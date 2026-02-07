@@ -16,7 +16,7 @@ Job Finder is a next-generation job aggregator designed to simplify the job sear
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: [Next.js](https://nextjs.org/) (Vercel)
+- **Frontend**: [Next.js](https://nextjs.org/) (React)
 - **Backend**: [Spring Boot](https://spring.io/projects/spring-boot) (Java)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
