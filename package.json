@@ -1,0 +1,16 @@
+{
+  "name": "model",
+  "version": "0.2.0",
+  "description": "",
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm run backend\" \"npm run frontend\"",
+    "dev:backend": "npm run dev --prefix server",
+    "dev:frontend": "npm run dev --prefix client",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

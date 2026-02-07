@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+vendor
+.env
+
+# Build outputs
+dist/
+build/
+out/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.history/
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+
+# Temporary files
+tmp/
+temp/
+.serena/*
+
+# Production
+.env.production
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
