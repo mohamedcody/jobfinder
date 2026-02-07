@@ -10,7 +10,7 @@ Job Finder is a next-generation job aggregator designed to simplify the job sear
 
 ### 🤖 AI-Powered Capabilities
 - **AI Career Chat**: An intelligent assistant to help you navigate your job search and query specific roles.
-- **Job Summarization**: Quickly grasp the essence of roles with AI-generated summaries of long job descriptions.
+- **Job Summarization**: AI-generated summaries of long job descriptions to help you quickly grasp the essence of roles.
 - **AI Apply**: Streamlining the application process with intelligent automation.
 - **CV Review & Optimization**: uploads and analyzes your resume, providing actionable feedback and AI-driven optimizations to match specific job descriptions.
 
