@@ -19,6 +19,7 @@ public class JobController {
 
     private final JobScraperService jobScraperService;
 
+
     @PostMapping("/sync")
     public ResponseEntity<?> triggerSync(@RequestParam String keyword) {
         // Note: This is a blocking call currently.
@@ -31,6 +32,8 @@ public class JobController {
                 "timestamp", LocalDateTime.now()
         ));
     }
+
+
 
     @GetMapping
     public ResponseEntity<CursorPageResponse<JobResponseDTO>> getAllJobs(
