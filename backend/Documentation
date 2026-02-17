@@ -1,0 +1,83 @@
+
+🚀 Job Finder API Documentation
+Welcome! This guide provides all the necessary information to integrate with the Backend services.
+
+Base URL: http://localhost:8080/api/jobs
+
+Content-Type: application/json
+
+
+1. Sync Jobs (Scraping)
+Triggers the background process to scrape jobs from external sources.
+
+Endpoint: /sync
+
+Method: POST
+
+Params: - keyword (String): e.g., "Java", "React".
+
+Success Response (202 Accepted):
+
+JSON
+{
+  "status": "Processing",
+  "message": "Scraping started in the background...",
+  "timestamp": "2026-02-15T..."
+}
+
+
+
+2. Get All Jobs (With Cursor Pagination)
+Fetch all jobs using high-performance cursor-based pagination.
+
+Endpoint: /
+
+Method: GET
+
+Params:
+
+lastId (Long/Optional): The ID of the last visible job.
+
+size (int/Default: 10): Number of items per page.
+
+Success Response:
+
+JSON
+{
+  "data": [
+    {
+      "title": "Software Engineer",
+      "companyName": "Tech Co",
+      "location": "Cairo",
+      "link": "https://...",
+      "companyLogo": "https://..."
+    }
+  ],
+  "pageSize": 10,
+  "nextCursor": 864,
+  "hasNext": true
+}
+Note: Use nextCursor value as the lastId for the next request.
+
+3. Search Jobs
+Endpoint: /search
+
+Method: GET
+
+Params:
+
+title (String): Search keyword for job titles.
+
+lastId & size: Same as pagination.
+
+4. Error Handling
+The API returns a consistent error format for all business exceptions.
+
+Format:
+JSON
+{
+  "errorCode": "ERR_101",
+  "message": "Job not found",
+  "timestamp": "2026-02-15T...",
+  "path": "/api/jobs/search"
+}
