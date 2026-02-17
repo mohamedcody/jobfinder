@@ -1,4 +1,4 @@
-package com.example.jobfinder;
+package jobfinder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
