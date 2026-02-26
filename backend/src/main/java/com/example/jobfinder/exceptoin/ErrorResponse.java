@@ -1,4 +1,4 @@
-package com.example.jobfinder.exceptoin;
+package jobfinder.exceptoin;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

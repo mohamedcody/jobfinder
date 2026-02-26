@@ -1,7 +1,7 @@
-package com.example.jobfinder.controller;
-import com.example.jobfinder.model.dto.CursorPageResponse;
-import com.example.jobfinder.model.dto.JobResponseDTO;
-import com.example.jobfinder.servics.JobScraperService;
+package jobfinder.controller;
+import jobfinder.model.dto.CursorPageResponse;
+import jobfinder.model.dto.JobResponseDTO;
+import jobfinder.servics.implemention.JobScraperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

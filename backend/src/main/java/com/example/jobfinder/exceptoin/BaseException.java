@@ -1,4 +1,4 @@
-package com.example.jobfinder.exceptoin;
+package jobfinder.exceptoin;
 
 import lombok.Getter;
 
@@ -16,4 +16,5 @@ public class BaseException extends RuntimeException {
         super(customMessage);
         this.errorCode = errorCode;
     }
+
 }

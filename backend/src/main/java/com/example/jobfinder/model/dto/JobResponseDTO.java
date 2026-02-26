@@ -1,4 +1,4 @@
-package com.example.jobfinder.model.dto;
+package jobfinder.model.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 

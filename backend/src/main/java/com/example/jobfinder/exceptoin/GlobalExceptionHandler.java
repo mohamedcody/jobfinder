@@ -1,16 +1,20 @@
-package com.example.jobfinder.exceptoin;
+package jobfinder.exceptoin;
 
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.example.jobfinder.exceptoin.BaseException;
-import com.example.jobfinder.exceptoin.ErrorResponse;
+import jobfinder.exceptoin.BaseException;
+import jobfinder.exceptoin.ErrorResponse;
 
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -29,8 +33,7 @@ public class GlobalExceptionHandler {
                   .path(request.getRequestURI())
                   .build();
 
-
-          return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+          return new ResponseEntity<>(errorResponse, ex.getErrorCode().getHttpStatus());
 
       }
 

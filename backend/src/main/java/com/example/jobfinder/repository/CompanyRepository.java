@@ -1,5 +1,5 @@
-package com.example.jobfinder.repository;
-import com.example.jobfinder.model.entity.CompanyEntity;
+package jobfinder.repository;
+import jobfinder.model.entity.CompanyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
