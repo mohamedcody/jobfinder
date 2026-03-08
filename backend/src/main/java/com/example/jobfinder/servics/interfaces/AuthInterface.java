@@ -1,8 +1,7 @@
 package jobfinder.servics.interfaces;
 
-import jobfinder.model.dto.AuthResponse;
-import jobfinder.model.dto.LoginRequest;
-import jobfinder.model.dto.RegisterRequest;
+import jakarta.validation.constraints.NotBlank;
+import jobfinder.model.dto.*;
 
 public interface AuthInterface {
 
@@ -11,6 +10,10 @@ public interface AuthInterface {
 
     AuthResponse register (RegisterRequest request);
 
+
+    void forgetPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 
 
 }

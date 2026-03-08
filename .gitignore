@@ -42,3 +42,19 @@ temp/
 
 # Optional eslint cache
 .eslintcache
+
+#java spring boot specific
+*.class
+*.jar
+*.war
+*.ear
+# maven specific
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.utils
+release.properties
+
+# ignore env
+.env
+
+!.env.example

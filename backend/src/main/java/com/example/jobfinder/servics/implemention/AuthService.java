@@ -3,15 +3,17 @@ import jakarta.transaction.Transactional;
 import jobfinder.config.CustomUserDetails;
 import jobfinder.exceptoin.BaseException;
 import jobfinder.exceptoin.ErrorCode;
-import jobfinder.model.dto.AuthResponse;
-import jobfinder.model.dto.LoginRequest;
-import jobfinder.model.dto.RegisterRequest;
+import jobfinder.model.dto.*;
+import jobfinder.model.entity.OtpCode;
 import jobfinder.model.entity.User;
+import jobfinder.repository.OtpCodeRepository;
 import jobfinder.repository.UserRepository;
 import jobfinder.servics.interfaces.AuthInterface;
 import jobfinder.util.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,8 +21,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,26 +32,27 @@ import java.util.List;
 public class AuthService implements AuthInterface {
 
     private final UserRepository userRepository;
+    private final OtpCodeRepository otpCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-
+    private final JavaMailSender mailSender;
+    private static final SecureRandom secureRandom = new java.security.SecureRandom();
 
 
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        // 1. فحص الدومين (لازم ينتهي بـ @jobfinder.com)
+
         if (request.email() == null || !request.email().toLowerCase().endsWith("@jobfinder.com")) {
             throw new BaseException(ErrorCode.EMAIL_DOMAIN_NOT_ALLOWED);
         }
 
-        // 2. فحص هل الإيميل موجود قبل كده؟
+
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new BaseException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        // 3. فحص هل اسم المستخدم موجود قبل كده؟
         if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new BaseException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
@@ -86,13 +91,13 @@ public class AuthService implements AuthInterface {
                 ? userRepository.findByEmail(identifier).orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND))
                 : userRepository.findByUsername(identifier).orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. هل الحساب مقفول دلوقتي؟
+
         if (user.getLockoutTime() != null) {
             if (user.getLockoutTime().isAfter(LocalDateTime.now())) {
-                // لسه وقت الحظر مخلصش
+
                 throw new BaseException(ErrorCode.ACCOUNT_LOCKED);
             } else {
-                // وقت الحظر خلص، هنصفر العداد ونفتح الحساب تاني
+
                 user.setFailedAttempts(0);
                 user.setLockoutTime(null);
                 userRepository.save(user);
@@ -103,34 +108,33 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
         }
 
-        // 3. نجرب نعمل Login
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(identifier, password)
             );
 
-            // لو الباسورد صح ووصلنا هنا: نصفر العداد (عشان لو كان غلط مرة أو اتنين قبل كده)
+
             if (user.getFailedAttempts() > 0) {
                 user.setFailedAttempts(0);
                 userRepository.save(user);
             }
 
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
-            // لو الباسورد غلط: نزود العداد
             int attempts = user.getFailedAttempts() + 1;
             user.setFailedAttempts(attempts);
 
-            // لو وصل لـ 5 مرات غلط، نقفل الحساب لمدة 15 دقيقة
+
             if (attempts >= 5) {
                 user.setLockoutTime(LocalDateTime.now().plusMinutes(1));
                 log.warn("Account locked for user: {}", identifier);
             }
-            userRepository.save(user); // نحفظ التعديلات في الداتا بيز
+            userRepository.save(user);
 
             throw new BaseException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // 4. إصدار التوكن بعد النجاح
+
         UserDetails userDetails = createDetails(user);
         String token = jwtService.generateToken(userDetails);
 
@@ -143,6 +147,77 @@ public class AuthService implements AuthInterface {
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
         );
     }
+
+
+
+    @Override
+    @Transactional
+    public void forgetPassword(ForgotPasswordRequest request) {
+
+        if (request.email() == null || !request.email().toLowerCase().endsWith("@jobfinder.com")) {
+            throw new BaseException(ErrorCode.EMAIL_DOMAIN_NOT_ALLOWED);
+        }
+
+
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+
+        String resetToken = UUID.randomUUID().toString();
+
+
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(15);
+
+
+        OtpCode otp = OtpCode.builder()
+                .user(user)
+                .code(resetToken)
+                .expiryTime(expiryTime)
+                .used(false)
+                .build();
+        otpCodeRepository.save(otp);
+
+
+        sendEmail(user.getEmail(), resetToken);
+    }
+
+    private void sendEmail(String email, String token) {
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("JobFinder - Password Reset Request");
+        message.setText("To reset your password, click the link below:\n" + resetLink);
+
+        mailSender.send(message);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+
+        OtpCode otp = otpCodeRepository.findByCodeAndUsedFalse(request.otpCode())
+                .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
+
+
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new BaseException(ErrorCode.OTP_EXPIRED);
+        }
+        if(!request.newPassword().equals(request.confirmPassword())){
+            throw new BaseException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
+        }
+
+
+        User user = otp.getUser();
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        otp.setUsed(true);
+        otpCodeRepository.save(otp);
+    }
+
+
+
 
 }
 

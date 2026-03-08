@@ -18,6 +18,6 @@ public interface JobRepository extends JpaRepository<JobEntity, Long> {
 
     List<JobEntity> findFirst11ByIdGreaterThanOrderByIdAsc(Long id);
 
-    // بحث بالاسم أو المكان مع دعم الـ Cursor
+
     List<JobEntity> findByTitleContainingIgnoreCaseAndIdGreaterThanOrderByIdAsc(String title, Long id, Pageable pageable);
 }

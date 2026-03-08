@@ -2,9 +2,7 @@ package jobfinder.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jobfinder.model.dto.AuthResponse;
-import jobfinder.model.dto.LoginRequest;
-import jobfinder.model.dto.RegisterRequest;
+import jobfinder.model.dto.*;
 import jobfinder.servics.interfaces.AuthInterface;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,4 +30,23 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @Operation(summary = "طلب إعادة تعيين كلمة المرور")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid  @RequestBody ForgotPasswordRequest request) {
+        authService.forgetPassword(request);
+        return ResponseEntity.ok("OTP sent to your email successfully.");
+    }
+
+    @Operation(summary = "إعادة تعيين كلمة المرور باستخدام OTP")
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword (@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok("Password has been reset successfully.");
+    }
+
+
+
+
+
 }

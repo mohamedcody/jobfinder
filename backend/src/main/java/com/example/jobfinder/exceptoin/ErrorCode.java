@@ -30,10 +30,16 @@ public enum ErrorCode {
 
     // General
     INTERNAL_ERROR("ERR_999", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
-    EMAIL_DOMAIN_NOT_ALLOWED("ERR_406", "Email domain not allowed", HttpStatus.BAD_REQUEST), // ✅
+    EMAIL_DOMAIN_NOT_ALLOWED("ERR_406", "Email domain not allowed", HttpStatus.BAD_REQUEST),
+    PROVIDE_EMAIL("ERR_407", "Please provide an email address", HttpStatus.BAD_REQUEST),
+    PASSWORDS_DO_NOT_MATCH("ERR_406","password do not match", HttpStatus.BAD_REQUEST),
+    INVALID_OTP("ERR_408", "Invalid or wrong OTP code", HttpStatus.BAD_REQUEST),
+    OTP_EXPIRED("ERR_409", "OTP code has expired", HttpStatus.BAD_REQUEST),
+
 
     // USER LOCKED
-    ACCOUNT_LOCKED("ERR_407", "Account is locked due to too many failed attempts. Try again later.", HttpStatus.LOCKED);
+    ACCOUNT_LOCKED("ERR_407", "Account is locked due to too many failed attempts. Try again later.", HttpStatus.LOCKED),
+   ;
 
 
     private final String code;

@@ -40,18 +40,18 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    // 3. توليد توكن جديد (بدون بيانات إضافية)
+
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
 
-    // 4. توليد توكن مع إمكانية إضافة بيانات إضافية (Extra Claims)
+
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) // التأكد من جمع الوقت الحالي مع مدة الصلاحية
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
