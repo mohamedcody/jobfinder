@@ -9,4 +9,9 @@ import org.springframework.stereotype.Repository;
 public interface OtpCodeRepository extends JpaRepository<OtpCode, Long > {
 
 
+
+    Optional<OtpCode> findByCodeAndUsedFalse (String code);
+
+
+
 }
