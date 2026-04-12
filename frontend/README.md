@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JobFinder Frontend
 
-## Getting Started
+Next.js (App Router) frontend for JobFinder with a complete authentication flow integrated with Spring Boot.
 
-First, run the development server:
+## Auth Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Register (`/register`)
+- Login (`/login`)
+- Forgot Password (`/forgot-password`)
+- Reset Password with OTP (`/reset-password`)
+- Verify Email with OTP (`/verify-email`)
+
+## Tech Stack
+
+- Next.js + TypeScript + Tailwind CSS
+- `react-hook-form` + `zod` for form validation
+- `axios` for API requests with JWT interceptor
+- `sonner` for success/error toasts
+
+## Environment Variables
+
+Create `.env.local` in `frontend/`:
+
+```env
+NEXT_PUBLIC_AUTH_API_URL=http://localhost:8080/api/auth
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Run Locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open `http://localhost:3000`.
 
-## Learn More
+## Notes
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- JWT is stored client-side in `localStorage` for this client-only implementation.
+- The axios client automatically attaches `Authorization: Bearer <token>` to outgoing requests when a valid token exists.
