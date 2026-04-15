@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AUTH_SESSION_EVENT,
   clearToken,
@@ -11,29 +11,39 @@ import {
 } from "@/lib/auth/token-storage";
 
 export const useAuthSession = () => {
-  const [token, setToken] = useState<string | null>(() =>
-    hasValidToken() ? getToken() : null,
-  );
+  const [token, setToken] = useState<string | null>(null);
+  const [isSessionReady, setIsSessionReady] = useState(false);
+  const isMountedRef = useRef(true);
+
+  const syncToken = useCallback(() => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    setToken(hasValidToken() ? getToken() : null);
+    setIsSessionReady(true);
+  }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === TOKEN_KEY) {
-        setToken(event.newValue);
+      if (event.key === TOKEN_KEY || event.key === null) {
+        syncToken();
       }
     };
 
-    const syncToken = () => {
-      setToken(hasValidToken() ? getToken() : null);
-    };
+    queueMicrotask(syncToken);
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener(AUTH_SESSION_EVENT, syncToken);
 
     return () => {
+      isMountedRef.current = false;
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener(AUTH_SESSION_EVENT, syncToken);
     };
-  }, []);
+  }, [syncToken]);
 
   const login = useCallback((newToken: string) => {
     saveToken(newToken);
@@ -49,6 +59,7 @@ export const useAuthSession = () => {
 
   return {
     token,
+    isSessionReady,
     isAuthenticated,
     login,
     logout,

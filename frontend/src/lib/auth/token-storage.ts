@@ -39,18 +39,6 @@ const decodeJwtPayload = (token: string): JwtPayload | null => {
   }
 };
 
-const migrateLegacyLocalStorageToken = (storage: Storage) => {
-  if (!isBrowser()) {
-    return;
-  }
-
-  const legacyToken = window.localStorage.getItem(TOKEN_KEY);
-  if (legacyToken && !storage.getItem(TOKEN_KEY)) {
-    storage.setItem(TOKEN_KEY, legacyToken);
-  }
-  window.localStorage.removeItem(TOKEN_KEY);
-};
-
 export const saveToken = (token: string) => {
   const storage = getStorage();
   if (!storage) {
@@ -58,9 +46,6 @@ export const saveToken = (token: string) => {
   }
 
   storage.setItem(TOKEN_KEY, token);
-  if (isBrowser()) {
-    window.localStorage.removeItem(TOKEN_KEY);
-  }
   notifyAuthSessionChange();
 };
 
@@ -70,7 +55,6 @@ export const getToken = (): string | null => {
     return null;
   }
 
-  migrateLegacyLocalStorageToken(storage);
   return storage.getItem(TOKEN_KEY);
 };
 
@@ -81,9 +65,6 @@ export const clearToken = () => {
   }
 
   storage.removeItem(TOKEN_KEY);
-  if (isBrowser()) {
-    window.localStorage.removeItem(TOKEN_KEY);
-  }
   notifyAuthSessionChange();
 };
 

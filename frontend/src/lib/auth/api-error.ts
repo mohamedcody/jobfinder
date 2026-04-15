@@ -1,6 +1,14 @@
 import axios from "axios";
 import type { ApiErrorShape } from "@/lib/auth/types";
 
+export const isRequestCanceled = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  return error.code === "ERR_CANCELED";
+};
+
 export const getApiErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError<ApiErrorShape>(error)) {
     const data = error.response?.data;
@@ -20,6 +28,10 @@ export const getApiErrorMessage = (error: unknown): string => {
 
     if (status === 429) {
       return data?.message || "Too many requests. Please wait a moment before trying again.";
+    }
+
+    if (!status) {
+      return "Unable to reach the server. Please check your connection and try again.";
     }
 
     return (

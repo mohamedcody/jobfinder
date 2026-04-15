@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AppToaster } from "@/components/providers/app-toaster";
 import "./globals.css";
 
@@ -15,7 +16,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <Suspense
+          fallback={
+            <div className="jobs-page-background flex min-h-screen items-center justify-center text-sm text-[#D1D5DB]">
+              Loading application...
+            </div>
+          }
+        >
+          {children}
+        </Suspense>
         <AppToaster />
       </body>
     </html>

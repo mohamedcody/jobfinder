@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthSocialLogin } from "@/components/auth/auth-social-login";
 import { PasswordField } from "@/components/auth/password-field";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { TextField } from "@/components/auth/text-field";
@@ -19,6 +20,30 @@ import { useAuthSession } from "@/lib/auth/use-auth-session";
 const LOGIN_LOCK_UNTIL_KEY = "jobfinder.auth.login-lock-until";
 const DEFAULT_LOCK_DURATION_SECONDS = 60;
 const getNowMs = () => new Date().getTime();
+
+const authTabs = (
+  <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/20 bg-slate-900/45 p-1.5 shadow-inner">
+    <Link
+      href="/login"
+      aria-current="page"
+      className="rounded-xl bg-linear-to-r from-violet-600 to-sky-600 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-violet-500/20"
+    >
+      Login
+    </Link>
+    <Link
+      href="/register"
+      className="rounded-xl px-4 py-3 text-center text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+    >
+      Register
+    </Link>
+  </div>
+);
+
+const authFooterMark = (
+  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-600 text-xs font-black text-white shadow-lg shadow-slate-900/20">
+    N
+  </div>
+);
 
 export default function LoginPage() {
   const router = useRouter();
@@ -117,12 +142,17 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShell title="Welcome back" description="Login with your email or username.">
+    <AuthShell
+      title="Welcome back"
+      description="Login with your email or username."
+      prelude={authTabs}
+      footer={authFooterMark}
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <TextField
           id="identifier"
           label="Email or username"
-          placeholder="you@example.com"
+          placeholder="yourusername"
           autoComplete="username"
           error={errors.identifier?.message}
           {...register("identifier")}
@@ -131,14 +161,14 @@ export default function LoginPage() {
         <PasswordField
           id="password"
           label="Password"
-          placeholder="Enter your password"
+          placeholder="•••••••••••"
           autoComplete="current-password"
           error={errors.password?.message}
           {...register("password")}
         />
 
         <div className="text-right">
-          <Link href="/forgot-password" className="soft-link text-sm font-medium hover:underline">
+          <Link href="/forgot-password" className="soft-link text-sm font-semibold hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -148,7 +178,9 @@ export default function LoginPage() {
         </SubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[var(--muted)]">
+      <AuthSocialLogin />
+
+      <p className="mt-6 text-sm text-slate-300">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="soft-link font-semibold hover:underline">
           Register

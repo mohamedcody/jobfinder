@@ -7,7 +7,7 @@ public interface AuthInterface {
 
     AuthResponse login(LoginRequest request);
     AuthResponse register(RegisterRequest request);
-    void verifyAccount(String email, String otpCode); // مهم جداً!
+    void verifyAccount(String email, String otpCode);
     void resendVerificationOtp(ResendVerificationOtpRequest request);
     void forgetPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);

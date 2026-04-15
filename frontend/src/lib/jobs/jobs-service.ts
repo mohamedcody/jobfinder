@@ -1,6 +1,11 @@
 import axios from "axios";
+import { emitGlobalApiError, getGlobalApiErrorMessage } from "@/lib/api/global-api-error";
 import { clearToken, getToken, isTokenExpired } from "@/lib/auth/token-storage";
 import type { CursorPageResponse, Job, JobsSearchParams } from "./types";
+
+interface RequestOptions {
+  signal?: AbortSignal;
+}
 
 const JOBS_API_BASE_URL = 
   process.env.NEXT_PUBLIC_JOBS_API_URL || "/api/jobs";
@@ -40,25 +45,35 @@ jobsApiClient.interceptors.response.use(
       clearToken();
     }
 
+    if (!status || status >= 500) {
+      emitGlobalApiError({
+        status,
+        message: getGlobalApiErrorMessage(status),
+      });
+    }
+
     return Promise.reject(error);
   },
 );
 
 export const jobsService = {
-  async getAllJobs(lastId?: number, size: number = 10): Promise<CursorPageResponse<Job>> {
+  async getAllJobs(lastId?: number, size: number = 10, options?: RequestOptions): Promise<CursorPageResponse<Job>> {
     const params: Record<string, string | number> = { size };
     if (lastId !== undefined && lastId !== null) {
       params.lastId = lastId;
     }
-    const { data } = await jobsApiClient.get<CursorPageResponse<Job>>("", { params });
+    const { data } = await jobsApiClient.get<CursorPageResponse<Job>>("", {
+      params,
+      signal: options?.signal,
+    });
     return data;
   },
 
-  async searchJobs(params: JobsSearchParams): Promise<CursorPageResponse<Job>> {
+  async searchJobs(params: JobsSearchParams, options?: RequestOptions): Promise<CursorPageResponse<Job>> {
     const { title, lastId, size = 10 } = params;
     
     if (!title || title.trim() === "") {
-      return this.getAllJobs(lastId, size);
+      return this.getAllJobs(lastId, size, options);
     }
 
     const queryParams: Record<string, string | number> = { title, size };
@@ -68,6 +83,7 @@ export const jobsService = {
 
     const { data } = await jobsApiClient.get<CursorPageResponse<Job>>("/search", {
       params: queryParams,
+      signal: options?.signal,
     });
     return data;
   },

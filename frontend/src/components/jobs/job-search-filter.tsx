@@ -1,56 +1,81 @@
 "use client";
 
 import { Search, Sparkles, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 interface JobSearchFilterProps {
   onSearch: (title: string) => void;
   isLoading?: boolean;
+  debounceMs?: number;
 }
 
-export function JobSearchFilter({ onSearch, isLoading }: JobSearchFilterProps) {
+export function JobSearchFilter({ onSearch, isLoading, debounceMs = 400 }: JobSearchFilterProps) {
   const [searchTitle, setSearchTitle] = useState("");
+  const skipNextDebounceRef = useRef(false);
+  const isFirstDebounceRef = useRef(true);
+
+  const triggerImmediateSearch = (value: string) => {
+    skipNextDebounceRef.current = true;
+    onSearch(value.trim());
+  };
+
+  useEffect(() => {
+    if (isFirstDebounceRef.current) {
+      isFirstDebounceRef.current = false;
+      return;
+    }
+
+    if (skipNextDebounceRef.current) {
+      skipNextDebounceRef.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onSearch(searchTitle.trim());
+    }, debounceMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [debounceMs, onSearch, searchTitle]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSearch(searchTitle.trim());
+    triggerImmediateSearch(searchTitle);
   };
 
   const handleClear = () => {
     setSearchTitle("");
-    onSearch("");
+    triggerImmediateSearch("");
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Search Input */}
         <div className="group relative flex-1">
-          {/* Glow Effect */}
-          <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 opacity-0 blur transition duration-300 group-focus-within:opacity-20" />
+          <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#A020F0]/70 to-[#4B0082]/70 opacity-0 blur transition duration-300 group-focus-within:opacity-30" />
           
           <div className="relative flex items-center">
-            {/* Search Icon */}
             <div className="absolute left-4 flex h-10 w-10 items-center justify-center">
-              <Search className="h-5 w-5 text-slate-400 transition-colors group-focus-within:text-purple-500" />
+              <Search className="h-5 w-5 text-[#D1D5DB] transition-colors group-focus-within:text-[#00FFFF]" />
             </div>
 
-            {/* Input Field */}
             <input
               type="text"
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               placeholder="Search by job title, skills, or keywords..."
-              className="w-full rounded-2xl border-2 border-slate-200 bg-white py-4 pl-14 pr-14 text-sm font-medium text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Search jobs by title, skills, or keywords"
+              className="search-input-glass w-full rounded-2xl border border-white/20 bg-white/10 py-4 pl-14 pr-14 text-sm font-medium text-white shadow-[inset_0_-6px_16px_rgba(10,15,31,0.35)] backdrop-blur-md transition-all placeholder:text-[#D1D5DB] hover:border-cyan-300/50 focus:border-cyan-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isLoading}
             />
 
-            {/* Clear Button */}
             {searchTitle && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all hover:bg-slate-200 hover:text-slate-700 active:scale-90"
+                aria-label="Clear search input"
+                className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[#D1D5DB] transition-all hover:border-cyan-300/50 hover:text-white active:scale-90"
                 disabled={isLoading}
               >
                 <X className="h-4 w-4" />
@@ -59,13 +84,12 @@ export function JobSearchFilter({ onSearch, isLoading }: JobSearchFilterProps) {
           </div>
         </div>
 
-        {/* Search Button */}
         <button
           type="submit"
+          aria-label="Search jobs now"
           disabled={isLoading}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-purple-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-purple-500/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#A020F0] to-[#4B0082] px-8 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(160,32,240,0.9)] transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
         >
-          {/* Shimmer Effect */}
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
           
           <span className="relative flex items-center justify-center gap-2">
@@ -84,19 +108,19 @@ export function JobSearchFilter({ onSearch, isLoading }: JobSearchFilterProps) {
         </button>
       </div>
 
-      {/* Quick Suggestions (Optional) */}
       {!searchTitle && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="text-xs font-semibold text-slate-500">Popular:</span>
+          <span className="text-xs font-semibold text-[#D1D5DB]">Popular:</span>
           {["React Developer", "Backend Engineer", "Product Manager", "UI/UX Designer"].map((term) => (
             <button
               key={term}
               type="button"
               onClick={() => {
                 setSearchTitle(term);
-                onSearch(term);
+                triggerImmediateSearch(term);
               }}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+              aria-label={`Search for ${term}`}
+              className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md transition-all hover:border-cyan-300/60 hover:shadow-[0_0_10px_rgba(0,255,255,0.35)]"
               disabled={isLoading}
             >
               {term}

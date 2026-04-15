@@ -1,4 +1,5 @@
 import axios from "axios";
+import { emitGlobalApiError, getGlobalApiErrorMessage } from "@/lib/api/global-api-error";
 import { clearToken, getToken, isTokenExpired } from "@/lib/auth/token-storage";
 
 const AUTH_API_BASE_URL =
@@ -36,6 +37,13 @@ apiClient.interceptors.response.use(
 
     if (status === 401 || status === 403) {
       clearToken();
+    }
+
+    if (!status || status >= 500) {
+      emitGlobalApiError({
+        status,
+        message: getGlobalApiErrorMessage(status),
+      });
     }
 
     return Promise.reject(error);
