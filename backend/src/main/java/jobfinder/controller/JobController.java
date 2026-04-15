@@ -47,7 +47,7 @@ public class JobController {
             @RequestParam String location ,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size) {
-        return ok(jobScraperService.searchJobs(title, lastId, size));
+        return ok(jobScraperService.searchJobs(title,location, lastId, size));
     }
 
 
