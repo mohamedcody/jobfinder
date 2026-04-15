@@ -20,4 +20,17 @@ public interface JobRepository extends JpaRepository<JobEntity, Long> {
 
 
     List<JobEntity> findByTitleContainingIgnoreCaseAndIdGreaterThanOrderByIdAsc(String title, Long id, Pageable pageable);
+
+
+    @Query("SELECT j FROM JobEntity j WHERE " +
+            "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
+            "(:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+            "(j.id > :lastId)")
+    List<JobEntity> findJobsSmartFilter(
+            @Param("title")   String title  ,
+            @Param("location") String  location ,
+            @Param("lastId")   Long lastId  ,
+            Pageable pageable
+    );
+
 }
