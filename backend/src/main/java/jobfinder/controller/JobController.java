@@ -44,6 +44,7 @@ public class JobController {
     @GetMapping("/search")
     public ResponseEntity<CursorPageResponse<JobResponseDTO>> searchJobs(
             @RequestParam String title,
+            @RequestParam String location ,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size) {
         return ok(jobScraperService.searchJobs(title, lastId, size));
