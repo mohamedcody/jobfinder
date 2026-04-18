@@ -27,7 +27,6 @@ public class CompanyEntity {
     private String websiteUrl ;
 
 
-
     @Column(name = "description" , columnDefinition = "TEXT")
     private String description  ;
 

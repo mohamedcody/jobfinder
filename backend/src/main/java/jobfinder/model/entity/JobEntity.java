@@ -22,7 +22,11 @@ public class JobEntity {
     private Long id;
 
     private String title ;
+
     private String location ;
+
+    @Column(name = "employment_type")
+    private String employmentType;
 
     @Column(columnDefinition = "TEXT")
     private String description ;

@@ -2,6 +2,7 @@ package jobfinder.servics.implemention;
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.CursorPageResponse;
+import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
 import jobfinder.model.entity.CompanyEntity;
 import jobfinder.model.entity.JobEntity;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -24,7 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-
+import static reactor.netty.http.HttpConnectionLiveness.log;
 
 
 @Slf4j
@@ -46,7 +49,6 @@ public class JobScraperService {
 
         log.info("🚀 Starting comprehensive scraping process for keyword: {}", keyword);
 
-        // ✅ الـ ErrorCode الصح INVALID_INPUT مش JOB_NOT_FOUND
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Keyword cannot be empty.");
         }
@@ -54,7 +56,6 @@ public class JobScraperService {
         try {
             String runUrl = "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs?token=" + apifyToken.trim();
 
-            // ✅ keyword اتعمله URL encode
             String encodedKeyword = URLEncoder.encode(keyword.trim(), StandardCharsets.UTF_8);
             String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword;
 
@@ -64,7 +65,6 @@ public class JobScraperService {
                     "proxyConfiguration", Map.of("useApifyProxy", true)
             );
 
-            // ✅ flatMap + Mono.error عشان الـ exception تترمي صح
             Map runResponse = webClient.post()
                     .uri(runUrl)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -83,9 +83,10 @@ public class JobScraperService {
 
             Map dataPart = (Map) runResponse.get("data");
             String datasetId = (String) dataPart.get("defaultDatasetId");
-            log.info("✅ الأكتور بدأ! الـ Dataset ID: {}", datasetId);
+            log.info("✅ Scraper started! Dataset ID: {}", datasetId);
 
-            Thread.sleep(30000);
+            // Wait for items to be available 
+            Thread.sleep(15000); 
 
             String datasetUrl = "https://api.apify.com/v2/datasets/" + datasetId + "/items?token=" + apifyToken.trim();
             List<JobResponseDTO> items = webClient.get()
@@ -106,10 +107,10 @@ public class JobScraperService {
             throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new BaseException(ErrorCode.INTERNAL_ERROR, "Thread interrupted while waiting for data.");
+            throw new BaseException(ErrorCode.INTERNAL_ERROR, "Process interrupted.");
         } catch (Exception e) {
             log.error("❌ Unexpected error during scraping: ", e);
-            throw new BaseException(ErrorCode.INTERNAL_ERROR, "A technical error occurred: " + e.getMessage());
+            throw new BaseException(ErrorCode.INTERNAL_ERROR, "Scraping failed: " + e.getMessage());
         }
     }
 
@@ -121,7 +122,7 @@ public class JobScraperService {
 
             List<JobEntity> entities = jobList.stream()
                     .filter(dto -> dto.getLink() != null && !jobRepository.existsByJobUrl(dto.getLink()))
-                    .map(dto -> {
+                    .map((JobResponseDTO dto) -> {
                         CompanyEntity company = companyRepository.findByName(dto.getCompanyName())
                                 .orElseGet(() -> companyRepository.save(
                                         CompanyEntity.builder()
@@ -133,7 +134,9 @@ public class JobScraperService {
                         return JobEntity.builder()
                                 .title(dto.getTitle())
                                 .location(dto.getLocation())
+                                .employmentType(dto.getEmploymentType())
                                 .description(dto.getDescriptionText())
+                                .salaryRange(dto.getSalaryRange())
                                 .jobUrl(dto.getLink())
                                 .company(company)
                                 .isActive(true)
@@ -207,13 +210,18 @@ public class JobScraperService {
         }
     }
 
-    public CursorPageResponse<JobResponseDTO> searchJobs(String title, Long lastId, int size) {
+    public CursorPageResponse<JobResponseDTO> searchJobs(String title, String location, Long lastId, int size) {
 
-        log.info("🔍 Searching for jobs with title: '{}' - Start ID: {}, Size: {}", title, lastId, size);
+        log.info("🔍 Searching for jobs with title: '{}', location: '{}' - Start ID: {}, Size: {}", title, location, lastId, size);
 
         try {
-            if (title == null || title.trim().isEmpty()) {
-                throw new BaseException(ErrorCode.INVALID_INPUT, "Search keyword is missing.");
+            // 1. التفكير الهندسي: تنظيف البيانات (Sanitization)
+            String sanitizedTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : null;
+            String sanitizedLocation = (location != null && !location.trim().isEmpty()) ? location.trim() : null;
+
+            // التأكد إن المستخدم مدخل حاجة يبحث بيها على الأقل (أو ممكن تشيل الشرط ده لو عايزه يجيب كل الوظائف لو مفيش بحث)
+            if (sanitizedTitle == null && sanitizedLocation == null) {
+                throw new BaseException(ErrorCode.INVALID_INPUT, "Search keyword or location is missing.");
             }
 
             if (lastId != null && lastId < 0) {
@@ -227,13 +235,19 @@ public class JobScraperService {
 
             Long startId = (lastId == null) ? 0L : lastId;
 
-            List<JobEntity> jobList = jobRepository.findByTitleContainingIgnoreCaseAndIdGreaterThanOrderByIdAsc(
-                    title, startId, PageRequest.of(0, size + 1));
+            // 2. استخدام الميثود الذكية من الـ Repository
+            // (تأكد إنك ضفت الميثود دي في الـ JobRepository بالـ @Query زي ما اتفقنا)
+            List<JobEntity> jobList = jobRepository.findJobsSmartFilter(
+                    sanitizedTitle,
+                    sanitizedLocation,
+                    startId,
+                    PageRequest.of(0, size + 1)
+            );
 
             if (jobList.isEmpty()) {
-                log.info("📭 No jobs found matching title: {}", title);
+                log.info("ℹ️ No jobs found matching title: {} and location: {}", title, location);
                 if (startId == 0) {
-                    throw new BaseException(ErrorCode.JOB_NOT_FOUND, "No jobs found matching your search: " + title);
+                    throw new BaseException(ErrorCode.JOB_NOT_FOUND, "No jobs found matching your search criteria.");
                 }
                 return new CursorPageResponse<>(List.of(), size, null, false);
             }
@@ -259,10 +273,68 @@ public class JobScraperService {
         }
     }
 
+
+
+    public CursorPageResponse<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
+        log.info("🚀 Advanced smart search applied for filter: {}", filter);
+
+        try {
+            // 1. Validation
+            if (lastId != null && lastId < 0) {
+                throw new BaseException(ErrorCode.INVALID_INPUT, "lastId cannot be negative: " + lastId);
+            }
+
+            // ضبط الحجم الافتراضي
+            int limit = (size <= 0 || size > 100) ? 10 : size;
+            Long startId = (lastId == null) ? 0L : lastId;
+
+            // 2. Build Specification
+            Specification<JobEntity> spec = JobSpecification.filterJobs(filter, startId);
+
+            // 3. Database Query (Fetch size + 1 to check if hasNext)
+            List<JobEntity> jobList = jobRepository.findAll(
+                    spec,
+                    PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.ASC, "id"))
+            ).getContent();
+
+            if (jobList.isEmpty()) {
+                log.info("ℹ️ No jobs found matching the criteria.");
+                return new CursorPageResponse<>(List.of(), limit, null, false);
+            }
+
+            // 4. Pagination Logic (The Magic)
+            boolean hasNext = jobList.size() > limit;
+            List<JobEntity> finalContent = hasNext ? jobList.subList(0, limit) : jobList;
+
+            // استخراج الـ cursor القادم من آخر عنصر في القائمة الحقيقية
+            Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
+
+            return new CursorPageResponse<>(
+                    finalContent.stream().map(this::convertToDTO).toList(),
+                    limit,
+                    nextCursor,
+                    hasNext
+            );
+
+        } catch (BaseException e) {
+            throw e; // إعادة رمي الـ custom exception بتاعك
+        } catch (Exception e) {
+            log.error("❌ Unexpected error during advanced search: ", e);
+            throw new BaseException(ErrorCode.DATABASE_ERROR, "An unexpected error occurred during search.");
+        }
+    }
+
+
+
+
+
+
     private JobResponseDTO convertToDTO(JobEntity entity) {
         return JobResponseDTO.builder()
                 .title(entity.getTitle())
                 .location(entity.getLocation())
+                .employmentType(entity.getEmploymentType())
+                .salaryRange(entity.getSalaryRange())
                 .descriptionText(entity.getDescription())
                 .link(entity.getJobUrl())
                 .scrapedAt(entity.getScrapedAt())

@@ -90,9 +90,11 @@ export function AuthShowcase() {
         </a>
       </div>
 
-      <p className="mt-8 text-center text-xs font-medium tracking-wide text-slate-400">
-        Crafted with passion by Mohamed Saad Abdalfa
-      </p>
+      <div className="mt-8 flex justify-center">
+        <p className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-4 py-2 text-center text-xs font-semibold tracking-wide text-slate-200 backdrop-blur-md shadow-[0_8px_20px_rgba(2,6,23,0.35)]">
+             development By  mohamed saad abdallah
+        </p>
+      </div>
     </aside>
   );
 }

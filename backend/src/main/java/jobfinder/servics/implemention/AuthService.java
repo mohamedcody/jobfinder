@@ -44,27 +44,18 @@ public class AuthService implements AuthInterface {
     @Override
     public AuthResponse register(RegisterRequest request) {
 
-
         if (!emailValidatorService.isEmailDomainValid(request.email())) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Email domain does not exist!");
         }
 
-        // 2. Check for existence (Or let DB handle it via Unique Constraints)
+        // 1. Check for existence
         if (userRepository.existsByEmail(request.email())) {
             throw new BaseException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new BaseException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
-
-
 
         if (userRepository.existsByUsername(request.username())) {
             throw new BaseException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-
 
         User user = User.builder()
                 .username(request.username())
@@ -120,6 +111,7 @@ public class AuthService implements AuthInterface {
         String token = jwtService.generateToken(createDetails(user));
         return new AuthResponse(token, user.getEmail(), user.getRole(), "Welcome back!");
     }
+
     @Override
     @Transactional // Main transaction for account verification
     public void verifyAccount(String email, String otpCode) {
@@ -132,22 +124,21 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.INVALID_INPUT, "User is already enabled");
         }
 
-        // Always verify against the latest unused OTP to avoid stale-code conflicts.
+        // Always verify against the latest unused OTP
         OtpCode otp = otpCodeRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
 
-        // Check if the OTP has expired based on current server time
+        // Check if the OTP has expired
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
-            // Invalidate expired OTP so repeated attempts don't keep hitting the same stale code.
             otp.setUsed(true);
             otpCodeRepository.saveAndFlush(otp);
             throw new BaseException(ErrorCode.OTP_EXPIRED, "OTP expired. Please request a new OTP code.");
         }
 
-        // If the OTP is wrong, delegate to the independent failure handler and stop here.
+        // CRITICAL FIX: If OTP is wrong, handle failure AND throw exception
         if (!otp.getCode().equals(otpCode)) {
             otpService.handleFailedAttempt(otp.getId());
-            return;
+            throw new BaseException(ErrorCode.INVALID_OTP, "The verification code you entered is incorrect.");
         }
 
         // If the code is correct, enable the user and mark OTP as used
@@ -155,7 +146,6 @@ public class AuthService implements AuthInterface {
         user.setEmailVerified(true);
         otp.setUsed(true);
 
-        // Save changes to the database
         userRepository.save(user);
         otpCodeRepository.save(otp);
 

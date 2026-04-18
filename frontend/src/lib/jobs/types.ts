@@ -24,3 +24,17 @@ export interface JobsSearchParams {
   lastId?: number;
   size?: number;
 }
+
+/** Maps to the backend's /api/jobs/filter endpoint */
+export interface JobFilterParams {
+  title?: string;
+  location?: string;
+  /** ISO date string: "YYYY-MM-DD" */
+  postedAfter?: string;
+  employmentType?: string;
+  lastId?: number;
+  size?: number;
+}
+
+/** "posted within" presets shown in the UI */
+export type DatePreset = "any" | "24h" | "week" | "month";
