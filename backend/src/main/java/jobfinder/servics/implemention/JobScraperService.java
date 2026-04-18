@@ -177,15 +177,14 @@ public class JobScraperService {
                 size = 10;
             }
 
-            Long startId = (lastId != null) ? lastId : 0L;
-
-            List<JobEntity> jobEntities = jobRepository.findFirst11ByIdGreaterThanOrderByIdAsc(startId);
+            // Updated startId for DESC: first page should have lastId null
+            List<JobEntity> jobEntities = jobRepository.findJobsAdvancedFilter(
+                    null, null, null, null, lastId,
+                    PageRequest.of(0, size + 1)
+            );
 
             if (jobEntities.isEmpty()) {
                 log.info("📭 No jobs available for the current request.");
-                if (startId == 0) {
-                    throw new BaseException(ErrorCode.JOB_NOT_FOUND, "The database is currently empty.");
-                }
                 return new CursorPageResponse<>(List.of(), size, null, false);
             }
 
@@ -235,12 +234,13 @@ public class JobScraperService {
 
             Long startId = (lastId == null) ? 0L : lastId;
 
-            // 2. استخدام الميثود الذكية من الـ Repository
-            // (تأكد إنك ضفت الميثود دي في الـ JobRepository بالـ @Query زي ما اتفقنا)
-            List<JobEntity> jobList = jobRepository.findJobsSmartFilter(
+            // 2. Optimized smart filter
+            List<JobEntity> jobList = jobRepository.findJobsAdvancedFilter(
                     sanitizedTitle,
                     sanitizedLocation,
-                    startId,
+                    null, // employmentType
+                    null, // postedAfter
+                    lastId,
                     PageRequest.of(0, size + 1)
             );
 
@@ -288,14 +288,15 @@ public class JobScraperService {
             int limit = (size <= 0 || size > 100) ? 10 : size;
             Long startId = (lastId == null) ? 0L : lastId;
 
-            // 2. Build Specification
-            Specification<JobEntity> spec = JobSpecification.filterJobs(filter, startId);
-
-            // 3. Database Query (Fetch size + 1 to check if hasNext)
-            List<JobEntity> jobList = jobRepository.findAll(
-                    spec,
-                    PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.ASC, "id"))
-            ).getContent();
+            // 2. Optimized Database Query (Avoiding COUNT(*) and Specification overhead)
+            List<JobEntity> jobList = jobRepository.findJobsAdvancedFilter(
+                    filter.title(),
+                    filter.location(),
+                    filter.employmentType(),
+                    (filter.postedAfter() != null) ? filter.postedAfter().atStartOfDay() : null,
+                    lastId,
+                    PageRequest.of(0, limit + 1)
+            );
 
             if (jobList.isEmpty()) {
                 log.info("ℹ️ No jobs found matching the criteria.");

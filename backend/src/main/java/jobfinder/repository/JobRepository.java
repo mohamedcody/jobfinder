@@ -23,18 +23,19 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
     List<JobEntity> findFirst11ByIdGreaterThanOrderByIdAsc(Long id);
 
 
-    List<JobEntity> findByTitleContainingIgnoreCaseAndIdGreaterThanOrderByIdAsc(String title, Long id, Pageable pageable);
-
-
     @Query("SELECT j FROM JobEntity j WHERE " +
             "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
             "(:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
-            "(j.id > :lastId) " +
-            "ORDER BY j.id ASC")
-    List<JobEntity> findJobsSmartFilter(
-            @Param("title")   String title  ,
-            @Param("location") String  location ,
-            @Param("lastId")   Long lastId  ,
+            "(:employmentType IS NULL OR LOWER(j.employmentType) = LOWER(:employmentType)) AND " +
+            "(:postedAfter IS NULL OR j.scrapedAt >= :postedAfter) AND " +
+            "(:lastId IS NULL OR j.id < :lastId) " +
+            "ORDER BY j.id DESC")
+    List<JobEntity> findJobsAdvancedFilter(
+            @Param("title") String title,
+            @Param("location") String location,
+            @Param("employmentType") String employmentType,
+            @Param("postedAfter") java.time.LocalDateTime postedAfter,
+            @Param("lastId") Long lastId,
             Pageable pageable
     );
 
