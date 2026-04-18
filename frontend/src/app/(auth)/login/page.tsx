@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthSocialLogin } from "@/components/auth/auth-social-login";
 import { PasswordField } from "@/components/auth/password-field";
+import { UserCircle2, Lock } from "lucide-react";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { TextField } from "@/components/auth/text-field";
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas";
@@ -156,6 +157,7 @@ export default function LoginPage() {
           placeholder="yourusername"
           autoComplete="username"
           error={errors.identifier?.message}
+          icon={UserCircle2}
           {...register("identifier")}
         />
 
@@ -165,6 +167,7 @@ export default function LoginPage() {
           placeholder="•••••••••••"
           autoComplete="current-password"
           error={errors.password?.message}
+          icon={Lock}
           {...register("password")}
         />
 
