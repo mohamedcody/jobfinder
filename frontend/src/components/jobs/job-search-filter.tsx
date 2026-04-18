@@ -1,8 +1,9 @@
 "use client";
 
 import { Briefcase, Calendar, MapPin, Search, Sparkles } from "lucide-react";
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import type { DatePreset } from "@/lib/jobs/types";
+import { motion } from "framer-motion";
 
 export interface JobSearchFormState {
   title: string;
@@ -42,6 +43,8 @@ export const getPostedAfterFromPreset = (preset: DatePreset): string | undefined
 };
 
 export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading }: JobSearchFilterProps) {
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   const handleSearch = (e?: FormEvent) => {
     e?.preventDefault();
     onSearch(value);
@@ -68,28 +71,44 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
   return (
     <div className="w-full space-y-6">
       <form onSubmit={handleSearch} className="relative flex flex-col gap-5">
-        <div className="flex flex-col gap-3 lg:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#D1D5DB]" />
+        <div className="flex flex-col gap-4 lg:flex-row">
+          <div className="relative flex-1 group">
+            <motion.div 
+              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-colors duration-300 ${focusedField === "title" ? "text-cyan-400" : "text-slate-500"}`}
+              animate={focusedField === "title" ? { y: ["-50%", "-65%", "-50%"] } : { y: "-50%" }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+            >
+              <Search className="h-5 w-5" />
+            </motion.div>
             <input
               type="text"
               value={value.title}
+              onFocus={() => setFocusedField("title")}
+              onBlur={() => setFocusedField(null)}
               onChange={(e) => onChange({ ...value, title: e.target.value })}
               placeholder="Job title or keywords..."
               aria-label="Search by job title or keywords"
-              className="field-input w-full rounded-2xl py-4 pl-12 pr-4 text-sm"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-4 pl-12 pr-4 text-sm text-white shadow-inner placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-400/15"
             />
           </div>
 
-          <div className="relative flex-1">
-            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#D1D5DB]" />
+          <div className="relative flex-1 group">
+            <motion.div 
+              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-colors duration-300 ${focusedField === "location" ? "text-cyan-400" : "text-slate-500"}`}
+              animate={focusedField === "location" ? { y: ["-50%", "-65%", "-50%"] } : { y: "-50%" }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+            >
+              <MapPin className="h-5 w-5" />
+            </motion.div>
             <input
               type="text"
               value={value.location}
+              onFocus={() => setFocusedField("location")}
+              onBlur={() => setFocusedField(null)}
               onChange={(e) => onChange({ ...value, location: e.target.value })}
               placeholder="Location or Remote..."
               aria-label="Filter jobs by location"
-              className="field-input w-full rounded-2xl py-4 pl-12 pr-4 text-sm"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-4 pl-12 pr-4 text-sm text-white shadow-inner placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-cyan-400/15"
             />
           </div>
 
@@ -97,18 +116,25 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
             type="submit"
             disabled={isLoading}
             aria-label="Apply job search filters"
-            className="cta-button flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white disabled:opacity-50"
+            className="group/btn relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-600 px-8 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all disabled:opacity-50 hover:shadow-[0_0_25px_rgba(34,211,238,0.4)] hover:scale-[1.02] active:scale-95 border border-white/10"
           >
-            {isLoading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <Sparkles className="h-5 w-5" />}
-            Search
+            <motion.div 
+              className="absolute top-0 -left-[100%] h-full w-[40%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"
+              animate={{ left: ["-100%", "250%"] }}
+              transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 5 }}
+            />
+            {isLoading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white relative z-10" /> : <Sparkles className="h-5 w-5 relative z-10" />}
+            <span className="relative z-10">Search</span>
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-8 px-1 py-1.5">
-          <div className="flex flex-wrap items-center gap-5">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-[#D1D5DB]" />
-              <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-8 px-2 py-1.5 bg-slate-900/30 rounded-2xl p-4 border border-white/5 backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                <Calendar className="h-4 w-4 text-slate-400" />
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {(["any", "24h", "week", "month"] as DatePreset[]).map((preset) => (
                   <button
                     key={preset}
@@ -116,10 +142,10 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
                     onClick={() => handleDatePresetClick(preset)}
                     aria-label={`Filter by posted date: ${preset === "any" ? "Anytime" : preset}`}
                     aria-pressed={value.datePreset === preset}
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all border ${
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${
                       value.datePreset === preset
-                        ? "border-[#00FFFF] bg-[#00FFFF]/10 text-[#00FFFF] shadow-[0_0_10px_rgba(0,255,255,0.2)]"
-                        : "border-white/10 bg-white/5 text-[#D1D5DB]"
+                        ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                        : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     }`}
                   >
                     {preset === "any" ? "Anytime" : preset === "24h" ? "24h" : preset === "week" ? "Week" : "Month"}
@@ -128,9 +154,13 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
               </div>
             </div>
 
-            <div className="flex items-center gap-3 border-l border-white/10 pl-5">
-              <Briefcase className="h-4 w-4 text-[#D1D5DB]" />
-              <div className="flex flex-wrap gap-2.5">
+            <div className="hidden h-8 w-px bg-white/10 lg:block" />
+
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                <Briefcase className="h-4 w-4 text-slate-400" />
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {['Remote', 'Full-time', 'Contract'].map((type) => (
                   <button
                     key={type}
@@ -138,10 +168,10 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
                     onClick={() => handleEmploymentTypeClick(type)}
                     aria-label={`Filter by employment type: ${type}`}
                     aria-pressed={value.empType === type}
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all border ${
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${
                       value.empType === type
-                        ? "border-[#A020F0] bg-[#A020F0]/10 text-[#A020F0] shadow-[0_0_10px_rgba(160,32,240,0.2)]"
-                        : "border-white/10 bg-white/5 text-[#D1D5DB]"
+                        ? "border-violet-500/50 bg-violet-500/10 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+                        : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     }`}
                   >
                     {type}
@@ -156,9 +186,9 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
               type="button"
               onClick={handleClear}
               aria-label="Reset all job filters"
-              className="px-2 py-1 text-sm font-bold text-red-400 transition-colors hover:text-red-300"
+              className="px-3 py-1.5 rounded-full bg-rose-500/10 text-xs font-bold text-rose-400 transition-colors hover:bg-rose-500/20 border border-rose-500/20"
             >
-              Reset All
+              Reset Filters
             </button>
           )}
         </div>

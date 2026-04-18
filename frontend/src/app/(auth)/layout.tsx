@@ -43,9 +43,9 @@ function AuthParticles() {
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10 bg-[#050914] overflow-hidden">
+    <main className="relative flex min-h-[100dvh] items-center justify-center px-4 py-6 sm:px-6 sm:py-10 bg-[#050914] overflow-hidden">
       {/* Dynamic Mesh Gradient Background */}
-      <div className="absolute inset-0 z-[1] mix-blend-screen">
+      <div className="absolute inset-0 z-[1] mix-blend-screen hidden lg:block">
         <motion.div
           className="absolute top-0 left-[10%] w-[50rem] h-[50rem] bg-violet-600/20 rounded-full blur-[120px] pointer-events-none"
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
@@ -61,15 +61,15 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="absolute inset-0 z-[2] opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.4) 0.5px, transparent 0.5px)", backgroundSize: "4px 4px" }} />
       <AuthParticles />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-stretch gap-8 lg:flex-row lg:gap-12">
-        <div className="w-full lg:hidden">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-stretch gap-6 lg:flex-row lg:gap-12">
+        <div className="w-full lg:hidden flex-none">
           <AuthMobileIntro />
         </div>
 
         <div className="hidden w-full lg:block lg:flex-1">
           <AuthShowcase />
         </div>
-        <div className="flex w-full items-center justify-center lg:flex-1">{children}</div>
+        <div className="flex w-full items-start lg:items-center justify-center lg:flex-1">{children}</div>
       </div>
     </main>
   );

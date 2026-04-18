@@ -14,7 +14,7 @@ export function SubmitButton({ isLoading, children, disabled, ...props }: Submit
       type="submit"
       whileTap={{ scale: 0.98 }}
       disabled={disabled || isLoading}
-      className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all disabled:cursor-not-allowed disabled:opacity-60 hover:shadow-[0_0_35px_rgba(34,211,238,0.4)] group border border-white/10"
+      className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-600 px-4 py-[0.95rem] text-[15px] font-bold text-white shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all disabled:cursor-not-allowed disabled:opacity-60 hover:shadow-[0_0_35px_rgba(34,211,238,0.4)] group border border-white/10 mt-2"
       {...props}
     >
       {/* Shine Effect */}
