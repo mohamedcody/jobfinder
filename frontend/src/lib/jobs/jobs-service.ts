@@ -108,4 +108,11 @@ export const jobsService = {
     });
     return data;
   },
+
+  async summarizeJob(id: number, options?: RequestOptions): Promise<string> {
+    const { data } = await jobsApiClient.post<{ summary: string }>(`/${id}/summarize`, {}, {
+      signal: options?.signal,
+    });
+    return data.summary;
+  },
 };

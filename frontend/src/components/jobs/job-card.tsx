@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { memo, useCallback, useMemo, useState } from "react";
 import type { Job } from "@/lib/jobs/types";
-import { ArrowUpRight, BadgeCheck, Briefcase, Building2, Clock3, Heart, MapPin } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Briefcase, Building2, Clock3, Heart, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { normalizeExternalUrl } from "@/lib/security/url";
+import { jobsService } from "@/lib/jobs/jobs-service";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface JobCardProps {
   job: Job;
@@ -37,6 +39,30 @@ function JobCardComponent({ job }: JobCardProps) {
   const handleLogoError = useCallback(() => {
     setIsLogoBroken(true);
   }, []);
+
+  const [summary, setSummary] = useState(job.aiSummary);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const handleSummarize = async () => {
+    if (showSummary) {
+      setShowSummary(false);
+      return;
+    }
+
+    setShowSummary(true);
+    if (summary) return;
+    
+    setIsLoadingSummary(true);
+    try {
+      const result = await jobsService.summarizeJob(job.id);
+      setSummary(result);
+    } catch (error) {
+      console.error("Failed to summarize:", error);
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
 
   return (
     <article className="group glass-panel relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(160,32,240,0.28)]">
@@ -103,10 +129,50 @@ function JobCardComponent({ job }: JobCardProps) {
             </div>
           )}
 
-          {job.descriptionText && (
-            <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#D1D5DB]">
-              {job.descriptionText}
-            </p>
+          {job.description && (
+            <div className="mt-4">
+              <p className="line-clamp-3 text-sm leading-6 text-[#D1D5DB]">
+                {job.description}
+              </p>
+              
+              <button
+                onClick={handleSummarize}
+                className="mt-3 flex items-center gap-1.5 text-sm font-bold text-[#A020F0] transition-colors hover:text-[#b845ff]"
+              >
+                <Sparkles className="h-4 w-4" />
+                {summary ? (showSummary ? "Hide AI Summary" : "Show AI Summary") : "Summarize with AI"}
+              </button>
+
+              <AnimatePresence>
+                {showSummary && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 rounded-2xl border border-[#A020F0]/30 bg-[#A020F0]/5 p-5 text-base text-[#E5E7EB] backdrop-blur-sm">
+                      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-[#A020F0]">
+                        <Sparkles className="h-4 w-4" />
+                        AI GENERATED SUMMARY
+                      </div>
+                      {isLoadingSummary ? (
+                        <div className="flex items-center gap-2 py-2 text-[#D1D5DB]">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Analyzing job description...
+                        </div>
+                      ) : (
+                        <div className="prose prose-invert prose-base max-w-none leading-relaxed">
+                          {summary?.split('\n').map((line, i) => (
+                            <p key={i} className="mb-2 last:mb-0 text-base">{line}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -161,6 +227,7 @@ const areEqual = (prevProps: JobCardProps, nextProps: JobCardProps) => {
   const next = nextProps.job;
 
   return (
+    prev.id === next.id &&
     prev.title === next.title &&
     prev.companyName === next.companyName &&
     prev.link === next.link &&
@@ -170,7 +237,8 @@ const areEqual = (prevProps: JobCardProps, nextProps: JobCardProps) => {
     prev.location === next.location &&
     prev.employmentType === next.employmentType &&
     prev.seniorityLevel === next.seniorityLevel &&
-    prev.descriptionText === next.descriptionText
+    prev.description === next.description &&
+    prev.aiSummary === next.aiSummary
   );
 };
 

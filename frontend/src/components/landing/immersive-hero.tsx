@@ -2,19 +2,7 @@
 
 import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform, type Variants } from "framer-motion";
-import {
-  ArrowRight,
-  BarChart3,
-  BriefcaseBusiness,
-  ChevronDown,
-  Clock3,
-  Filter,
-  LogOut,
-  ShieldCheck,
-  Sparkles,
-  UserCircle2,
-  Zap,
-} from "lucide-react";
+import { BarChart3, Zap, ArrowRight, ShieldCheck, ChevronDown, UserCircle2, BriefcaseBusiness, Sparkles, Filter, Clock3, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useAuthSession } from "@/lib/auth/use-auth-session";
 
@@ -96,43 +84,52 @@ const highlightCards = [
 ];
 
 function FloatingParticles() {
-  // Fix hydration issues by generating empty on server, then populating on client
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  const [particlesValues, setParticlesValues] = useState<{size:number, shape:string, delay:number, duration:number, ay:number, ax:number, l:number, t:number}[]>([]);
 
-  if (!isMounted) return null;
+  useEffect(() => {
+    // Generate static random values once on client to prevent layout thrashing & hydration issues
+    const values = Array.from({ length: 30 }).map((_, i) => ({
+      size: Math.random() * 6 + 2,
+      shape: i % 3 === 0 ? "50%" : i % 3 === 1 ? "0%" : "25%",
+      delay: Math.random() * 5,
+      duration: Math.random() * 10 + 10,
+      ay: -Math.random() * 120 - 60,
+      ax: Math.random() * 40 - 20,
+      l: Math.random() * 100,
+      t: Math.random() * 100,
+    }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParticlesValues(values);
+  }, []);
 
-  const particles = Array.from({ length: 40 });
+  if (particlesValues.length === 0) return null;
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-[2]">
-      {particles.map((_, i) => {
-        const size = Math.random() * 6 + 2;
-        const shape = i % 3 === 0 ? "50%" : i % 3 === 1 ? "0%" : "25%";
-        return (
-          <motion.div
-            key={i}
-            className="absolute border border-cyan-400/20 bg-cyan-400/5 backdrop-blur-sm"
-            style={{
-              width: size + "px",
-              height: size + "px",
-              borderRadius: shape,
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-            }}
-            animate={{
-              y: [0, -Math.random() * 150 - 50, 0],
-              x: [0, Math.random() * 80 - 40, 0],
-              rotate: [0, 360],
-              opacity: [0.1, 0.7, 0.1],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 10,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-        );
-      })}
+      {particlesValues.map((val, i) => (
+        <motion.div
+          key={i}
+          className="absolute border border-cyan-400/20 bg-cyan-400/5 backdrop-blur-sm will-change-transform"
+          style={{
+            width: val.size + "px",
+            height: val.size + "px",
+            borderRadius: val.shape,
+            left: val.l + "%",
+            top: val.t + "%",
+          }}
+          animate={{
+            y: [0, val.ay, 0],
+            x: [0, val.ax, 0],
+            opacity: [0.1, 0.4, 0.1],
+            rotate: [0, 180, 0],
+          }}
+          transition={{
+            duration: val.duration,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -287,47 +284,54 @@ export function ImmersiveHero() {
       <FloatingParticles />
 
       <motion.div
-        className="glow-orb glow-orb-violet absolute top-[10%] left-[10%] w-[30rem] h-[30rem] bg-violet-500/20 rounded-full blur-[100px] z-0"
-        animate={{ x: [0, 80, 0], y: [0, -60, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-      />
-      <motion.div
-        className="glow-orb glow-orb-cyan absolute bottom-[10%] right-[10%] w-[25rem] h-[25rem] bg-cyan-400/20 rounded-full blur-[100px] z-0"
-        animate={{ x: [0, -90, 0], y: [0, 50, 0], scale: [1, 1.15, 1] }}
+        className="glow-orb glow-orb-violet absolute top-[10%] left-[10%] w-[30rem] h-[30rem] bg-violet-500/10 rounded-full blur-[100px] z-0 will-change-transform transform-gpu"
+        animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.05, 1] }}
         transition={{ duration: 25, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
       />
       <motion.div
-        className="glow-orb glow-orb-teal absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-teal-500/10 rounded-full blur-[120px] z-0"
-        animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0.8, 0.5] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        className="glow-orb glow-orb-cyan absolute bottom-[10%] right-[10%] w-[25rem] h-[25rem] bg-cyan-400/10 rounded-full blur-[100px] z-0 will-change-transform transform-gpu"
+        animate={{ x: [0, -50, 0], y: [0, 40, 0], scale: [1, 1.05, 1] }}
+        transition={{ duration: 30, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+      />
+      <motion.div
+        className="glow-orb glow-orb-teal absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-teal-500/5 rounded-full blur-[120px] z-0 will-change-transform transform-gpu"
+        animate={{ scale: [1, 1.02, 1], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <header className="fixed inset-x-0 top-0 z-50 px-4 py-4 sm:px-6 lg:px-8">
-        <nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-full px-6 py-3 bg-slate-900/40 border border-white/10 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-all hover:bg-slate-900/50">
-          <Link href="/" className="group inline-flex items-center gap-3" aria-label="JobFinder home">
-            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)] group-hover:scale-105 transition-transform">
-              <BriefcaseBusiness className="h-5 w-5 text-white" aria-hidden="true" />
-            </span>
-            <span className="text-lg font-black tracking-tight text-white">
-              JobFinder <span className="text-[0.65rem] uppercase tracking-widest bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent ml-1 font-extrabold border border-cyan-500/30 px-1.5 py-0.5 rounded-md">PRO</span>
+      <nav className="relative z-50 flex items-center justify-between px-6 py-6 lg:px-12 backdrop-blur-md bg-[#0f172a]/20 border-b border-white/5">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex-shrink-0" aria-label="JobFinder home">
+            <span className="block w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+              <BriefcaseBusiness className="w-5 h-5 text-white" aria-hidden="true" />
             </span>
           </Link>
+          <Link
+            href="/"
+            className="hidden sm:inline-block text-lg font-extrabold text-white transition-all"
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            JobFinder{" "}
+            <span className="text-[0.65rem] uppercase tracking-widest bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent ml-1 font-extrabold border border-cyan-500/30 px-1.5 py-0.5 rounded-md">
+              PRO
+            </span>
+          </Link>
+        </div>
 
-          <div className="hidden items-center gap-8 text-sm font-semibold text-slate-300 md:flex">
-            <a href="#features" className="hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all">
-              Features
-            </a>
-            <a href="#workflow" className="hover:text-violet-300 hover:drop-shadow-[0_0_8px_rgba(167,139,250,0.5)] transition-all">
-              Workflow
-            </a>
-            <a href="#proof" className="hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all">
-              Proof
-            </a>
-          </div>
+        <div className="hidden items-center gap-8 text-sm font-semibold text-slate-300 md:flex">
+          <a href="#features" className="hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all">
+            Features
+          </a>
+          <a href="#workflow" className="hover:text-violet-300 hover:drop-shadow-[0_0_8px_rgba(167,139,250,0.5)] transition-all">
+            Workflow
+          </a>
+          <a href="#proof" className="hover:text-cyan-300 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all">
+            Proof
+          </a>
+        </div>
 
-          <AuthActions />
-        </nav>
-      </header>
+        <AuthActions />
+      </nav>
 
       <section className="relative z-10 flex flex-col pt-40 pb-20 px-4 sm:px-6 lg:px-8 mx-auto max-w-6xl items-center text-center">
         <motion.div

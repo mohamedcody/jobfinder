@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class JobResponseDTO {
 
+    private Long id;
     private String title;
     private String companyName;
     private String location;
@@ -39,6 +40,8 @@ public class JobResponseDTO {
     
     @JsonProperty("salary") // Apify common field for salary
     private String salaryRange;
+
+    private String aiSummary;
 
     @Builder.Default
     private LocalDateTime scrapedAt = LocalDateTime.now();

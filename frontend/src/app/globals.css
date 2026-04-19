@@ -24,6 +24,52 @@
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
+@theme {
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  --animate-slow-pan: slow-pan 20s ease-in-out infinite;
+  --animate-slow-pan-reverse: slow-pan-reverse 25s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes slow-pan {
+    0%,
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    50% {
+      transform: translate(40px, -30px) scale(1.05);
+    }
+  }
+
+  @keyframes slow-pan-reverse {
+    0%,
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    50% {
+      transform: translate(-50px, 40px) scale(1.05);
+    }
+  }
+}
+
 body {
   background:
     radial-gradient(56rem 34rem at 8% 8%, rgb(160 32 240 / 26%) 0%, transparent 62%),

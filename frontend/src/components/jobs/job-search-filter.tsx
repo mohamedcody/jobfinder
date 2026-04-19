@@ -73,7 +73,7 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
       <form onSubmit={handleSearch} className="relative flex flex-col gap-5">
         <div className="flex flex-col gap-4 lg:flex-row">
           <div className="relative flex-1 group">
-            <motion.div 
+            <motion.div
               className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-colors duration-300 ${focusedField === "title" ? "text-cyan-400" : "text-slate-500"}`}
               animate={focusedField === "title" ? { y: ["-50%", "-65%", "-50%"] } : { y: "-50%" }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -93,7 +93,7 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
           </div>
 
           <div className="relative flex-1 group">
-            <motion.div 
+            <motion.div
               className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-colors duration-300 ${focusedField === "location" ? "text-cyan-400" : "text-slate-500"}`}
               animate={focusedField === "location" ? { y: ["-50%", "-65%", "-50%"] } : { y: "-50%" }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -118,7 +118,7 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
             aria-label="Apply job search filters"
             className="group/btn relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-600 px-8 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all disabled:opacity-50 hover:shadow-[0_0_25px_rgba(34,211,238,0.4)] hover:scale-[1.02] active:scale-95 border border-white/10"
           >
-            <motion.div 
+            <motion.div
               className="absolute top-0 -left-[100%] h-full w-[40%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"
               animate={{ left: ["-100%", "250%"] }}
               transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 5 }}
@@ -142,11 +142,10 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
                     onClick={() => handleDatePresetClick(preset)}
                     aria-label={`Filter by posted date: ${preset === "any" ? "Anytime" : preset}`}
                     aria-pressed={value.datePreset === preset}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${
-                      value.datePreset === preset
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${value.datePreset === preset
                         ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                         : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
-                    }`}
+                      }`}
                   >
                     {preset === "any" ? "Anytime" : preset === "24h" ? "24h" : preset === "week" ? "Week" : "Month"}
                   </button>
@@ -168,11 +167,10 @@ export function JobSearchFilter({ value, onChange, onSearch, onClear, isLoading 
                     onClick={() => handleEmploymentTypeClick(type)}
                     aria-label={`Filter by employment type: ${type}`}
                     aria-pressed={value.empType === type}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${
-                      value.empType === type
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${value.empType === type
                         ? "border-violet-500/50 bg-violet-500/10 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
                         : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
-                    }`}
+                      }`}
                   >
                     {type}
                   </button>

@@ -13,9 +13,9 @@ public class JobSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Cursor Pagination (lastId)
+            // 1. Cursor Pagination (lastId) - For DESC order, we want IDs smaller than lastId
             if (lastId != null && lastId > 0) {
-                predicates.add(criteriaBuilder.greaterThan(root.get("id"), lastId));
+                predicates.add(criteriaBuilder.lessThan(root.get("id"), lastId));
             }
 
             // 2. Filter by Title
