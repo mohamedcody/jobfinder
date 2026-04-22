@@ -24,9 +24,9 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
 
 
     @Query("SELECT j FROM JobEntity j WHERE " +
-            "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
-            "(:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
-            "(:employmentType IS NULL OR LOWER(j.employmentType) = LOWER(:employmentType)) AND " +
+            "(:title IS NULL OR :title = '' OR LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
+            "(:location IS NULL OR :location = '' OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+            "(:employmentType IS NULL OR :employmentType = '' OR LOWER(j.employmentType) = LOWER(:employmentType)) AND " +
             "(:postedAfter IS NULL OR j.scrapedAt >= :postedAfter) AND " +
             "(:lastId IS NULL OR j.id < :lastId) " +
             "ORDER BY j.id DESC")

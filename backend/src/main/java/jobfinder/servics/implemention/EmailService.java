@@ -20,7 +20,7 @@ public class EmailService {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(email);
                 message.setSubject("JobFinder - Verify Your Account");
-                message.setText("Your activation code is: " + code);
+                message.setText("Your activation code is:   " + code);
                 mailSender.send(message);
             } catch (Exception e) {
                 System.err.println("Error sending email: " + e.getMessage()); // هيطبعلك السبب هنا

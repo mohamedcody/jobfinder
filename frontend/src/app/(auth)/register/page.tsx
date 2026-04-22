@@ -9,6 +9,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordField } from "@/components/auth/password-field";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { TextField } from "@/components/auth/text-field";
+import { UserCircle2, Mail, Lock } from "lucide-react";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -60,6 +61,7 @@ export default function RegisterPage() {
           placeholder="yourusername"
           autoComplete="username"
           error={errors.username?.message}
+          icon={UserCircle2}
           {...register("username")}
         />
 
@@ -70,6 +72,7 @@ export default function RegisterPage() {
           placeholder="you@example.com"
           autoComplete="email"
           error={errors.email?.message}
+          icon={Mail}
           {...register("email")}
         />
 
@@ -79,6 +82,7 @@ export default function RegisterPage() {
           placeholder="Create a strong password"
           autoComplete="new-password"
           error={errors.password?.message}
+          icon={Lock}
           {...register("password")}
         />
 
@@ -88,6 +92,7 @@ export default function RegisterPage() {
           placeholder="Repeat your password"
           autoComplete="new-password"
           error={errors.confirmPassword?.message}
+          icon={Lock}
           {...register("confirmPassword")}
         />
 

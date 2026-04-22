@@ -1,4 +1,5 @@
 package jobfinder.servics.implemention;
+
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.CursorPageResponse;
@@ -8,6 +9,7 @@ import jobfinder.model.entity.CompanyEntity;
 import jobfinder.model.entity.JobEntity;
 import jobfinder.repository.CompanyRepository;
 import jobfinder.repository.JobRepository;
+import jobfinder.servics.interfaces.JobInterface;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,22 +29,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static reactor.netty.http.HttpConnectionLiveness.log;
-
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JobScraperService {
-
+public class JobScraperService implements JobInterface {
 
     private final JobRepository jobRepository;// call the repo jobs in database
     private final CompanyRepository companyRepository; // call the repo company in database
-    private final WebClient webClient = WebClient.create();  // call by apify
+    private final AiService aiService;
+    private final WebClient webClient = WebClient.create(); // call by apify
 
     @Value("${apify.token}")
     private String apifyToken;
-
 
     @Transactional
     public String scrapeAndSaveAllInOne(String keyword) {
@@ -54,7 +52,8 @@ public class JobScraperService {
         }
 
         try {
-            String runUrl = "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs?token=" + apifyToken.trim();
+            String runUrl = "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs?token="
+                    + apifyToken.trim();
 
             String encodedKeyword = URLEncoder.encode(keyword.trim(), StandardCharsets.UTF_8);
             String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword;
@@ -62,18 +61,16 @@ public class JobScraperService {
             Map<String, Object> input = Map.of(
                     "urls", List.of(searchUrl),
                     "limitPerQuery", 10,
-                    "proxyConfiguration", Map.of("useApifyProxy", true)
-            );
+                    "proxyConfiguration", Map.of("useApifyProxy", true));
 
             Map runResponse = webClient.post()
                     .uri(runUrl)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(input)
                     .retrieve()
-                    .onStatus(status -> status.isError(), response ->
-                            response.bodyToMono(String.class).flatMap(errorBody ->
-                                    Mono.error(new BaseException(ErrorCode.EXTERNAL_API_ERROR, "Apify error: " + errorBody)))
-                    )
+                    .onStatus(status -> status.isError(), response -> response.bodyToMono(String.class)
+                            .flatMap(errorBody -> Mono.error(
+                                    new BaseException(ErrorCode.EXTERNAL_API_ERROR, "Apify error: " + errorBody))))
                     .bodyToMono(Map.class)
                     .block();
 
@@ -85,8 +82,8 @@ public class JobScraperService {
             String datasetId = (String) dataPart.get("defaultDatasetId");
             log.info("✅ Scraper started! Dataset ID: {}", datasetId);
 
-            // Wait for items to be available 
-            Thread.sleep(15000); 
+            // Wait for items to be available
+            Thread.sleep(15000);
 
             String datasetUrl = "https://api.apify.com/v2/datasets/" + datasetId + "/items?token=" + apifyToken.trim();
             List<JobResponseDTO> items = webClient.get()
@@ -128,8 +125,7 @@ public class JobScraperService {
                                         CompanyEntity.builder()
                                                 .name(dto.getCompanyName())
                                                 .logoUrl(dto.getCompanyLogo())
-                                                .build()
-                                ));
+                                                .build()));
 
                         return JobEntity.builder()
                                 .title(dto.getTitle())
@@ -148,7 +144,8 @@ public class JobScraperService {
 
             if (entities.isEmpty()) {
                 log.warn("⚠️ No new jobs found. All items already exist in the database.");
-                throw new BaseException(ErrorCode.DUPLICATE_JOB, "All scraped jobs are already present in the database.");
+                throw new BaseException(ErrorCode.DUPLICATE_JOB,
+                        "All scraped jobs are already present in the database.");
             }
 
             jobRepository.saveAll(entities);
@@ -162,6 +159,7 @@ public class JobScraperService {
         }
     }
 
+    @Override
     public CursorPageResponse<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
 
         log.info("🔍 Fetching jobs - Start ID: {}, Page size: {}", lastId, size);
@@ -180,8 +178,7 @@ public class JobScraperService {
             // Updated startId for DESC: first page should have lastId null
             List<JobEntity> jobEntities = jobRepository.findJobsAdvancedFilter(
                     null, null, null, null, lastId,
-                    PageRequest.of(0, size + 1)
-            );
+                    PageRequest.of(0, size + 1));
 
             if (jobEntities.isEmpty()) {
                 log.info("📭 No jobs available for the current request.");
@@ -198,8 +195,7 @@ public class JobScraperService {
                     finalContent.stream().map(this::convertToDTO).toList(),
                     size,
                     nextCursor,
-                    hasNext
-            );
+                    hasNext);
 
         } catch (BaseException e) {
             throw e;
@@ -209,16 +205,19 @@ public class JobScraperService {
         }
     }
 
+    @Override
     public CursorPageResponse<JobResponseDTO> searchJobs(String title, String location, Long lastId, int size) {
 
-        log.info("🔍 Searching for jobs with title: '{}', location: '{}' - Start ID: {}, Size: {}", title, location, lastId, size);
+        log.info("🔍 Searching for jobs with title: '{}', location: '{}' - Start ID: {}, Size: {}", title, location,
+                lastId, size);
 
         try {
             // 1. التفكير الهندسي: تنظيف البيانات (Sanitization)
             String sanitizedTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : null;
             String sanitizedLocation = (location != null && !location.trim().isEmpty()) ? location.trim() : null;
 
-            // التأكد إن المستخدم مدخل حاجة يبحث بيها على الأقل (أو ممكن تشيل الشرط ده لو عايزه يجيب كل الوظائف لو مفيش بحث)
+            // التأكد إن المستخدم مدخل حاجة يبحث بيها على الأقل (أو ممكن تشيل الشرط ده لو
+            // عايزه يجيب كل الوظائف لو مفيش بحث)
             if (sanitizedTitle == null && sanitizedLocation == null) {
                 throw new BaseException(ErrorCode.INVALID_INPUT, "Search keyword or location is missing.");
             }
@@ -241,14 +240,10 @@ public class JobScraperService {
                     null, // employmentType
                     null, // postedAfter
                     lastId,
-                    PageRequest.of(0, size + 1)
-            );
+                    PageRequest.of(0, size + 1));
 
             if (jobList.isEmpty()) {
-                log.info("ℹ️ No jobs found matching title: {} and location: {}", title, location);
-                if (startId == 0) {
-                    throw new BaseException(ErrorCode.JOB_NOT_FOUND, "No jobs found matching your search criteria.");
-                }
+                log.info("ℹ️ No jobs found matching the criteria.");
                 return new CursorPageResponse<>(List.of(), size, null, false);
             }
 
@@ -262,8 +257,7 @@ public class JobScraperService {
                     finalContent.stream().map(this::convertToDTO).toList(),
                     size,
                     nextCursor,
-                    hasNext
-            );
+                    hasNext);
 
         } catch (BaseException e) {
             throw e;
@@ -273,8 +267,7 @@ public class JobScraperService {
         }
     }
 
-
-
+    @Override
     public CursorPageResponse<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
         log.info("🚀 Advanced smart search applied for filter: {}", filter);
 
@@ -295,8 +288,7 @@ public class JobScraperService {
                     filter.employmentType(),
                     (filter.postedAfter() != null) ? filter.postedAfter().atStartOfDay() : null,
                     lastId,
-                    PageRequest.of(0, limit + 1)
-            );
+                    PageRequest.of(0, limit + 1));
 
             if (jobList.isEmpty()) {
                 log.info("ℹ️ No jobs found matching the criteria.");
@@ -314,8 +306,7 @@ public class JobScraperService {
                     finalContent.stream().map(this::convertToDTO).toList(),
                     limit,
                     nextCursor,
-                    hasNext
-            );
+                    hasNext);
 
         } catch (BaseException e) {
             throw e; // إعادة رمي الـ custom exception بتاعك
@@ -325,18 +316,32 @@ public class JobScraperService {
         }
     }
 
+    @Override
+    @Transactional
+    public String generateAiSummary(Long jobId) {
+        JobEntity job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new BaseException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + jobId));
 
+        if (job.getAiSummary() != null && !job.getAiSummary().isEmpty()) {
+            return job.getAiSummary();
+        }
 
+        String summary = aiService.summarizeJob(job.getDescription());
+        job.setAiSummary(summary);
+        jobRepository.save(job);
 
-
+        return summary;
+    }
 
     private JobResponseDTO convertToDTO(JobEntity entity) {
         return JobResponseDTO.builder()
+                .id(entity.getId())
                 .title(entity.getTitle())
                 .location(entity.getLocation())
                 .employmentType(entity.getEmploymentType())
                 .salaryRange(entity.getSalaryRange())
                 .descriptionText(entity.getDescription())
+                .aiSummary(entity.getAiSummary())
                 .link(entity.getJobUrl())
                 .scrapedAt(entity.getScrapedAt())
                 .companyName(entity.getCompany() != null ? entity.getCompany().getName() : "N/A")
@@ -344,8 +349,3 @@ public class JobScraperService {
                 .build();
     }
 }
-
-
-
-
-

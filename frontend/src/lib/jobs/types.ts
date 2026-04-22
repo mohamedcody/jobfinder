@@ -1,14 +1,16 @@
 export interface Job {
+  id: number;
   title: string;
   companyName: string;
   location: string;
   link: string;
-  descriptionText: string;
+  description: string;
   companyLogo: string | null;
   companyWebsite: string | null;
   companyDescription: string | null;
   seniorityLevel: string | null;
   employmentType: string | null;
+  aiSummary?: string;
   scrapedAt: string;
 }
 

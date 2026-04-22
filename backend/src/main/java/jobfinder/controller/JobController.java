@@ -69,4 +69,10 @@ public class JobController {
         return ok(jobScraperService.searchJobsByFilter(filter, lastId, size));
     }
 
+    @PostMapping("/{id}/summarize")
+    public ResponseEntity<Map<String, String>> summarizeJob(@PathVariable Long id) {
+        String summary = jobScraperService.generateAiSummary(id);
+        return ResponseEntity.ok(Map.of("summary", summary));
+    }
+
 }
