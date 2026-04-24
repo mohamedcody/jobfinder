@@ -2,10 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect } from "react";
-import { 
+import dynamic from "next/dynamic";
+// Dynamically import the AI Chatbot (client-side only)
+const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: false });
+import {
   Briefcase, 
-  Rocket, 
-  Shield, 
+  Rocket,
+  Shield,
   Sparkles,
   TrendingUp,
   Zap
@@ -75,115 +78,90 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="jobs-page-background relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="aurora-spot absolute left-1/4 top-20 h-96 w-96 rounded-full bg-[#A020F0]/25 blur-3xl" />
-        <div className="aurora-spot absolute right-1/4 top-40 h-80 w-80 rounded-full bg-[#00FFFF]/20 blur-3xl" />
-        <div className="aurora-spot absolute bottom-20 left-1/3 h-72 w-72 rounded-full bg-[#A020F0]/18 blur-3xl" />
+    <div className="relative w-full pb-12">
+      {/* AI Chatbot Floating Button */}
+      <AiChatbot />
+      
+      {/* Mobile Navbar (Hidden on Desktop since Sidebar takes over) */}
+      <div className="lg:hidden">
+        <JobsNavbar />
       </div>
 
-      <JobsNavbar />
-
-      <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <section className="fade-up dashboard-panel mb-10 overflow-hidden rounded-3xl p-8 sm:p-10">
-          <div className="absolute right-0 top-0 h-64 w-64 opacity-30">
+      <div className="relative mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+        {/* Top: AI Match Section */}
+        <section className="fade-up dashboard-panel mb-8 overflow-hidden rounded-3xl p-6 sm:p-8">
+          <div className="absolute right-0 top-0 h-64 w-64 opacity-30 pointer-events-none">
             <div className="h-full w-full rounded-full bg-linear-to-br from-[#A020F0] to-[#4B0082] blur-3xl" />
           </div>
 
           <div className="relative">
-            <div className="live-session-pill mb-6 inline-flex items-center gap-2 rounded-full bg-[#00FF00]/10 px-4 py-2 text-sm font-bold text-white ring-1 ring-[#00FF00]/30">
+            <div className="live-session-pill mb-6 inline-flex items-center gap-2 rounded-full bg-[#00FF00]/10 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-[#00FF00]/30">
               <div className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00FF00] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00FF00]" />
               </div>
-              Live Opportunities Updated Daily
+              Live AI Match Detected
             </div>
 
             <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-[inset_0_-6px_16px_rgba(10,15,31,0.35)]">
-                    <Briefcase className="h-8 w-8 text-white" />
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-[inset_0_-6px_16px_rgba(10,15,31,0.35)]">
+                    <Briefcase className="h-7 w-7 text-white" />
                   </div>
 
-                  <div className="space-y-3">
-                    <h1 className="metallic-title text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                      Discover Your Next
-                      <span className="block">Dream Role</span>
+                  <div className="space-y-2">
+                    <h1 className="metallic-title text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                      Top Match for You
                     </h1>
                     
-                    <p className="max-w-2xl text-base leading-7 text-[#D1D5DB] sm:text-lg">
-                      Browse through curated job opportunities with intelligent search, 
-                      elegant filters, and a lightning-fast experience designed to help you land your ideal position.
+                    <p className="max-w-xl text-sm leading-6 text-[#D1D5DB] sm:text-base">
+                      Based on your recent profile update, our AI found this perfect remote opportunity that aligns with your skills.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   {[
-                    { icon: Zap, label: "Instant Results", color: "from-[#A020F0] to-[#4B0082]" },
-                    { icon: Shield, label: "Verified Jobs", color: "from-[#A020F0] to-[#4B0082]" },
-                    { icon: TrendingUp, label: "Fresh Postings", color: "from-[#A020F0] to-[#4B0082]" },
+                    { icon: Zap, label: "98% Match", color: "from-green-500 to-emerald-600" },
+                    { icon: Shield, label: "$120k - $150k", color: "from-violet-600 to-cyan-600" },
                   ].map((stat) => (
                     <div
                       key={stat.label}
-                      className="group glass-panel flex items-center gap-2 rounded-xl px-4 py-2 transition-all hover:-translate-y-0.5"
+                      className="group glass-panel flex items-center gap-2 rounded-xl px-3 py-1.5 transition-all hover:-translate-y-0.5 cursor-pointer"
                     >
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br ${stat.color} text-white shadow-[0_0_15px_rgba(160,32,240,0.45)]`}>
-                        <stat.icon className="h-4 w-4" />
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-lg bg-linear-to-br ${stat.color} text-white shadow-[0_0_10px_rgba(160,32,240,0.3)]`}>
+                        <stat.icon className="h-3 w-3" />
                       </div>
-                      <span className="text-sm font-bold text-white">{stat.label}</span>
+                      <span className="text-xs font-bold text-white">{stat.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="glass-panel space-y-4 rounded-2xl p-6 lg:min-w-[320px]">
-                <div className="flex items-center gap-3">
-                  <Rocket className="h-6 w-6 text-[#FFFFE0] quick-yellow-glow" />
-                  <h3 className="text-lg font-black text-white">Quick Actions</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="glass-panel flex items-center justify-between rounded-lg px-4 py-3">
-                    <span className="flex items-center gap-2 text-sm font-medium text-[#D1D5DB]">
-                      <Zap className="h-4 w-4 text-[#FFFFE0] quick-yellow-glow" />
-                      Active Searches
-                    </span>
-                    <span className="quick-yellow-glow rounded-full bg-linear-to-r from-[#A020F0] to-[#4B0082] px-2.5 py-1 text-xs font-bold text-white shadow-[0_0_15px_rgba(160,32,240,0.5)]">
-                      24/7
-                    </span>
-                  </div>
-                  
-                  <div className="glass-panel flex items-center justify-between rounded-lg px-4 py-3">
-                    <span className="text-sm font-medium text-[#D1D5DB]">Match Rate</span>
-                    <div className="relative flex h-12 w-12 items-center justify-center rounded-full" style={{ background: "conic-gradient(#FFFFE0 0deg, #00FFFF 352.8deg, rgba(255,255,255,0.15) 352.8deg)" }}>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0F1F] text-xs font-bold text-white">98%</div>
-                    </div>
-                  </div>
-                  
-                  <div className="glass-panel flex items-center justify-between rounded-lg px-4 py-3">
-                    <span className="flex items-center gap-2 text-sm font-medium text-[#D1D5DB]">
-                      <TrendingUp className="h-4 w-4 text-[#FFFFE0] quick-yellow-glow" />
-                      Response Time
-                    </span>
-                    <span className="quick-yellow-glow rounded-full bg-linear-to-r from-[#A020F0] to-[#4B0082] px-2.5 py-1 text-xs font-bold text-white shadow-[0_0_15px_rgba(160,32,240,0.5)]">
-                      &lt;1s
-                    </span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-4 lg:flex-col lg:items-stretch">
+                <button className="flex-1 py-3 px-6 text-sm font-bold text-white bg-linear-to-r from-violet-600 to-cyan-600 rounded-xl shadow-[0_0_20px_rgba(160,32,240,0.4)] hover:scale-105 transition-transform whitespace-nowrap">
+                  Apply with 1-Click
+                </button>
+                <button className="flex-1 py-3 px-6 text-sm font-bold text-slate-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors whitespace-nowrap">
+                  Save for Later
+                </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Jobs List */}
-        <div className="fade-up" style={{ animationDelay: "0.2s" }}>
+        {/* Middle: Jobs List */}
+        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white">Recommended Roles</h2>
+            <span className="text-xs text-slate-400 font-medium hover:text-white cursor-pointer transition-colors">View All</span>
+          </div>
           <Suspense fallback={<JobsListFallback />}>
             <JobsList />
           </Suspense>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

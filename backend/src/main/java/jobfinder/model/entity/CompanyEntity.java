@@ -35,6 +35,8 @@ public class CompanyEntity {
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
+    // --- Added for Bidirectional Mapping & Cascade Deletion ---
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<JobEntity> jobs;
 
 }
-

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppToaster } from "@/components/providers/app-toaster";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
           {children}
         </Suspense>
         <AppToaster />
+        <MobileBottomNav />
       </body>
     </html>
   );

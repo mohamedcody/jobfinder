@@ -60,7 +60,12 @@ public class JobEntity {
    @JoinColumn(name = "company_id")
   private CompanyEntity company;
 
+    // --- Added Bidirectional Mappings for Cascade Deletes ---
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<JobSkill> skills;
 
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<UserInteraction> interactions;
 
 }
 

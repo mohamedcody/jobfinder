@@ -17,6 +17,30 @@ import {
 import { getApiErrorMessage } from "@/lib/auth/api-error";
 import { authService } from "@/lib/auth/auth-service";
 
+const authTabs = (
+  <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/20 bg-slate-900/45 p-1.5 shadow-inner">
+    <Link
+      href="/login"
+      className="rounded-xl px-4 py-3 text-center text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+    >
+      Login
+    </Link>
+    <Link
+      href="/register"
+      aria-current="page"
+      className="rounded-xl bg-linear-to-r from-violet-600 to-sky-600 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-violet-500/20"
+    >
+      Register
+    </Link>
+  </div>
+);
+
+const authFooterMark = (
+  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-600 text-xs font-black text-white shadow-lg shadow-slate-900/20">
+    N
+  </div>
+);
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -53,6 +77,8 @@ export default function RegisterPage() {
     <AuthShell
       title="Create your account"
       description="Register to start using JobFinder."
+      prelude={authTabs}
+      footer={authFooterMark}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <TextField
