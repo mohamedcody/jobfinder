@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 
 const backendOrigin = process.env.BACKEND_ORIGIN || "http://localhost:8080";
 const ngrokDevOrigin = "tetragonally-homotypic-armando.ngrok-free.dev";
+const locaUiOrigin = "jobfinder-saad-ui.loca.lt";
+const locaApiOrigin = "jobfinder-saad-api.loca.lt";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -14,7 +16,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
-  allowedDevOrigins: [ngrokDevOrigin],
+  allowedDevOrigins: [ngrokDevOrigin, locaUiOrigin, locaApiOrigin, "localhost:3000"],
   turbopack: {
     root: path.join(__dirname),
   },

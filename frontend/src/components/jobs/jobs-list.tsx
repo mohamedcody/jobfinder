@@ -40,7 +40,7 @@ export function JobsList() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="sticky top-[64px] z-40 -mx-4 px-4 py-3 bg-[#07091a]/80 backdrop-blur-xl border-b border-white/5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="sticky top-20 z-40 -mx-4 px-4 py-3 bg-[#07091a]/80 backdrop-blur-xl border-b border-white/5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <JobSearchFilter
           value={draftFilters}
           onChange={setDraftFilters}

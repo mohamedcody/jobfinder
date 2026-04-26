@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { EmployerSidebar } from "@/components/employer/employer-sidebar";
+import { motion } from "framer-motion";
 
 export default function EmployerLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,11 +11,17 @@ export default function EmployerLayout({ children }: { children: ReactNode }) {
         <div className="absolute bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-cyan-600/20 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-[100vw]">
+      <div className="relative z-10 flex w-full">
         <EmployerSidebar />
         
-        <main className="flex-1 h-screen overflow-y-auto custom-scrollbar relative">
-          {children}
+        <main className="flex-1 min-h-screen overflow-x-hidden custom-scrollbar relative px-6 py-8 lg:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {children}
+          </motion.div>
         </main>
       </div>
     </div>

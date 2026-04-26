@@ -2,21 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Briefcase, Home, Search, User, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { icon: Home, label: "Hub", href: "/dashboard" },
-  { icon: Briefcase, label: "Jobs", href: "/jobs" },
-  { icon: Bookmark, label: "Saved", href: "/saved" },
-  { icon: User, label: "Profile", href: "/profile" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-];
+interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+}
 
-export function MobileBottomNav() {
+interface MobileBottomNavProps {
+  items: NavItem[];
+}
+
+export function MobileBottomNav({ items }: MobileBottomNavProps) {
   const pathname = usePathname();
 
+  // Hide on auth pages
   if (
     pathname === "/" ||
     pathname?.startsWith("/login") ||
@@ -26,45 +29,30 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2 pb-5 pt-2 lg:hidden"
-      style={{
-        background: "linear-gradient(180deg, rgb(7 9 26 / 85%), rgb(7 9 26 / 95%))",
-        backdropFilter: "blur(12px) saturate(1.2)",
-        borderTop: "1px solid rgb(255 255 255 / 8%)",
-        boxShadow: "0 -16px 40px rgb(2 6 23 / 60%), inset 0 1px 0 rgb(255 255 255 / 6%)",
-      }}
-    >
-      {NAV_ITEMS.map((item) => {
-        const isActive =
-          item.href === "/jobs"
-            ? pathname === "/jobs"
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 bg-gradient-to-t from-[#07091a] via-[#07091a]/95 to-transparent backdrop-blur-lg">
+      <div className="flex items-center justify-around bg-[#0a0c24]/80 border border-white/5 rounded-[2rem] p-2 shadow-2xl">
+        {items.map((item) => {
+          const isActive = item.href === "/dashboard" 
+            ? pathname === "/dashboard" 
             : pathname?.startsWith(item.href);
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn("mobile-nav-item", isActive && "active")}
-            aria-label={item.label}
-            aria-current={isActive ? "page" : undefined}
-          >
-            <motion.div
-              animate={isActive ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <item.icon
-                className={cn(
-                  "mb-1 h-5 w-5 transition-all",
-                  isActive ? "text-white drop-shadow-[0_0_6px_rgba(139,44,245,0.8)]" : "text-slate-600"
-                )}
-                strokeWidth={isActive ? 2.5 : 1.8}
-              />
-            </motion.div>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+            
+          return (
+            <Link key={item.href} href={item.href} className="relative p-3 group">
+              {isActive && (
+                <motion.div
+                  layoutId="mobile-nav-pill"
+                  className="absolute inset-0 bg-violet-600/20 rounded-2xl border border-violet-500/20"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <item.icon className={cn(
+                "h-5 w-5 transition-colors relative z-10",
+                isActive ? "text-violet-400" : "text-slate-500 group-hover:text-slate-300"
+              )} />
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

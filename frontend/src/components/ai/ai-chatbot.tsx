@@ -11,6 +11,8 @@ import {
   Sparkles,
   Star,
   X,
+  User,
+  ArrowRight
 } from "lucide-react";
 
 interface Message {
@@ -60,13 +62,13 @@ async function callGemini(messages: Message[]): Promise<string> {
 function formatMessage(text: string) {
   const lines = text.split("\n");
   return lines.map((line, i) => {
-    const formatted = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    const formatted = line.replace(/\*\*(.*?)\*\*/g, "<strong class='text-cyan-400'>$1</strong>");
     if (line.startsWith("* ") || line.startsWith("- ")) {
       return (
-        <li key={i} className="ml-3 list-disc text-sm" dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
+        <li key={i} className="ml-4 list-disc text-[13px] leading-relaxed mb-1" dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
       );
     }
-    return <p key={i} className="text-sm" dangerouslySetInnerHTML={{ __html: formatted }} />;
+    return <p key={i} className="text-[13px] leading-relaxed mb-2" dangerouslySetInnerHTML={{ __html: formatted }} />;
   });
 }
 
@@ -76,7 +78,7 @@ export default function AiChatbot() {
     {
       id: "welcome",
       role: "assistant",
-      content: "👋 Hi! I'm **JobBot**. How can I help you today?",
+      content: "👋 Hi! I'm **JobBot**. I'm here to help you land your **dream role**. What's on your mind?",
       timestamp: new Date(),
     },
   ]);
@@ -89,8 +91,9 @@ export default function AiChatbot() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    const handleTriggerChat = (e: CustomEvent) => {
-      const { text, autoSend } = e.detail;
+    const handleTriggerChat = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { text, autoSend } = customEvent.detail;
       setIsOpen(true);
       if (autoSend) {
         sendMessage(text);
@@ -98,8 +101,8 @@ export default function AiChatbot() {
         setInput(text);
       }
     };
-    window.addEventListener("trigger-ai-chat" as any, handleTriggerChat as any);
-    return () => window.removeEventListener("trigger-ai-chat" as any, handleTriggerChat as any);
+    window.addEventListener("trigger-ai-chat", handleTriggerChat);
+    return () => window.removeEventListener("trigger-ai-chat", handleTriggerChat);
   }, [messages]);
 
   const sendMessage = async (text?: string) => {
@@ -115,7 +118,7 @@ export default function AiChatbot() {
       const reply = await callGemini([...messages, userMsg]);
       setMessages((prev) => [...prev, { id: Date.now().toString() + "-ai", role: "assistant", content: reply, timestamp: new Date() }]);
     } catch (err) {
-      setMessages((prev) => [...prev, { id: "err", role: "assistant", content: "❌ Error occurred.", timestamp: new Date() }]);
+      setMessages((prev) => [...prev, { id: "err", role: "assistant", content: "❌ Error connecting to AI service.", timestamp: new Date() }]);
     } finally {
       setIsLoading(false);
     }
@@ -124,83 +127,133 @@ export default function AiChatbot() {
   return (
     <>
       <motion.button
-        whileHover={{ scale: 1.05 }}
+        whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 text-white shadow-2xl md:h-16 md:w-16"
+        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-[0_0_30px_rgba(139,92,246,0.5)] md:h-16 md:w-16 border border-white/20"
         aria-label="Toggle AI Assistant"
       >
-        <Sparkles className="h-6 w-6 md:h-7 md:w-7" />
+        <div className="relative">
+          <Sparkles className="h-6 w-6 md:h-7 md:w-7" />
+          <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-cyan-400 blur-sm" />
+        </div>
       </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-4 z-[60] flex w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900/90 shadow-2xl backdrop-blur-2xl sm:right-6 sm:w-[380px] md:bottom-28"
-            style={{ height: "500px", maxHeight: "75dvh" }}
+            initial={{ opacity: 0, y: 40, scale: 0.9, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 40, scale: 0.9, filter: "blur(10px)" }}
+            transition={{ type: "spring", damping: 20, stiffness: 150 }}
+            className="fixed bottom-24 right-4 z-[60] flex w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#07091a]/80 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-3xl sm:right-6 sm:w-[400px] md:bottom-28"
+            style={{ height: "600px", maxHeight: "80dvh" }}
           >
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between bg-white/5 px-5 py-4 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 shadow-lg shadow-violet-600/30">
-                  <Bot className="h-5 w-5 text-white" />
+            {/* Header: Premium Glassmorphism */}
+            <div className="relative shrink-0 overflow-hidden px-6 py-5 border-b border-white/5 bg-white/5">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-600/40">
+                      <Bot className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#07091a]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white tracking-tight">JobBot Oracle</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Expert Assistant</p>
+                  </div>
                 </div>
-                <p className="text-sm font-black text-white">JobBot AI</p>
+                <button onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-full flex items-center justify-center bg-white/5 text-slate-400 hover:text-white transition-all hover:rotate-90">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white transition-colors">
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${msg.role === "user" ? "bg-violet-600 text-white" : "bg-white/10 text-slate-200"}`}>
-                    {formatMessage(msg.content)}
+            {/* Messages: Smooth Flow */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, x: msg.role === "user" ? 20 : -20, y: 10 }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`flex items-start gap-3 max-w-[85%] ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                    <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white ${msg.role === "user" ? "bg-indigo-600" : "bg-white/10"}`}>
+                      {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                    </div>
+                    <div className={`relative px-5 py-3.5 shadow-xl ${msg.role === "user" ? "rounded-2xl rounded-tr-none bg-indigo-600 text-white" : "rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200"}`}>
+                      {formatMessage(msg.content)}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
+              
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white/10 rounded-2xl px-4 py-3 flex gap-1 animate-pulse">
-                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
-                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
-                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl px-5 py-3.5 flex gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                          className="w-1.5 h-1.5 bg-indigo-400 rounded-full"
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Prompts */}
-            {messages.length <= 1 && (
-              <div className="p-4 flex flex-wrap gap-2">
-                {QUICK_PROMPTS.map((p) => (
-                  <button key={p.label} onClick={() => sendMessage(p.text)} className="bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-xs text-slate-300 transition-colors">
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Footer Area */}
+            <div className="shrink-0 p-6 bg-white/[0.02] border-t border-white/5">
+              {/* Quick Prompts */}
+              {messages.length <= 1 && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {QUICK_PROMPTS.map((p) => (
+                    <button 
+                      key={p.label} 
+                      onClick={() => sendMessage(p.text)} 
+                      className="group flex items-center gap-2 bg-white/5 hover:bg-violet-600/20 border border-white/10 hover:border-violet-500/40 px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-all"
+                    >
+                      <p.icon className="h-3.5 w-3.5" />
+                      {p.label}
+                      <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            {/* Input */}
-            <div className="p-4 border-t border-white/5 bg-black/20">
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+              {/* Chat Input */}
+              <form 
+                onSubmit={(e) => { e.preventDefault(); sendMessage(); }} 
+                className="relative group"
+              >
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask something..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+                  placeholder="Ask JobBot Anything..."
+                  className="w-full bg-[#07091a] border border-white/10 rounded-2xl px-6 py-4 pr-16 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all shadow-inner"
                 />
-                <button type="submit" disabled={isLoading || !input.trim()} className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 h-10 w-10 rounded-xl flex items-center justify-center transition-colors">
-                  <Send className="h-4 w-4 text-white" />
+                <button 
+                  type="submit" 
+                  disabled={isLoading || !input.trim()} 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 h-11 w-11 rounded-xl flex items-center justify-center transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                >
+                  <Send className="h-5 w-5 text-white" />
                 </button>
               </form>
+              <p className="text-center mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-widest">Powered by JobFinder Quantum Engine</p>
             </div>
           </motion.div>
         )}

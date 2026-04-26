@@ -36,6 +36,7 @@ export interface JobFilterParams {
   employmentType?: string;
   lastId?: number;
   size?: number;
+  refresh?: boolean;
 }
 
 /** "posted within" presets shown in the UI */

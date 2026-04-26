@@ -3,24 +3,27 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  Bookmark, 
-  User, 
-  Settings, 
-  ChevronLeft, 
+import {
+  LayoutDashboard,
+  Briefcase,
+  Bookmark,
+  User,
+  Settings,
+  ChevronLeft,
   Menu,
   Sparkles,
   Search,
   Bell,
   LogOut,
-  ArrowUpRight
+  ArrowUpRight,
+  Command,
+  Home
 } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarItemProps {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   href: string;
   isCollapsed: boolean;
@@ -32,25 +35,26 @@ const SidebarItem = ({ icon: Icon, label, href, isCollapsed, isActive }: Sidebar
     <motion.div
       whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
-        isActive 
-          ? "bg-gradient-to-r from-violet-600/20 to-cyan-600/10 text-white shadow-[inset_0_0_12px_rgba(139,44,245,0.1)] border border-violet-500/20" 
-          : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-      }`}
+      className={`group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all ${isActive
+          ? "bg-gradient-to-r from-violet-600/20 to-indigo-600/10 text-white shadow-[inset_0_0_20px_rgba(139,44,245,0.15)] border border-violet-500/20"
+          : "text-slate-500 hover:bg-white/5 hover:text-slate-300"
+        }`}
     >
-      <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-violet-400" : "group-hover:text-violet-400"}`} />
+      <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? "text-violet-400" : "group-hover:text-violet-400"}`} />
       {!isCollapsed && (
-        <span className="text-sm font-bold tracking-tight whitespace-nowrap">{label}</span>
+        <span className="text-sm font-black tracking-tight whitespace-nowrap">{label}</span>
       )}
       {isActive && !isCollapsed && (
-        <motion.div 
-          layoutId="active-pill"
-          className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_8px_#a855f7]"
+        <motion.div
+          layoutId="active-sidebar-pill"
+          className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_12px_#a855f7]"
         />
       )}
     </motion.div>
   </Link>
 );
+
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 import dynamic from "next/dynamic";
 const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: false });
@@ -58,23 +62,22 @@ const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: fal
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved !== null) {
-      setIsCollapsed(saved === "true");
-    }
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+      const saved = localStorage.getItem("sidebar-collapsed");
+      if (saved !== null) setIsCollapsed(saved === "true");
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem("sidebar-collapsed", String(isCollapsed));
-    }
+    if (isMounted) localStorage.setItem("sidebar-collapsed", String(isCollapsed));
   }, [isCollapsed, isMounted]);
 
   useEffect(() => {
@@ -90,148 +93,134 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Briefcase, label: "All Jobs", href: "/jobs" },
+    { icon: Briefcase, label: "Explore Jobs", href: "/jobs" },
     { icon: Bookmark, label: "Saved Matches", href: "/saved" },
     { icon: User, label: "My Profile", href: "/profile" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
+  const COMMANDS = [
+    { icon: LayoutDashboard, label: "Go to Dashboard", href: "/dashboard" },
+    { icon: Briefcase, label: "Search All Jobs", href: "/jobs" },
+    { icon: Bookmark, label: "View Saved", href: "/saved" },
+    { icon: User, label: "Manage Profile", href: "/profile" },
+    { icon: Sparkles, label: "Talk to AI", action: () => window.dispatchEvent(new CustomEvent("trigger-ai-chat", { detail: { text: "", autoSend: false } })) },
+  ].filter(cmd => cmd.label.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
     <div className="flex min-h-screen bg-[#07091a] text-slate-200 selection:bg-violet-500/30">
       <AiChatbot />
-      {/* Sidebar - Desktop */}
-      <aside 
-        className={`hidden lg:flex flex-col border-r border-white/5 bg-[#0a0c24]/50 backdrop-blur-3xl transition-all duration-300 ${
-          isCollapsed ? "w-20" : "w-64"
-        }`}
+      
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden lg:flex flex-col border-r border-white/5 bg-[#0a0c24]/80 backdrop-blur-3xl transition-all duration-500 ease-in-out ${isCollapsed ? "w-20" : "w-68"}`}
       >
-        <div className="flex h-20 items-center px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg shadow-violet-500/20">
-              <Sparkles className="h-5 w-5 text-white" />
+        <div className="flex h-24 items-center px-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-xl shadow-violet-600/20">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
             {!isCollapsed && (
-              <span className="text-lg font-black tracking-tighter text-white">
+              <span className="text-xl font-black tracking-tighter text-white">
                 Job<span className="text-violet-400">Finder</span>
               </span>
             )}
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1.5 px-3 py-4">
+        <nav className="flex-1 space-y-2 px-4 py-6">
           {menuItems.map((item) => (
-            <SidebarItem 
-              key={item.href} 
-              {...item} 
-              isCollapsed={isCollapsed} 
-              isActive={pathname === item.href} 
+            <SidebarItem
+              key={item.href}
+              {...item}
+              isCollapsed={isCollapsed}
+              isActive={pathname === item.href}
             />
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-          <div className={`mb-4 flex items-center gap-3 rounded-xl bg-white/5 border border-white/5 p-2 transition-all ${isCollapsed ? "justify-center px-0" : ""}`}>
-            <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center text-xs font-black text-white shrink-0">
-              {isCollapsed ? "M" : <User className="h-4 w-4" />}
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0">
-                <p className="text-[10px] font-black text-white truncate uppercase tracking-wider">Active Session</p>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[9px] font-bold text-emerald-500/80 uppercase tracking-tighter">Online</p>
-                </div>
-              </div>
-            )}
-          </div>
-
+        <div className="p-6 border-t border-white/5 space-y-4">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-slate-400 hover:bg-white/5 transition-all mb-2"
+            className="flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-slate-500 hover:bg-white/5 hover:text-white transition-all"
           >
-            <ChevronLeft className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
-            {!isCollapsed && <span className="text-xs font-bold">Collapse</span>}
+            <ChevronLeft className={`h-5 w-5 transition-transform duration-500 ${isCollapsed ? "rotate-180" : ""}`} />
+            {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Collapse</span>}
           </button>
 
-          <button 
-            className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
-          >
-            <LogOut className="h-4 w-4" />
-            {!isCollapsed && <span className="text-xs font-bold uppercase tracking-widest">Sign Out</span>}
+          <button className="w-full flex items-center gap-4 rounded-2xl px-4 py-3 text-slate-600 hover:bg-rose-500/10 hover:text-rose-400 transition-all">
+            <LogOut className="h-5 w-5" />
+            {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Sign Out</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-[#07091a]/80 backdrop-blur-md sticky top-0 z-30">
-          <div className="flex items-center gap-6">
-            {/* Wayfinding Breadcrumbs - Desktop & Mobile Context */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg shadow-violet-500/20 lg:hidden">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]">
-                <Link href="/dashboard" className="text-slate-500 hover:text-slate-300 transition-colors hidden sm:block">Platform</Link>
-                <span className="text-slate-700 hidden sm:block">/</span>
-                <span className="text-violet-400">{pathname.replace("/", "") || "Hub"}</span>
-              </nav>
+        {/* Universal Header */}
+        <header className="h-20 flex items-center justify-between px-8 border-b border-white/5 bg-[#07091a]/90 backdrop-blur-xl sticky top-0 z-40">
+          <div className="flex items-center gap-8 flex-1">
+            {/* Mobile Brand Mark */}
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 lg:hidden shadow-lg shadow-violet-600/20">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
 
-            <div className="flex-1 max-w-xl hidden lg:block">
+            {/* Omni-Search System */}
+            <div className="hidden md:block flex-1 max-w-2xl relative">
               <div className="relative group">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isSearching ? "text-violet-400" : "text-slate-500 group-focus-within:text-violet-400"}`} />
-                <input 
+                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isSearching ? "text-violet-400" : "text-slate-500"}`} />
+                <input
                   id="global-search-input"
-                  type="text" 
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearching(true)}
                   onBlur={() => setTimeout(() => setIsSearching(false), 200)}
-                  placeholder="Platform Command... (⌘K)" 
-                  className="w-full bg-white/5 border border-white/5 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.08] transition-all"
+                  placeholder="Type a command or search... (⌘K)"
+                  className="w-full bg-[#0a0c24] border border-white/5 rounded-2xl py-3.5 pl-12 pr-12 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] font-black text-slate-500">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   ⌘K
                 </div>
 
-                {/* Command Palette Dropdown */}
+                {/* Intelligent Dropdown */}
                 <AnimatePresence>
                   {isSearching && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      initial={{ opacity: 0, y: 15, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className="absolute top-full left-0 right-0 mt-3 overflow-hidden rounded-[24px] border border-white/10 bg-[#0a0c24]/90 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-3xl"
+                      exit={{ opacity: 0, y: 15, scale: 0.98 }}
+                      className="absolute top-full left-0 right-0 mt-4 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0a0c24] p-3 shadow-[0_30px_90px_rgba(0,0,0,0.8)] backdrop-blur-3xl"
                     >
-                      <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5 mb-1">
-                        Quick Actions
+                      <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5 mb-2">
+                        Platform Commands
                       </div>
-                      {[
-                        { icon: LayoutDashboard, label: "Navigate to Hub", href: "/dashboard" },
-                        { icon: Briefcase, label: "Explore All Jobs", href: "/jobs" },
-                        { icon: Bookmark, label: "View Saved Matches", href: "/saved" },
-                        { icon: User, label: "Update My Profile", href: "/profile" },
-                        { icon: Sparkles, label: "Ask JobBot Assistant", action: () => window.dispatchEvent(new CustomEvent("trigger-ai-chat", { detail: { text: "", autoSend: false } })) },
-                      ].map((cmd, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            if (cmd.href) {
-                              router.push(cmd.href);
-                              setIsSearching(false);
-                            } else {
-                              cmd.action?.();
-                            }
-                          }}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-300 transition-all hover:bg-white/5 hover:text-white group/cmd"
-                        >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 group-hover/cmd:bg-violet-500/20 group-hover/cmd:text-violet-400">
-                            <cmd.icon className="h-4 w-4" />
+                      <div className="max-height-[400px] overflow-y-auto space-y-1">
+                        {COMMANDS.length > 0 ? COMMANDS.map((cmd, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (cmd.href) {
+                                router.push(cmd.href);
+                                setIsSearching(false);
+                              } else {
+                                cmd.action?.();
+                              }
+                            }}
+                            className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white transition-all group/cmd"
+                          >
+                            <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center group-hover/cmd:bg-violet-600/20 group-hover/cmd:text-violet-400 transition-colors">
+                              <cmd.icon className="h-5 w-5" />
+                            </div>
+                            {cmd.label}
+                            <ArrowUpRight className="ml-auto h-4 w-4 opacity-0 -translate-x-4 group-hover/cmd:opacity-40 group-hover/cmd:translate-x-0 transition-all" />
+                          </button>
+                        )) : (
+                          <div className="px-4 py-8 text-center text-slate-600 text-sm italic">
+                            No commands found for &quot;{searchQuery}&quot;
                           </div>
-                          {cmd.label}
-                          <ArrowUpRight className="ml-auto h-3 w-3 opacity-0 -translate-x-2 group-hover/cmd:opacity-40 group-hover/cmd:translate-x-0 transition-all" />
-                        </button>
-                      ))}
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -239,33 +228,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Neural Thinking Indicator - Responsive to Search State */}
-            <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-500 ${
-              isSearching ? "bg-violet-500/15 border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]" : "bg-violet-500/5 border-violet-500/10"
-            }`}>
-              <div className={`h-1.5 w-1.5 rounded-full bg-violet-400 ${isSearching ? "animate-ping" : "animate-pulse"}`} />
-              <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isSearching ? "text-violet-200" : "text-violet-300/80"}`}>
-                {isSearching ? "System Listening" : "Neural Active"}
-              </span>
+          <div className="flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-xl bg-violet-600/5 border border-violet-500/10">
+              <div className="h-2 w-2 rounded-full bg-violet-500 animate-pulse shadow-[0_0_10px_#8b5cf6]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">Neural Link Active</span>
             </div>
 
-            <button className="relative p-2 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors">
+            <button className="relative h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-white/5">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-violet-500 border-2 border-[#07091a]" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 border-2 border-[#07091a]" />
             </button>
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 border border-white/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-violet-300" />
+            
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600/20 to-indigo-600/10 border border-violet-500/20 flex items-center justify-center shadow-lg">
+              <User className="h-5 w-5 text-violet-400" />
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="mx-auto max-w-7xl px-6 py-8">
-            {children}
+        {/* Global Page Content */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar pb-24 lg:pb-0">
+          <div className="mx-auto max-w-7xl px-8 py-10">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              {children}
+            </motion.div>
           </div>
         </main>
+
+        <MobileBottomNav items={menuItems} pathname={pathname} />
       </div>
     </div>
   );

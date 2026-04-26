@@ -16,27 +16,45 @@ import {
 } from "@/features/auth/schemas";
 import { getApiErrorMessage } from "@/lib/auth/api-error";
 import { authService } from "@/lib/auth/auth-service";
+import { motion } from "framer-motion";
 
-const authTabs = (
-  <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/20 bg-slate-900/45 p-1.5 shadow-inner">
+const AuthTabs = ({ active }: { active: "login" | "register" }) => (
+  <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-white/5 bg-black/20 p-1.5 shadow-inner backdrop-blur-md">
     <Link
       href="/login"
-      className="rounded-xl px-4 py-3 text-center text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+      className={`relative z-10 rounded-xl px-4 py-3 text-center text-sm font-bold transition-colors duration-300 ${
+        active === "login" ? "text-white" : "text-slate-500 hover:text-slate-300"
+      }`}
     >
       Login
+      {active === "login" && (
+        <motion.div
+          layoutId="active-auth-tab"
+          className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-600/30"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
     </Link>
     <Link
       href="/register"
-      aria-current="page"
-      className="rounded-xl bg-linear-to-r from-violet-600 to-sky-600 px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-violet-500/20"
+      className={`relative z-10 rounded-xl px-4 py-3 text-center text-sm font-bold transition-colors duration-300 ${
+        active === "register" ? "text-white" : "text-slate-500 hover:text-slate-300"
+      }`}
     >
       Register
+      {active === "register" && (
+        <motion.div
+          layoutId="active-auth-tab"
+          className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-600/30"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
     </Link>
   </div>
 );
 
 const authFooterMark = (
-  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-600 text-xs font-black text-white shadow-lg shadow-slate-900/20">
+  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0a0c24] to-slate-800 border border-white/5 text-xs font-black text-white shadow-2xl">
     JF
   </div>
 );
@@ -66,7 +84,7 @@ export default function RegisterPage() {
         password: values.password,
       });
 
-      toast.success("Registration successful. Verify your email OTP to continue.");
+      toast.success("Identity established. Verify your email OTP to continue.");
       router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -75,63 +93,68 @@ export default function RegisterPage() {
 
   return (
     <AuthShell
-      title="Create your account"
-      description="Register to start using JobFinder."
-      prelude={authTabs}
+      title="Create Identity"
+      description="Join the elite platform for modern careers."
+      prelude={<AuthTabs active="register" />}
       footer={authFooterMark}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <TextField
-          id="username"
-          label="Username"
-          placeholder="yourusername"
-          autoComplete="username"
-          error={errors.username?.message}
-          icon={UserCircle2}
-          {...register("username")}
-        />
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+          <TextField
+            id="username"
+            label="Visual Identity"
+            placeholder="Unique username"
+            autoComplete="username"
+            error={errors.username?.message}
+            icon={UserCircle2}
+            {...register("username")}
+          />
 
-        <TextField
-          id="email"
-          type="email"
-          label="Email"
-          placeholder="you@example.com"
-          autoComplete="email"
-          error={errors.email?.message}
-          icon={Mail}
-          {...register("email")}
-        />
+          <TextField
+            id="email"
+            type="email"
+            label="Secure Contact"
+            placeholder="Email address"
+            autoComplete="email"
+            error={errors.email?.message}
+            icon={Mail}
+            {...register("email")}
+          />
 
-        <PasswordField
-          id="password"
-          label="Password"
-          placeholder="Create a strong password"
-          autoComplete="new-password"
-          error={errors.password?.message}
-          icon={Lock}
-          {...register("password")}
-        />
+          <PasswordField
+            id="password"
+            label="Primary Key"
+            placeholder="Strong security key"
+            autoComplete="new-password"
+            error={errors.password?.message}
+            icon={Lock}
+            {...register("password")}
+          />
 
-        <PasswordField
-          id="confirmPassword"
-          label="Confirm password"
-          placeholder="Repeat your password"
-          autoComplete="new-password"
-          error={errors.confirmPassword?.message}
-          icon={Lock}
-          {...register("confirmPassword")}
-        />
+          <PasswordField
+            id="confirmPassword"
+            label="Verify Key"
+            placeholder="Repeat security key"
+            autoComplete="new-password"
+            error={errors.confirmPassword?.message}
+            icon={Lock}
+            {...register("confirmPassword")}
+          />
 
-        <SubmitButton isLoading={isSubmitting}>Create account</SubmitButton>
-      </form>
+          <SubmitButton isLoading={isSubmitting}>Establish Account</SubmitButton>
+        </form>
 
-      <p className="mt-6 text-sm text-[var(--muted)]">
-        Already have an account?{" "}
-        <Link href="/login" className="soft-link font-semibold hover:underline">
-          Login
-        </Link>
-      </p>
+        <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+          Already have an account?{" "}
+          <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors ml-1">
+            Authorize Access
+          </Link>
+        </p>
+      </motion.div>
     </AuthShell>
   );
 }
-

@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { 
   createEmptyJobSearchState, 
-  getPostedAfterFromPreset, 
   type JobSearchFormState 
 } from "@/components/jobs/job-search-filter";
+import { getPostedAfterFromPreset } from "@/lib/jobs/jobs-utils";
 import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import type { Job, JobFilterParams } from "@/lib/jobs/types";
@@ -104,7 +104,10 @@ export const useJobsSearch = () => {
   }, [appliedFilters, loadJobs]);
 
   const handleSearch = (e?: React.FormEvent) => {
-    e?.preventDefault();
+    // Safely check if 'e' is a React event with preventDefault
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
     setAppliedFilters(draftFilters);
   };
 
@@ -145,7 +148,7 @@ export const useJobsSearch = () => {
 
   const handleRefresh = useCallback(() => {
     setJobs([]);
-    void loadJobs({ ...toJobFilterParams(appliedFilters), refresh: true } as any);
+    void loadJobs({ ...toJobFilterParams(appliedFilters), refresh: true });
     toast.success("System Refreshed");
   }, [appliedFilters, loadJobs]);
 

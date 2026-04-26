@@ -3,8 +3,6 @@
 import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
-// Dynamically import the AI Chatbot (client-side only)
-const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: false });
 import {
   Briefcase, 
   Rocket,
@@ -23,14 +21,31 @@ const JobsList = lazy(() =>
 
 function JobsListFallback() {
   return (
-    <div className="glass-panel rounded-3xl p-6">
-      <div className="h-5 w-40 animate-pulse rounded bg-white/20" />
-      <div className="mt-4 h-14 animate-pulse rounded-2xl bg-white/10" />
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-24 animate-pulse rounded-2xl bg-white/10" />
-        ))}
-      </div>
+    <div className="grid grid-cols-1 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/5 p-6 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-white/5 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-32 rounded bg-white/10 animate-pulse" />
+                <div className="h-3 w-20 rounded bg-white/5 animate-pulse" />
+              </div>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-white/5 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-full rounded bg-white/5 animate-pulse" />
+            <div className="h-3 w-4/5 rounded bg-white/5 animate-pulse" />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <div className="h-6 w-16 rounded-full bg-white/5 animate-pulse" />
+            <div className="h-6 w-16 rounded-full bg-white/5 animate-pulse" />
+          </div>
+          {/* Shimmer effect overlay */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/[0.03] to-transparent" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -91,27 +106,35 @@ export default function JobsPage() {
         </div>
 
         {/* Top: AI Match Section - Compact & Premium */}
-        <section className="fade-up mb-6 overflow-hidden rounded-2xl bg-white/[0.03] border border-white/5 p-5 sm:p-6 relative">
-          <div className="absolute right-0 top-0 h-40 w-40 opacity-10 pointer-events-none">
-            <div className="h-full w-full rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 blur-3xl" />
-          </div>
-
-          <div className="relative">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/5">
-                  <Sparkles className="h-5 w-5 text-violet-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-sm font-black uppercase tracking-widest text-violet-400">Perfect Match</h2>
-                    <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <section className="fade-up group relative overflow-hidden rounded-[2rem] bg-[#0a0c24] border border-white/5 p-6 sm:p-8 shadow-2xl">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
+          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+              <div className="flex items-start gap-6">
+                <div className="relative shrink-0">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                  <div className="relative h-16 w-16 rounded-2xl border border-white/10 bg-[#07091a] flex items-center justify-center">
+                    <Sparkles className="h-8 w-8 text-violet-400" />
                   </div>
-                  <h1 className="text-xl font-bold text-white tracking-tight sm:text-2xl">
-                    Senior Software Engineer (Remote)
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-400 max-w-lg">
-                    This role matches 98% of your profile skills and preferences.
+                  <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white border-2 border-[#0a0c24]">
+                    AI
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/20 text-[9px] font-black uppercase tracking-widest text-violet-400">Quantum Match</span>
+                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                      <Zap className="h-3 w-3 fill-current" /> 98% Compatibility
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-black text-white tracking-tight sm:text-3xl">
+                    Senior Software Engineer <span className="text-slate-500 font-medium">@ Remote</span>
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-400 max-w-xl leading-relaxed">
+                    Based on your expertise in <span className="text-cyan-400 font-bold">React</span> and <span className="text-violet-400 font-bold">Node.js</span>, this role is a top-tier recommendation for your next career move.
                   </p>
                 </div>
               </div>

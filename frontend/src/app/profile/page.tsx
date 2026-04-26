@@ -15,50 +15,38 @@ import {
   Award,
   History,
   TrendingUp,
-  Brain
+  Brain,
+  ChevronRight,
+  ExternalLink
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SKILLS = [
-  { name: "React", level: "Expert", color: "bg-cyan-500/10 text-cyan-400" },
-  { name: "TypeScript", level: "Advanced", color: "bg-blue-500/10 text-blue-400" },
-  { name: "Node.js", level: "Advanced", color: "bg-emerald-500/10 text-emerald-400" },
-  { name: "Spring Boot", level: "Intermediate", color: "bg-green-500/10 text-green-400" },
-  { name: "PostgreSQL", level: "Intermediate", color: "bg-indigo-500/10 text-indigo-400" },
-  { name: "Tailwind CSS", level: "Expert", color: "bg-cyan-500/10 text-cyan-400" },
-  { name: "Docker", level: "Beginner", color: "bg-blue-400/10 text-blue-300" },
+  { name: "React", level: "Expert", color: "from-cyan-500/20 to-blue-500/10", text: "text-cyan-400" },
+  { name: "TypeScript", level: "Advanced", color: "from-blue-500/20 to-indigo-500/10", text: "text-blue-400" },
+  { name: "Node.js", level: "Advanced", color: "from-emerald-500/20 to-teal-500/10", text: "text-emerald-400" },
+  { name: "Spring Boot", level: "Intermediate", color: "from-green-500/20 to-emerald-500/10", text: "text-green-400" },
+  { name: "PostgreSQL", level: "Intermediate", color: "from-indigo-500/20 to-blue-500/10", text: "text-indigo-400" },
+  { name: "Tailwind CSS", level: "Expert", color: "from-cyan-500/20 to-sky-500/10", text: "text-cyan-400" },
+  { name: "Docker", level: "Beginner", color: "from-blue-400/20 to-cyan-400/10", text: "text-blue-300" },
 ];
 
 const MatchGauge = ({ score }: { score: number }) => (
-  <div className="relative flex items-center justify-center h-48 w-48 mx-auto">
-    {/* Background Circle */}
-    <svg className="h-full w-full transform -rotate-90">
-      <circle
-        cx="96"
-        cy="96"
-        r="80"
-        stroke="currentColor"
-        strokeWidth="12"
-        fill="transparent"
-        className="text-white/5"
-      />
+  <div className="relative flex items-center justify-center h-40 w-40 mx-auto">
+    <svg className="h-full w-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,44,245,0.2)]">
+      <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-white/5" />
       <motion.circle
-        cx="96"
-        cy="96"
-        r="80"
-        stroke="currentColor"
-        strokeWidth="12"
-        fill="transparent"
-        strokeDasharray={502.6}
-        initial={{ strokeDashoffset: 502.6 }}
-        animate={{ strokeDashoffset: 502.6 - (502.6 * score) / 100 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="text-violet-500 drop-shadow-[0_0_8px_rgba(139,44,245,0.5)]"
+        cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent"
+        strokeDasharray={439.8}
+        initial={{ strokeDashoffset: 439.8 }}
+        animate={{ strokeDashoffset: 439.8 - (439.8 * score) / 100 }}
+        transition={{ duration: 1.5, ease: "circOut" }}
+        className="text-violet-500"
       />
     </svg>
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      <span className="text-4xl font-black text-white">{score}%</span>
-      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Match Score</span>
+    <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <span className="text-3xl font-black text-white">{score}%</span>
+      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Readiness</span>
     </div>
   </div>
 );
@@ -66,133 +54,111 @@ const MatchGauge = ({ score }: { score: number }) => (
 export default function ProfilePage() {
   return (
     <AppLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-6xl mx-auto space-y-6">
         
-        {/* Left Column: User Info Card */}
-        <div className="lg:col-span-4 space-y-6">
-          <section className="rounded-3xl bg-white/[0.03] border border-white/5 p-8 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-cyan-500" />
-            
-            <div className="relative mx-auto mb-6 h-32 w-32 rounded-3xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 p-1">
-              <div className="flex h-full w-full items-center justify-center rounded-[22px] bg-[#07091a] border border-white/10">
-                <User className="h-16 w-16 text-violet-300" />
+        {/* Header Section: Identity Banner */}
+        <section className="relative overflow-hidden rounded-[2.5rem] bg-[#0a0c24] border border-white/5 p-8 sm:p-10 shadow-2xl">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+              <div className="relative h-32 w-32 rounded-[2.2rem] bg-[#07091a] border border-white/10 flex items-center justify-center overflow-hidden">
+                <User className="h-16 w-16 text-slate-400" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-violet-600/20 to-transparent" />
               </div>
-              <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-lg border-2 border-[#07091a]">
-                <Zap className="h-4 w-4" />
-              </div>
-            </div>
-
-            <h1 className="text-2xl font-black text-white">Mohamed Saad</h1>
-            <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">Full Stack Developer</p>
-            
-            <div className="mt-6 flex flex-col gap-3">
-              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">
-                <Mail className="h-4 w-4 text-violet-400" />
-                saad@example.com
-              </div>
-              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">
-                <MapPin className="h-4 w-4 text-cyan-400" />
-                Cairo, Egypt
+              <div className="absolute -bottom-2 -right-2 h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white border-4 border-[#0a0c24] shadow-xl">
+                <Zap className="h-5 w-5" />
               </div>
             </div>
 
-            <div className="mt-8 flex justify-center gap-4">
-              <button className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-violet-600/20 transition-all border border-white/5">
-                <Github className="h-5 w-5" />
-              </button>
-              <button className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-blue-600/20 transition-all border border-white/5">
-                <Linkedin className="h-5 w-5" />
-              </button>
-              <button className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-emerald-600/20 transition-all border border-white/5">
-                <Globe className="h-5 w-5" />
-              </button>
-            </div>
-          </section>
-
-          {/* AI Match Gauge Section */}
-          <section className="rounded-3xl bg-white/[0.03] border border-white/5 p-8 text-center">
-            <div className="flex items-center gap-2 justify-center mb-6">
-              <Brain className="h-4 w-4 text-violet-400" />
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-200">Market Readiness</h3>
-            </div>
-            <MatchGauge score={85} />
-            <p className="mt-6 text-xs text-slate-400 leading-relaxed">
-              You're in the top <span className="text-violet-400 font-bold">15%</span> of developers in your region based on current market tech-stacks.
-            </p>
-          </section>
-        </div>
-
-        {/* Right Column: Skills and Activity */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Skills Section */}
-          <section className="rounded-3xl bg-white/[0.03] border border-white/5 p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600/10">
-                  <Code2 className="h-5 w-5 text-violet-400" />
+            <div className="text-center md:text-left flex-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-3">
+                <h1 className="text-4xl font-black text-white tracking-tight">Mohamed Saad</h1>
+                <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-[10px] font-black uppercase tracking-widest text-violet-400">PRO Member</span>
+              </div>
+              <p className="text-lg font-medium text-slate-400 mb-6 flex items-center justify-center md:justify-start gap-2">
+                Full Stack Developer <span className="h-1 w-1 rounded-full bg-slate-700" /> Cairo, Egypt
+              </p>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                  <Mail className="h-4 w-4 text-violet-400" /> saad@example.com
                 </div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Tech Stack & Skills</h2>
+                <div className="flex gap-2">
+                  {[Github, Linkedin, Globe].map((Icon, i) => (
+                    <button key={i} className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:border-violet-500/40 transition-all">
+                      <Icon className="h-5 w-5" />
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button className="text-xs font-black uppercase tracking-widest text-violet-400 hover:text-violet-300">Edit Skills</button>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <button className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 px-6 py-3 rounded-2xl text-sm font-bold hover:bg-white/10 transition-all">
+              Edit Profile <ExternalLink className="h-4 w-4" />
+            </button>
+          </div>
+        </section>
+
+        {/* Bento Grid: Core Data */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Main Skills Card - Takes more space */}
+          <section className="lg:col-span-8 rounded-[2.5rem] bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-violet-600/10 flex items-center justify-center">
+                  <Code2 className="h-6 w-6 text-violet-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">Technical Arsenal</h2>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Core Tech Stack</p>
+                </div>
+              </div>
+              <Sparkles className="h-5 w-5 text-violet-500/40" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {SKILLS.map((skill) => (
-                <div 
-                  key={skill.name}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 border border-white/5 ${skill.color}`}
-                >
-                  <span className="text-sm font-bold">{skill.name}</span>
-                  <span className="h-1 w-1 rounded-full bg-current opacity-40" />
-                  <span className="text-[10px] font-black uppercase opacity-60 tracking-wider">{skill.level}</span>
+                <div key={skill.name} className={`relative group flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-gradient-to-br ${skill.color} transition-all hover:border-white/10 hover:translate-x-1`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`h-2 w-2 rounded-full ${skill.text.replace('text', 'bg')} shadow-[0_0_8px_currentColor]`} />
+                    <span className="text-sm font-bold text-white">{skill.name}</span>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-tighter ${skill.text} opacity-80`}>{skill.level}</span>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Stats & Impact */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* Readiness Card - Compact & Visual */}
+          <section className="lg:col-span-4 rounded-[2.5rem] bg-gradient-to-br from-violet-600/10 to-transparent border border-violet-500/10 p-8 text-center flex flex-col justify-center items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-300 mb-8">Market Readiness</h3>
+            <MatchGauge score={85} />
+            <div className="mt-8 space-y-2">
+              <p className="text-sm font-bold text-white">Top 15% in Region</p>
+              <p className="text-xs text-slate-500 leading-relaxed">Based on current tech-stack trends and recruitment patterns.</p>
+            </div>
+          </section>
+
+          {/* Activity Mini-Bento */}
+          <section className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: "Jobs Matched", value: "128", icon: Target, color: "text-violet-400" },
-              { label: "Applications", value: "12", icon: Zap, color: "text-cyan-400" },
-              { label: "Interviews", value: "3", icon: Award, color: "text-emerald-400" },
+              { label: "Matches Found", value: "128", icon: Target, color: "text-violet-400" },
+              { label: "Active Apps", value: "12", icon: Zap, color: "text-cyan-400" },
+              { label: "Awarded Badges", value: "3", icon: Award, color: "text-emerald-400" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-3xl bg-white/[0.03] border border-white/5 p-6">
-                <stat.icon className={`h-5 w-5 mb-4 ${stat.color}`} />
-                <p className="text-2xl font-black text-white">{stat.value}</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">{stat.label}</p>
+              <div key={stat.label} className="rounded-3xl bg-white/[0.03] border border-white/5 p-6 flex items-center gap-6 hover:bg-white/[0.06] transition-all group">
+                <div className={`h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center transition-transform group-hover:scale-110`}>
+                  <stat.icon className={`h-7 w-7 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white">{stat.value}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.label}</p>
+                </div>
               </div>
             ))}
-          </div>
-
-          {/* Activity Timeline */}
-          <section className="rounded-3xl bg-white/[0.03] border border-white/5 p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-600/10">
-                <History className="h-5 w-5 text-cyan-400" />
-              </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Recent Activity</h2>
-            </div>
-
-            <div className="space-y-6">
-              {[
-                { event: "Applied to Senior React Dev", company: "Airtable", time: "2 hours ago", color: "bg-cyan-500" },
-                { event: "Profile view by Recruiter", company: "Netflix", time: "Yesterday", color: "bg-violet-500" },
-                { event: "Skill Badge: Spring Boot Mastery", company: "System Verified", time: "2 days ago", color: "bg-emerald-500" },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-4 relative">
-                  {i !== 2 && <div className="absolute left-2 top-8 bottom-[-24px] w-px bg-white/10" />}
-                  <div className={`h-4 w-4 rounded-full mt-1.5 shrink-0 border-4 border-[#07091a] ${item.color}`} />
-                  <div>
-                    <p className="text-sm font-bold text-white">{item.event}</p>
-                    <p className="text-xs text-slate-400 mt-1">{item.company} • {item.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </section>
         </div>
-
       </div>
     </AppLayout>
   );
