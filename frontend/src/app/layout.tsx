@@ -3,10 +3,17 @@ import { Suspense } from "react";
 import { AppToaster } from "@/components/providers/app-toaster";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import "./globals.css";
+import "./tokens.css";
 
 export const metadata: Metadata = {
-  title: "JobFinder",
-  description: "JobFinder authentication and jobs platform",
+  title: {
+    default: "JobFinder PRO | Discover Your Dream Tech Role",
+    template: "%s | JobFinder PRO",
+  },
+  description: "A premium, lightning-fast job search workspace where refined filters, intelligent matching, and crystal-clear workflows help you land the role you deserve.",
+  keywords: ["jobs", "tech roles", "hiring", "ATS", "career", "developer jobs"],
+  authors: [{ name: "Mohamed Saad" }],
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({

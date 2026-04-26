@@ -1,4 +1,4 @@
-package jobfinder.servics.implemention;
+package jobfinder.services.implementation;
 import jakarta.transaction.Transactional;
 import jobfinder.config.CustomUserDetails;
 import jobfinder.exception.BaseException;
@@ -8,7 +8,7 @@ import jobfinder.model.entity.OtpCode;
 import jobfinder.model.entity.User;
 import jobfinder.repository.OtpCodeRepository;
 import jobfinder.repository.UserRepository;
-import jobfinder.servics.interfaces.AuthInterface;
+import jobfinder.services.interfaces.AuthInterface;
 import jobfinder.util.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +33,12 @@ public class AuthService implements AuthInterface {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final EmailService emilService;
+    private final EmailService emailService;
     private final LoginAttemptService loginAttemptService;
     private final EmailValidatorService emailValidatorService;
     private final OtpService otpService ;
     private static final SecureRandom secureRandom = new SecureRandom();
-    private static final long OTP_RESEND_COOLDOWN_MINUTES = 2;
+    private static final long OTP_RESEND_COOLDOWN_MINUTES = 1;
 
 
     @Override
@@ -115,6 +115,7 @@ public class AuthService implements AuthInterface {
     @Override
     @Transactional // Main transaction for account verification
     public void verifyAccount(String email, String otpCode) {
+        if (otpCode != null) otpCode = otpCode.trim();
         // Find user by email or throw error if not found
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
@@ -226,7 +227,7 @@ public class AuthService implements AuthInterface {
                 .ifPresent(latestOtp -> {
                     throw new BaseException(
                             ErrorCode.MAX_OTP_ATTEMPTS_REACHED,
-                            "Please wait 2 minutes before requesting a new OTP code."
+                            "Please wait 1 minute before requesting a new OTP code."
                     );
                 });
 
@@ -243,7 +244,7 @@ public class AuthService implements AuthInterface {
                 .build();
 
         otpCodeRepository.saveAndFlush(otp);
-        emilService.sendVerificationEmail(user.getEmail(), otpCode);
+        emailService.sendVerificationEmail(user.getEmail(), otpCode);
     }
 
     private UserDetails createDetails(User user) {

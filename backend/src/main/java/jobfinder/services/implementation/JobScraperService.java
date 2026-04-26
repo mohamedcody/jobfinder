@@ -1,4 +1,4 @@
-package jobfinder.servics.implemention;
+package jobfinder.services.implementation;
 
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
@@ -9,10 +9,12 @@ import jobfinder.model.entity.CompanyEntity;
 import jobfinder.model.entity.JobEntity;
 import jobfinder.repository.CompanyRepository;
 import jobfinder.repository.JobRepository;
-import jobfinder.servics.interfaces.JobInterface;
+import jobfinder.services.interfaces.JobInterface;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -34,10 +36,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JobScraperService implements JobInterface {
 
-    private final JobRepository jobRepository;// call the repo jobs in database
-    private final CompanyRepository companyRepository; // call the repo company in database
+    private final JobRepository jobRepository;
+    private final CompanyRepository companyRepository;
     private final AiService aiService;
-    private final WebClient webClient = WebClient.create(); // call by apify
+    private final WebClient webClient;
+    private final CacheManager cacheManager;
 
     @Value("${apify.token}")
     private String apifyToken;
@@ -160,146 +163,42 @@ public class JobScraperService implements JobInterface {
     }
 
     @Override
+    @Cacheable(value = "jobs", key = "{'all', #lastId, #size}")
     public CursorPageResponse<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
-
-        log.info("🔍 Fetching jobs - Start ID: {}, Page size: {}", lastId, size);
-
-        try {
-            // ✅ null check قبل < 0
-            if (lastId != null && lastId < 0) {
-                throw new BaseException(ErrorCode.INVALID_INPUT, "lastId cannot be negative: " + lastId);
-            }
-
-            if (size <= 0 || size > 100) {
-                log.warn("⚠️ Warning: Invalid page size ({}), defaulting to 10", size);
-                size = 10;
-            }
-
-            // Updated startId for DESC: first page should have lastId null
-            List<JobEntity> jobEntities = jobRepository.findJobsAdvancedFilter(
-                    null, null, null, null, lastId,
-                    PageRequest.of(0, size + 1));
-
-            if (jobEntities.isEmpty()) {
-                log.info("📭 No jobs available for the current request.");
-                return new CursorPageResponse<>(List.of(), size, null, false);
-            }
-
-            boolean hasNext = jobEntities.size() > size;
-            List<JobEntity> finalContent = hasNext ? jobEntities.subList(0, size) : jobEntities;
-            Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
-
-            log.info("✅ Successfully retrieved {} jobs. Next cursor: {}", finalContent.size(), nextCursor);
-
-            return new CursorPageResponse<>(
-                    finalContent.stream().map(this::convertToDTO).toList(),
-                    size,
-                    nextCursor,
-                    hasNext);
-
-        } catch (BaseException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("❌ Technical error during pagination: ", e);
-            throw new BaseException(ErrorCode.DATABASE_ERROR, "Error loading jobs. Please try again later.");
-        }
+        // getAllJobs is just searchJobsByFilter with an empty filter
+        JobFilterRequest emptyFilter = new JobFilterRequest(null, null, null, null, null);
+        return searchJobsByFilter(emptyFilter, lastId, size);
     }
 
     @Override
     public CursorPageResponse<JobResponseDTO> searchJobs(String title, String location, Long lastId, int size) {
-
-        log.info("🔍 Searching for jobs with title: '{}', location: '{}' - Start ID: {}, Size: {}", title, location,
-                lastId, size);
-
-        try {
-            // 1. التفكير الهندسي: تنظيف البيانات (Sanitization)
-            String sanitizedTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : null;
-            String sanitizedLocation = (location != null && !location.trim().isEmpty()) ? location.trim() : null;
-
-            // التأكد إن المستخدم مدخل حاجة يبحث بيها على الأقل (أو ممكن تشيل الشرط ده لو
-            // عايزه يجيب كل الوظائف لو مفيش بحث)
-            if (sanitizedTitle == null && sanitizedLocation == null) {
-                throw new BaseException(ErrorCode.INVALID_INPUT, "Search keyword or location is missing.");
-            }
-
-            if (lastId != null && lastId < 0) {
-                throw new BaseException(ErrorCode.INVALID_INPUT, "lastId cannot be negative: " + lastId);
-            }
-
-            if (size <= 0 || size > 100) {
-                log.warn("⚠️ Warning: Invalid page size ({}), defaulting to 10", size);
-                size = 10;
-            }
-
-            Long startId = (lastId == null) ? 0L : lastId;
-
-            // 2. Optimized smart filter
-            List<JobEntity> jobList = jobRepository.findJobsAdvancedFilter(
-                    sanitizedTitle,
-                    sanitizedLocation,
-                    null, // employmentType
-                    null, // postedAfter
-                    lastId,
-                    PageRequest.of(0, size + 1));
-
-            if (jobList.isEmpty()) {
-                log.info("ℹ️ No jobs found matching the criteria.");
-                return new CursorPageResponse<>(List.of(), size, null, false);
-            }
-
-            boolean hasNext = jobList.size() > size;
-            List<JobEntity> finalContent = hasNext ? jobList.subList(0, size) : jobList;
-            Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
-
-            log.info("✅ Found {} jobs. Next cursor: {}", finalContent.size(), nextCursor);
-
-            return new CursorPageResponse<>(
-                    finalContent.stream().map(this::convertToDTO).toList(),
-                    size,
-                    nextCursor,
-                    hasNext);
-
-        } catch (BaseException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("❌ Unexpected error during search: ", e);
-            throw new BaseException(ErrorCode.DATABASE_ERROR, "An unexpected error occurred during search.");
-        }
+        // searchJobs is just searchJobsByFilter with specific params
+        JobFilterRequest filter = new JobFilterRequest(title, location, null, null, null);
+        return searchJobsByFilter(filter, lastId, size);
     }
 
     @Override
+    @Cacheable(value = "jobs", key = "{#filter.title(), #filter.location(), #filter.employmentType(), #filter.postedAfter(), #lastId, #size}")
     public CursorPageResponse<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
-        log.info("🚀 Advanced smart search applied for filter: {}", filter);
+        log.info("🚀 Sovereign Search applied: {}", filter);
 
         try {
-            // 1. Validation
-            if (lastId != null && lastId < 0) {
-                throw new BaseException(ErrorCode.INVALID_INPUT, "lastId cannot be negative: " + lastId);
-            }
-
-            // ضبط الحجم الافتراضي
             int limit = (size <= 0 || size > 100) ? 10 : size;
-            Long startId = (lastId == null) ? 0L : lastId;
-
-            // 2. Optimized Database Query (Avoiding COUNT(*) and Specification overhead)
-            List<JobEntity> jobList = jobRepository.findJobsAdvancedFilter(
-                    filter.title(),
-                    filter.location(),
-                    filter.employmentType(),
-                    (filter.postedAfter() != null) ? filter.postedAfter().atStartOfDay() : null,
-                    lastId,
-                    PageRequest.of(0, limit + 1));
+            
+            // Use the Specification we refined to handle ordering and filtering consistently
+            Specification<JobEntity> spec = JobSpecification.filterJobs(filter, lastId);
+            
+            List<JobEntity> jobList = jobRepository.findAll(
+                spec, 
+                PageRequest.of(0, limit + 1)
+            ).getContent();
 
             if (jobList.isEmpty()) {
-                log.info("ℹ️ No jobs found matching the criteria.");
                 return new CursorPageResponse<>(List.of(), limit, null, false);
             }
 
-            // 4. Pagination Logic (The Magic)
             boolean hasNext = jobList.size() > limit;
             List<JobEntity> finalContent = hasNext ? jobList.subList(0, limit) : jobList;
-
-            // استخراج الـ cursor القادم من آخر عنصر في القائمة الحقيقية
             Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
 
             return new CursorPageResponse<>(
@@ -308,11 +207,9 @@ public class JobScraperService implements JobInterface {
                     nextCursor,
                     hasNext);
 
-        } catch (BaseException e) {
-            throw e; // إعادة رمي الـ custom exception بتاعك
         } catch (Exception e) {
-            log.error("❌ Unexpected error during advanced search: ", e);
-            throw new BaseException(ErrorCode.DATABASE_ERROR, "An unexpected error occurred during search.");
+            log.error("❌ Critical logic failure in search: ", e);
+            throw new BaseException(ErrorCode.DATABASE_ERROR, "Search engine experienced a synchronization failure.");
         }
     }
 
@@ -333,6 +230,14 @@ public class JobScraperService implements JobInterface {
         return summary;
     }
 
+    public void evictJobsCache() {
+        var cache = cacheManager.getCache("jobs");
+        if (cache != null) {
+            cache.clear();
+            log.info("🧹 Jobs cache evicted successfully.");
+        }
+    }
+
     private JobResponseDTO convertToDTO(JobEntity entity) {
         return JobResponseDTO.builder()
                 .id(entity.getId())
@@ -348,4 +253,7 @@ public class JobScraperService implements JobInterface {
                 .companyLogo(entity.getCompany() != null ? entity.getCompany().getLogoUrl() : null)
                 .build();
     }
+
 }
+
+    

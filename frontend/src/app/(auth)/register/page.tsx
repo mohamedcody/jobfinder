@@ -37,7 +37,7 @@ const authTabs = (
 
 const authFooterMark = (
   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-600 text-xs font-black text-white shadow-lg shadow-slate-900/20">
-    N
+    JF
   </div>
 );
 

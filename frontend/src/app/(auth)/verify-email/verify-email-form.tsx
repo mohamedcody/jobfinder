@@ -131,13 +131,13 @@ export function VerifyEmailForm({ initialEmail }: VerifyEmailFormProps) {
   return (
     <AuthShell
       title="Verify your email"
-      description="Enter the OTP that was sent to your inbox."
+      description="Enter the 6-digit verification code sent to your inbox."
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <TextField
           id="email"
           type="email"
-          label="Email"
+          label="Email Address"
           placeholder="you@example.com"
           autoComplete="email"
           error={errors.email?.message}
@@ -146,7 +146,7 @@ export function VerifyEmailForm({ initialEmail }: VerifyEmailFormProps) {
 
         <OtpField
           id="otp"
-          label="OTP code"
+          label="Verification Code"
           placeholder="123456"
           error={errors.otp?.message}
           {...register("otp")}

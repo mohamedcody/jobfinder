@@ -1,4 +1,4 @@
-package jobfinder.servics.implemention;
+package jobfinder.services.implementation;
 
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;

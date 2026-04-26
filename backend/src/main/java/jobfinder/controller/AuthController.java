@@ -3,7 +3,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jobfinder.model.dto.*;
-import jobfinder.servics.interfaces.AuthInterface;
+import jobfinder.services.interfaces.AuthInterface;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

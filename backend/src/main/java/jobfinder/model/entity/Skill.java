@@ -1,13 +1,19 @@
 package jobfinder.model.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "skills", indexes = {
-    @Index(name = "idx_skill_name", columnList = "name", unique = true)
+        @Index(name = "idx_skill_name", columnList = "name", unique = true)
 })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Skill {
 
     @Id
@@ -26,8 +32,8 @@ public class Skill {
 
     // --- Added for Bidirectional Mapping & Cascade Deletion ---
     @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<UserSkill> userSkills;
+    private List<UserSkill> userSkills;
 
     @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<JobSkill> jobSkills;
+    private List<JobSkill> jobSkills;
 }

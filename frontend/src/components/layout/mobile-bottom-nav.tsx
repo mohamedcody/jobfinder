@@ -2,46 +2,66 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Briefcase, Search, User } from "lucide-react";
+import { Bookmark, Briefcase, Home, Search, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+
+const NAV_ITEMS = [
+  { icon: Home, label: "Hub", href: "/dashboard" },
+  { icon: Briefcase, label: "Jobs", href: "/jobs" },
+  { icon: Bookmark, label: "Saved", href: "/saved" },
+  { icon: User, label: "Profile", href: "/profile" },
+  { icon: Settings, label: "Settings", href: "/settings" },
+];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
 
-  const navItems = [
-    { icon: Home, label: "Home", href: "/jobs" },
-    { icon: Search, label: "Search", href: "/jobs/search" },
-    { icon: Briefcase, label: "ATS", href: "/employer/ats" },
-    { icon: User, label: "Profile", href: "/profile" },
-  ];
-
-  // Do not show the bottom nav on authentication pages or the landing page
   if (
-    pathname === "/" || 
-    pathname?.startsWith("/login") || 
+    pathname === "/" ||
+    pathname?.startsWith("/login") ||
     pathname?.startsWith("/register")
   ) {
     return null;
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center bg-[#050914]/90 backdrop-blur-xl border-t border-white/10 pb-6 pt-2 px-2 lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-      {navItems.map((item) => {
-        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/") && item.href !== "/jobs";
-        
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2 pb-5 pt-2 lg:hidden"
+      style={{
+        background: "linear-gradient(180deg, rgb(7 9 26 / 85%), rgb(7 9 26 / 95%))",
+        backdropFilter: "blur(12px) saturate(1.2)",
+        borderTop: "1px solid rgb(255 255 255 / 8%)",
+        boxShadow: "0 -16px 40px rgb(2 6 23 / 60%), inset 0 1px 0 rgb(255 255 255 / 6%)",
+      }}
+    >
+      {NAV_ITEMS.map((item) => {
+        const isActive =
+          item.href === "/jobs"
+            ? pathname === "/jobs"
+            : pathname?.startsWith(item.href);
+
         return (
-          <Link 
-            key={item.href} 
-            href={item.href} 
-            className={cn(
-              "flex flex-col items-center p-2 min-h-[48px] min-w-[48px] justify-center transition-all",
-              isActive 
-                ? "text-cyan-400 scale-110" 
-                : "text-slate-500 hover:text-slate-300"
-            )}
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn("mobile-nav-item", isActive && "active")}
+            aria-label={item.label}
+            aria-current={isActive ? "page" : undefined}
           >
-            <item.icon className="h-5 w-5 mb-1" strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
+            <motion.div
+              animate={isActive ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <item.icon
+                className={cn(
+                  "mb-1 h-5 w-5 transition-all",
+                  isActive ? "text-white drop-shadow-[0_0_6px_rgba(139,44,245,0.8)]" : "text-slate-600"
+                )}
+                strokeWidth={isActive ? 2.5 : 1.8}
+              />
+            </motion.div>
+            <span>{item.label}</span>
           </Link>
         );
       })}

@@ -4,7 +4,7 @@ package jobfinder.controller;
 import jobfinder.model.dto.CursorPageResponse;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
-import jobfinder.servics.implemention.JobScraperService;
+import jobfinder.services.implementation.JobScraperService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;

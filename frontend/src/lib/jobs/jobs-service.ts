@@ -101,6 +101,7 @@ export const jobsService = {
     if (postedAfter) queryParams.postedAfter = postedAfter;
     if (employmentType) queryParams.employmentType = employmentType;
     if (lastId !== undefined && lastId !== null) queryParams.lastId = lastId;
+    if (params.refresh) queryParams.refresh = "true";
 
     const { data } = await jobsApiClient.get<CursorPageResponse<Job>>("/filter", {
       params: queryParams,

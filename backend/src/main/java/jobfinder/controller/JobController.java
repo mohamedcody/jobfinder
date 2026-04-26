@@ -2,7 +2,7 @@ package jobfinder.controller;
 import jobfinder.model.dto.CursorPageResponse;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
-import jobfinder.servics.implemention.JobScraperService;
+import jobfinder.services.implementation.JobScraperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -63,8 +63,12 @@ public class JobController {
             @RequestParam(required = false) String minSalary,
             @RequestParam(required = false) String employmentType,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "false") boolean refresh
     ) {
+        if (refresh) {
+            jobScraperService.evictJobsCache();
+        }
         JobFilterRequest filter = new JobFilterRequest(title, location, minSalary, postedAfter, employmentType);
         return ok(jobScraperService.searchJobsByFilter(filter, lastId, size));
     }

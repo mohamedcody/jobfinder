@@ -1,4 +1,4 @@
-package jobfinder.servics.interfaces;
+package jobfinder.services.interfaces;
 
 import jobfinder.model.dto.CursorPageResponse;
 import jobfinder.model.dto.JobFilterRequest;

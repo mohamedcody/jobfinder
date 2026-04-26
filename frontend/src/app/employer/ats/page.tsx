@@ -101,98 +101,106 @@ export default function EmployerATSPage() {
             </div>
           </div>
 
-          {/* Kanban Columns */}
-          <div className="flex-1 overflow-x-auto p-6 flex gap-6 custom-scrollbar snap-x snap-mandatory pb-24 lg:pb-6">
-            {initialColumns.map(col => {
-              const columnCandidates = mockCandidates.filter(c => c.status === col.id);
-              return (
-                <div key={col.id} className="w-[300px] shrink-0 flex flex-col gap-4 snap-center">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${col.color}`} aria-hidden="true" />
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">{col.title}</h3>
-                      <span className="text-xs font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-full" aria-label={`${columnCandidates.length} candidates`}>{columnCandidates.length}</span>
-                    </div>
-                    <button 
-                      aria-label={`Column options for ${col.title}`}
-                      title={`Column options for ${col.title}`}
-                      className="text-slate-400 hover:text-white min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 rounded-md"
-                    >
-                      <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
+          {/* Kanban Board / List View */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            
+            {/* Mobile Column Selector (Visible only on mobile/tablet) */}
+            <div className="lg:hidden p-4 border-b border-white/5 flex gap-2 overflow-x-auto custom-scrollbar bg-black/10">
+              {initialColumns.map(col => (
+                <button
+                  key={col.id}
+                  onClick={() => setActiveTab(col.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
+                    activeTab === col.id 
+                    ? `bg-white/10 text-white ${col.color.replace("bg-", "border-")}` 
+                    : "bg-white/5 text-slate-500 border-transparent"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${col.color}`} />
+                  {col.title}
+                  <span className="opacity-60">{col.count}</span>
+                </button>
+              ))}
+            </div>
 
-                  <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pe-2 pb-4">
-                    {columnCandidates.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                        <p className="text-sm text-slate-500 font-medium">Drop candidate here</p>
+            <div className="flex-1 overflow-x-auto p-4 lg:p-6 flex lg:gap-6 custom-scrollbar snap-x snap-mandatory pb-24 lg:pb-6">
+              {initialColumns.map(col => {
+                const columnCandidates = mockCandidates.filter(c => c.status === col.id);
+                // On mobile, only show the active stage
+                const isVisibleOnMobile = activeTab === "pipeline" || activeTab === col.id;
+                
+                return (
+                  <div 
+                    key={col.id} 
+                    className={`w-full lg:w-[320px] shrink-0 flex flex-col gap-4 snap-center transition-opacity duration-300 ${
+                      !isVisibleOnMobile ? "hidden lg:flex" : "flex"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between hidden lg:flex">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${col.color}`} aria-hidden="true" />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">{col.title}</h3>
+                        <span className="text-xs font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-full" aria-label={`${columnCandidates.length} candidates`}>{columnCandidates.length}</span>
                       </div>
-                    ) : (
-                      columnCandidates.map(candidate => (
-                        <div 
-                          key={candidate.id} 
-                          role="article"
-                          tabIndex={0}
-                          aria-label={`Candidate ${candidate.name}, ${candidate.role}`}
-                          className="bg-white/5 border border-white/10 rounded-2xl p-4 cursor-grab hover:bg-white/10 hover:border-white/20 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_30px_-10px_rgba(34,211,238,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 relative"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 shrink-0 rounded-xl bg-linear-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-sm font-bold text-white shadow-inner" aria-hidden="true">
-                                {candidate.avatar}
-                              </div>
-                              <div className="min-w-0 pr-6">
-                                <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate">{candidate.name}</h4>
-                                <p className="text-xs text-slate-300 truncate">{candidate.role}</p>
-                              </div>
-                            </div>
-                            <button aria-label="Drag candidate" className="text-slate-500 hover:text-slate-300 cursor-grab absolute right-4 top-4">
-                              <GripVertical className="h-4 w-4" />
-                            </button>
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              <button 
-                                aria-label={`Email ${candidate.name}`}
-                                title={`Email ${candidate.name}`}
-                                className="p-2 sm:p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                              >
-                                <Mail className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
-                              </button>
-                              <button 
-                                aria-label={`Schedule interview with ${candidate.name}`}
-                                title={`Schedule interview with ${candidate.name}`}
-                                className="p-2 sm:p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                              >
-                                <Calendar className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
-                              </button>
-                              <button 
-                                aria-label={`Message ${candidate.name}`}
-                                title={`Message ${candidate.name}`}
-                                className="p-2 sm:p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                              >
-                                <MessageSquare className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
-                              </button>
-                            </div>
-                            <span 
-                              aria-label={`AI Match Score: ${candidate.match}`}
-                              className="text-[10px] font-black text-green-400 bg-green-400/10 px-2 py-1 rounded-md border border-green-400/20 shrink-0"
-                            >
-                              AI Match: {candidate.match}
-                            </span>
-                          </div>
+                      <button 
+                        aria-label={`Column options for ${col.title}`}
+                        title={`Column options for ${col.title}`}
+                        className="text-slate-400 hover:text-white flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 rounded-md"
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar lg:pe-2 pb-4">
+                      {columnCandidates.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+                          <p className="text-sm text-slate-500 font-medium">No candidates yet</p>
                         </div>
-                      ))
-                    )}
-                    
-                    <button className="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl border border-dashed border-white/10 transition-colors shrink-0 mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500">
-                      <Plus className="h-4 w-4" aria-hidden="true" /> Add Candidate
-                    </button>
+                      ) : (
+                        columnCandidates.map(candidate => (
+                          <div 
+                            key={candidate.id} 
+                            role="article"
+                            tabIndex={0}
+                            aria-label={`Candidate ${candidate.name}, ${candidate.role}`}
+                            className="bg-white/5 border border-white/10 rounded-2xl p-4 cursor-grab hover:bg-white/10 hover:border-white/20 transition-all group hover:-translate-y-0.5 transform-gpu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 relative"
+                          >
+                            {/* Card Content ... */}
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-sm font-bold text-white" aria-hidden="true">
+                                  {candidate.avatar}
+                                </div>
+                                <div className="min-w-0 pr-6">
+                                  <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors truncate">{candidate.name}</h4>
+                                  <p className="text-xs text-slate-300 truncate">{candidate.role}</p>
+                                </div>
+                              </div>
+                              <button aria-label="Candidate options" className="text-slate-500 hover:text-slate-300 absolute right-4 top-4">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                              <div className="flex items-center gap-1">
+                                <button className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><Mail className="h-3.5 w-3.5" /></button>
+                                <button className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><MessageSquare className="h-3.5 w-3.5" /></button>
+                              </div>
+                              <span className="text-[10px] font-black text-green-400 bg-green-400/10 px-2 py-1 rounded-md border border-green-400/20">
+                                {candidate.match} Match
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      <button className="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/5 rounded-xl border border-dashed border-white/10 transition-colors shrink-0 mt-2">
+                        <Plus className="h-3.5 w-3.5" /> Add Candidate
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </GlassPanel>
         

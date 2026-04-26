@@ -1,7 +1,7 @@
 package jobfinder.controller;
 
 import jobfinder.model.dto.*;
-import jobfinder.servics.interfaces.AuthInterface;
+import jobfinder.services.interfaces.AuthInterface;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;

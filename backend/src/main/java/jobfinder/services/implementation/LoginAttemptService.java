@@ -1,4 +1,4 @@
-package jobfinder.servics.implemention;
+package jobfinder.services.implementation;
 
 import jobfinder.model.entity.User;
 import jobfinder.repository.UserRepository;

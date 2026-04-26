@@ -35,23 +35,23 @@ const itemVariants: Variants = {
 const trustStats = [
   { label: "Live Jobs Indexed", value: "12,480+", hint: "Updated every hour" },
   { label: "Average Match Quality", value: "98%", hint: "AI-assisted ranking" },
-  { label: "Search Response Time", value: "< 1s", hint: "Optimized API pipeline" },
+  { label: "Search Speed", value: "< 1s", hint: "Instant results" },
 ];
 
 const workflowSteps = [
   {
     title: "Smart Discovery",
-    text: "Search by role, location, and stack with precision filters that surface what actually matters.",
+    text: "Find the perfect role by searching by title, location, and tech stack with ease.",
     icon: Filter,
   },
   {
-    title: "Instant Evaluation",
-    text: "Compare salary ranges, posting freshness, and company fit in one clean visual workflow.",
+    title: "Instant Comparison",
+    text: "Compare salaries, requirements, and company culture in one clear view.",
     icon: BarChart3,
   },
   {
-    title: "Confident Application",
-    text: "Move from shortlist to application quickly with secure access and seamless session flow.",
+    title: "Apply with Confidence",
+    text: "Save your favorite jobs and apply quickly with our secure professional portal.",
     icon: ShieldCheck,
   },
 ];
@@ -59,25 +59,25 @@ const workflowSteps = [
 const highlightCards = [
   {
     title: "Lightning Search",
-    text: "Debounced query UX, race-safe requests, and fast render paths for smooth exploration.",
+    text: "Experience a fast, responsive search that helps you explore opportunities without delay.",
     icon: Zap,
     className: "lg:col-span-1",
   },
   {
-    title: "Freshness Filters",
-    text: "Filter by published date: 24h, week, month, and custom windows without backend spam.",
+    title: "Fresh Opportunities",
+    text: "Always see the latest listings with filters for the last 24 hours, week, or month.",
     icon: Clock3,
     className: "lg:col-span-1",
   },
   {
-    title: "Pro-Grade Security",
-    text: "JWT session handling with robust auth states and predictable fallback UX for edge cases.",
+    title: "Secure & Private",
+    text: "Your data and job search activity are protected with industry-standard security.",
     icon: ShieldCheck,
     className: "lg:col-span-1",
   },
   {
-    title: "Actionable Insights",
-    text: "Visual summaries, quality cues, and clearer listing metadata for better decision speed.",
+    title: "Expert Insights",
+    text: "Get a clear summary of job requirements and company stats to make better decisions.",
     icon: BarChart3,
     className: "lg:col-span-1",
   },
@@ -88,13 +88,13 @@ function FloatingParticles() {
 
   useEffect(() => {
     // Generate static random values once on client to prevent layout thrashing & hydration issues
-    const values = Array.from({ length: 30 }).map((_, i) => ({
-      size: Math.random() * 6 + 2,
+    const values = Array.from({ length: 12 }).map((_, i) => ({
+      size: Math.random() * 4 + 2,
       shape: i % 3 === 0 ? "50%" : i % 3 === 1 ? "0%" : "25%",
       delay: Math.random() * 5,
-      duration: Math.random() * 10 + 10,
-      ay: -Math.random() * 120 - 60,
-      ax: Math.random() * 40 - 20,
+      duration: Math.random() * 15 + 15, // Slower is smoother
+      ay: -Math.random() * 80 - 40,
+      ax: Math.random() * 30 - 15,
       l: Math.random() * 100,
       t: Math.random() * 100,
     }));
@@ -109,7 +109,7 @@ function FloatingParticles() {
       {particlesValues.map((val, i) => (
         <motion.div
           key={i}
-          className="absolute border border-cyan-400/20 bg-cyan-400/5 backdrop-blur-sm will-change-transform"
+          className="absolute border border-cyan-400/10 bg-cyan-400/5 will-change-transform transform-gpu"
           style={{
             width: val.size + "px",
             height: val.size + "px",
@@ -347,7 +347,7 @@ export function ImmersiveHero() {
 
           <motion.h1
             variants={itemVariants}
-            className="hero-title mt-4 max-w-5xl text-6xl font-extrabold leading-[1.1] tracking-tight sm:text-7xl lg:text-[5.5rem] bg-gradient-to-br from-white via-cyan-50 to-slate-400 bg-clip-text text-transparent pb-2"
+            className="hero-title mt-4 max-w-5xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-7xl lg:text-[5.5rem] bg-gradient-to-br from-white via-cyan-50 to-slate-400 bg-clip-text text-transparent pb-2 px-2"
             style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
           >
             Discover Your <br className="hidden sm:block" />

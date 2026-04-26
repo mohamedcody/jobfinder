@@ -1,4 +1,4 @@
-package jobfinder.servics.interfaces;
+package jobfinder.services.interfaces;
 
 import jakarta.validation.constraints.NotBlank;
 import jobfinder.model.dto.*;

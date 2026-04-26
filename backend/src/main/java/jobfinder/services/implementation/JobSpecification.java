@@ -1,4 +1,4 @@
-package jobfinder.servics.implemention;
+package jobfinder.services.implementation;
 
 import jobfinder.model.entity.JobEntity;
 import jobfinder.model.dto.JobFilterRequest;
@@ -50,6 +50,7 @@ public class JobSpecification {
                 ));
             }
 
+            query.orderBy(criteriaBuilder.desc(root.get("id")));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }

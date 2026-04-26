@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,33 +42,30 @@ const authTabs = (
 
 const authFooterMark = (
   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-600 text-xs font-black text-white shadow-lg shadow-slate-900/20">
-    N
+    JF
   </div>
 );
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const session = useAuthSession();
-  const [lockUntil, setLockUntil] = useState<number | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const raw = window.sessionStorage.getItem(LOGIN_LOCK_UNTIL_KEY);
-    if (!raw) {
-      return null;
-    }
-
-
-    const parsed = Number(raw);
-    if (!Number.isNaN(parsed) && parsed > getNowMs()) {
-      return parsed;
-    }
-
-    window.sessionStorage.removeItem(LOGIN_LOCK_UNTIL_KEY);
-    return null;
-  });
+  
+  const [lockUntil, setLockUntil] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => getNowMs());
+
+  useEffect(() => {
+    const raw = window.sessionStorage.getItem(LOGIN_LOCK_UNTIL_KEY);
+    if (raw) {
+      const parsed = Number(raw);
+      if (!Number.isNaN(parsed) && parsed > getNowMs()) {
+        setLockUntil(parsed);
+      } else {
+        window.sessionStorage.removeItem(LOGIN_LOCK_UNTIL_KEY);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!lockUntil) {
@@ -122,7 +119,7 @@ export default function LoginPage() {
       }
 
       toast.success(response.message || "Welcome back!");
-      router.push("/jobs");
+      router.push(callbackUrl);
       router.refresh();
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 423) {
@@ -193,4 +190,3 @@ export default function LoginPage() {
     </AuthShell>
   );
 }
-
