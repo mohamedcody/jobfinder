@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+
     @Value("${jwt.secret}")
     private  String secret;
+
     @Value("${jwt.expiration}")
     private  long  jwtExpiration;
 
@@ -79,7 +81,7 @@ public class JwtService {
 
 
 
-    // التعديل في JwtService.java
+    // Parse and return all claims from the token.
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())

@@ -82,7 +82,7 @@ public class AuthService implements AuthInterface {
         User user = userRepository.findByEmailOrUsername(request.identifier())
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_CREDENTIALS));
 
-        // التأكد من حالة الحساب والـ Lockout
+        // Check the account status and lockout state.
         if (!user.isEnabled()) {
             throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
         }
@@ -96,15 +96,15 @@ public class AuthService implements AuthInterface {
                     new UsernamePasswordAuthenticationToken(request.identifier(), request.password())
             );
 
-            // لو نجح: نصفر المحاولات باستخدام السيرفس الخارجي لضمان الحفظ
+            // If authentication succeeds, reset the attempts through the external service to ensure persistence.
             loginAttemptService.resetAttempts(user.getEmail());
             user.setLastLoginAt(LocalDateTime.now());
 
         } catch (BadCredentialsException e) {
-            // هنا المشكلة اتحلت: بننادي الترانزاكشن المنفصلة
+            // The issue is solved here: we call the separate transaction.
             loginAttemptService.updateFailedAttempts(user.getEmail());
 
-            // الترانزاكشن الكبيرة هيحصلها Rollback هنا، بس الصغيرة (المحاولات) خلاص اتسيفت!
+            // The main transaction will roll back here, but the smaller one (attempt tracking) is already saved.
             throw new BaseException(ErrorCode.INVALID_CREDENTIALS);
         }
 
@@ -116,33 +116,33 @@ public class AuthService implements AuthInterface {
     @Transactional // Main transaction for account verification
     public void verifyAccount(String email, String otpCode) {
         if (otpCode != null) otpCode = otpCode.trim();
-        // Find user by email or throw error if not found
+        // Find the user by email or throw an error if not found.
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-        // Check if user is already verified to avoid redundant work
+        // Check whether the user is already verified to avoid redundant work.
         if (user.isEnabled()) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "User is already enabled");
         }
 
-        // Always verify against the latest unused OTP
+        // Always verify against the latest unused OTP.
         OtpCode otp = otpCodeRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
 
-        // Check if the OTP has expired
+        // Check whether the OTP has expired.
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
             otp.setUsed(true);
             otpCodeRepository.saveAndFlush(otp);
             throw new BaseException(ErrorCode.OTP_EXPIRED, "OTP expired. Please request a new OTP code.");
         }
 
-        // CRITICAL FIX: If OTP is wrong, handle failure AND throw exception
+        // Critical fix: if the OTP is wrong, handle the failure and throw an exception.
         if (!otp.getCode().equals(otpCode)) {
             otpService.handleFailedAttempt(otp.getId());
             throw new BaseException(ErrorCode.INVALID_OTP, "The verification code you entered is incorrect.");
         }
 
-        // If the code is correct, enable the user and mark OTP as used
+        // If the code is correct, enable the user and mark the OTP as used.
         user.setEnabled(true);
         user.setEmailVerified(true);
         otp.setUsed(true);
@@ -176,12 +176,12 @@ public class AuthService implements AuthInterface {
         userRepository.findByEmail(request.email())
                 .ifPresentOrElse(
                         user -> {
-                            // 2. لو موجود: بننادي الميثود اللي بتعمل الشغل التقيل (Transactional)
+                            // 2. If it exists, call the method that performs the heavy transactional work.
                             saveAndSendOtpInterna(user);
                             log.info("OTP sent for password reset: {}", request.email());
                         },
                         () -> {
-                            // 3. لو مش موجود: بنسجل لوج وبس (سرعة الضوء)
+                            // 3. If it does not exist, just log the event and move on.
                             log.warn("Forget password attempt for non-existent email: {}", request.email());
                         }
                 );

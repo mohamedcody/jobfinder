@@ -14,6 +14,7 @@ import {
 import { JobsNavbar } from "@/components/jobs/jobs-navbar";
 import { useAuthSession } from "@/lib/auth/use-auth-session";
 import { AppLayout } from "@/components/layout/app-layout";
+import { Button } from "@/components/ui/button";
 
 const JobsList = lazy(() =>
   import("@/components/jobs/jobs-list").then((module) => ({ default: module.JobsList })),
@@ -140,12 +141,8 @@ export default function JobsPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <button className="btn-glow-primary px-5 py-2.5 text-xs font-bold rounded-xl">
-                  Quick Apply
-                </button>
-                <button className="px-5 py-2.5 text-xs font-bold rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 transition-all">
-                  Dismiss
-                </button>
+                <Button variant="primary" size="sm">Quick Apply</Button>
+                <Button variant="ghost" size="sm">Dismiss</Button>
               </div>
             </div>
           </div>

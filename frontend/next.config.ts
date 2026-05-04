@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
         destination: `${backendOrigin}/api/auth/:path*`,
       },
       {
+        source: "/api/users/:path*",
+        destination: `${backendOrigin}/api/users/:path*`,
+      },
+      {
         source: "/api/jobs/:path*",
         destination: `${backendOrigin}/api/jobs/:path*`,
       },

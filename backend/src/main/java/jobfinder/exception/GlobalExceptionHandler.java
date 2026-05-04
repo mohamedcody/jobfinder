@@ -30,13 +30,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        // بنجمع كل أخطاء الحقول ونحطها في رسالة واحدة واضحة
+        // Collect all field errors and combine them into one clear message.
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode("ERR_VALIDATION_001") // كود خاص بأخطاء المدخلات
+                .errorCode("ERR_VALIDATION_001") // Dedicated error code for input validation errors.
                 .message(errorMessage)
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    // 3. دي "حائط الصد": لو حصل أي خطأ غير متوقع في السيستم (NullPointer مثلاً)
+    // 3. This is the last line of defense: handles any unexpected system error (for example, a NullPointerException).
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
         ErrorResponse errorResponse = ErrorResponse.builder()

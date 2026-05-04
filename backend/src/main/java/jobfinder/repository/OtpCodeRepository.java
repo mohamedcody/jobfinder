@@ -18,19 +18,19 @@ import java.util.Optional;
 @Repository
 public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
 
-    // 1. الميثود دي بتجيب آخر كود فعال وبتقفل السطر في الداتابيز (Lock)
-    // عشان لو فيه كذا Request في نفس اللحظة ميبوظوش عداد المحاولات
+    // 1. This method fetches the latest active OTP and locks the row in the database.
+    // This prevents concurrent requests from corrupting the attempt counter.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT o FROM OtpCode o WHERE o.user = :user AND o.used = false ORDER BY o.createdAt DESC")
     Optional<OtpCode> findLatestValidOtpWithLock(@Param("user") User user);
 
-    // 2. ميثود المسح الشامل لكل أكواد اليوزر
-    // الـ @Modifying مهمة جداً لأنها بتعرف سبرينج إن دي عملية Update/Delete مش Select
+    // 2. Method for deleting all OTP codes for a user.
+    // @Modifying is important because it tells Spring this is an Update/Delete operation, not a Select.
     @Modifying
     @Query("DELETE FROM OtpCode o WHERE o.user = :user")
     void deleteAllByUser(@Param("user") User user);
 
-    // 3. ميثود إبطال الأكواد القديمة (لو حبيت تستخدمها في الـ Register)
+    // 3. Method for deactivating old OTP codes (if you want to use it during registration).
     @Modifying
     @Query("UPDATE OtpCode o SET o.used = true WHERE o.user = :user AND o.used = false")
     void deactivateOldOtps(@Param("user") User user);
@@ -51,7 +51,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
 
 
 
-    // عشان يتوافق مع سطر 203 في الـ AuthService اللي محتاج لستة يعمل عليها forEach
+    // This matches line 203 in AuthService, which expects a list to iterate over with forEach.
     List<OtpCode> findByUserAndUsedFalse(User user);
 
     /**
@@ -60,8 +60,8 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
     Optional<OtpCode> findTopByUserAndUsedFalseOrderByCreatedAtDesc(User user);
 
 
-    // 2. التعديل الثاني: غير النوع هنا لـ Optional
-    // عشان يتوافق مع سطر 189 في الـ AuthService اللي بينادي .orElseThrow()
+    // 2. Second adjustment: change the return type here to Optional.
+    // This matches line 189 in AuthService, which calls .orElseThrow().
     Optional<OtpCode> findByUserAndCodeAndUsedFalse(User user, String code);
 
 }

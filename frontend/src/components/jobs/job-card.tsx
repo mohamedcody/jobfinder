@@ -15,12 +15,12 @@ import {
   Bot
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { JobResponseDTO } from "@/lib/jobs/types";
+import { Job } from "@/lib/jobs/types";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import { formatRelativeTime } from "@/lib/jobs/time-utils";
 
 interface JobCardProps {
-  job: JobResponseDTO;
+  job: Job;
 }
 
 export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
@@ -116,13 +116,6 @@ export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
           <MapPin className="h-4 w-4 text-slate-600" />
           <span className="text-xs font-bold text-slate-300">{job.location || "Remote"}</span>
         </div>
-        {job.salaryRange && (
-          <div className="flex items-center gap-2 bg-emerald-500/5 px-3 py-1.5 rounded-xl border border-emerald-500/10">
-            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-              {job.salaryRange}
-            </span>
-          </div>
-        )}
         <div className="flex items-center gap-2">
           <Clock3 className="h-4 w-4 text-slate-600" />
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -134,7 +127,7 @@ export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
       {/* 3. AI Intelligence Section */}
       <div className="space-y-4">
         <p className="line-clamp-2 text-sm leading-relaxed text-slate-400 font-medium">
-          {job.descriptionText || "Advanced role analytics available via JobBot platform."}
+          {job.description || "Advanced role analytics available via JobBot platform."}
         </p>
 
         <div className="pt-2 flex flex-wrap gap-3">

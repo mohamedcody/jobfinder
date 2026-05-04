@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Button } from "@/components/ui/button"; // Import the new Button component
 
 interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
@@ -9,10 +10,12 @@ interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function SubmitButton({ isLoading, children, disabled, className, ...props }: SubmitButtonProps) {
   return (
-    <button
+    <Button
       type="submit"
+      variant="primary"
+      size="lg"
       disabled={disabled || isLoading}
-      className={`btn-glow-primary btn-shine relative w-full overflow-hidden rounded-xl px-4 py-4 text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 mt-2 ${className ?? ""}`}
+      className={`w-full mt-2 ${className ?? ""}`}
       {...props}
     >
       {isLoading ? (
@@ -25,6 +28,6 @@ export function SubmitButton({ isLoading, children, disabled, className, ...prop
           {children}
         </span>
       )}
-    </button>
+    </Button>
   );
 }

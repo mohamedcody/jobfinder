@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService {
+public class  EmailService {
 
 
 
@@ -23,9 +23,10 @@ public class EmailService {
                 message.setText("Your activation code is:   " + code);
                 mailSender.send(message);
             } catch (Exception e) {
-                System.err.println("Error sending email: " + e.getMessage()); // هيطبعلك السبب هنا
+                System.err.println("Error sending email: " + e.getMessage()); // This prints the root cause here.
             }
         }
+
 }
 
 

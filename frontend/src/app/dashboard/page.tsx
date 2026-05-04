@@ -34,9 +34,9 @@ const FEATURED_JOBS = [
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState([
-    { id: 1, label: "Update Resume", done: true },
+    { id: 1, label: "Update Resume", done: false },
     { id: 2, label: "Apply to 3 Jobs", done: false },
-    { id: 3, label: "Refine Tech Stack", done: true },
+    { id: 3, label: "Refine Tech Stack", done: false },
     { id: 4, label: "Check Messages", done: false },
   ]);
 

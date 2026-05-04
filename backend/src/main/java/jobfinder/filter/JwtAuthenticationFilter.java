@@ -55,10 +55,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
 
-        // 5️⃣ لو في username ومفيش حد مسجل دخول لسه
+        // 5️⃣ If there is a username and no user is authenticated yet
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // 6️⃣ جيب بيانات المستخدم من الـ Database
+            // 6️⃣ Load the user details from the database
             UserDetails userDetails;
             try {
                 userDetails = this.userDetailsService.loadUserByUsername(userEmail);
@@ -67,10 +67,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 7️⃣ تحقق من صحة الـ Token
+            // 7️⃣ Validate the token
             if (jwtService.isTokenValid(jwt, userDetails)) {
 
-                // 8️⃣ اعمل Authentication object
+                // 8️⃣ Create the authentication object
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -81,7 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                // 9️⃣ حط المستخدم في الـ Security Context (يعني سجل دخوله)
+                // 9️⃣ Put the user into the Security Context (in other words, mark them as authenticated)
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

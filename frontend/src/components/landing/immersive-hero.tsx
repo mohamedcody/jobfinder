@@ -5,6 +5,7 @@ import { motion, useMotionValue, useSpring, useTransform, type Variants } from "
 import { BarChart3, Zap, ArrowRight, ShieldCheck, ChevronDown, UserCircle2, BriefcaseBusiness, Sparkles, Filter, Clock3, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useAuthSession } from "@/lib/auth/use-auth-session";
+import { Button } from "@/components/ui/button";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, scale: 0.98, filter: "blur(14px)" },
@@ -333,7 +334,7 @@ export function ImmersiveHero() {
         <AuthActions />
       </nav>
 
-      <section className="relative z-10 flex flex-col pt-40 pb-20 px-4 sm:px-6 lg:px-8 mx-auto max-w-6xl items-center text-center">
+      <section className="relative z-10 flex flex-col pt-24 pb-20 px-4 sm:px-6 lg:px-8 mx-auto max-w-6xl items-center text-center">
         <motion.div
           className="mx-auto flex w-full flex-col items-center text-center relative"
           variants={containerVariants}
@@ -362,25 +363,29 @@ export function ImmersiveHero() {
             intelligent matching, and crystal-clear workflows help you land the role you deserve.
           </motion.p>
 
-          <motion.div variants={itemVariants} className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:gap-6 relative z-20">
-            <MagneticCta />
-
-            <div className="flex items-center gap-4">
-              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
-                <Link href="/login" className="px-8 py-4 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40 text-white font-bold transition-all backdrop-blur-md">
-                  Login
-                </Link>
-              </motion.div>
-
-              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
-                <Link href="/register" className="px-8 py-4 rounded-2xl border border-white/10 bg-transparent hover:bg-white/5 hover:border-white/20 text-slate-300 hover:text-white font-bold transition-all backdrop-blur-md">
-                  Register
-                </Link>
-              </motion.div>
-            </div>
+          <motion.div variants={itemVariants} className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:gap-4 relative z-20">
+            <Button
+              variant="primary"
+              size="lg"
+              className="group"
+              asChild
+            >
+              <Link href="/jobs">
+                Browse Jobs <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              asChild
+            >
+              <Link href="/register">
+                Register
+              </Link>
+            </Button>
           </motion.div>
 
-          <motion.p variants={itemVariants} className="mt-10 text-sm text-slate-400 font-medium">
+          <motion.p variants={itemVariants} className="mt-8 text-sm text-slate-400 font-medium">
             No signup required to explore listings. Start free in seconds.
           </motion.p>
         </motion.div>

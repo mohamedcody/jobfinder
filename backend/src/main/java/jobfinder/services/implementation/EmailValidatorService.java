@@ -17,14 +17,14 @@ public class EmailValidatorService {
         try {
             String domain = email.substring(email.indexOf("@") + 1);
 
-            // 1. Regex سريع كخط دفاع أول (مش بيسحب وقت)
+            // 1. A fast regex check as the first line of defense.
             if (domain.isBlank() || !domain.contains(".")) return false;
 
-            // 2. إعداد الـ DNS Lookup مع وضع Timeout (مهلة زمنية)
+            // 2. Set up DNS lookup with a timeout.
             Hashtable<String, String> env = new Hashtable<>();
             env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
             
-            // مهم جداً: لو الـ DNS مردش في خلال ثانيتين، اقطع الاتصال ومتعطلش السيرفر
+            // Very important: if DNS does not respond within two seconds, stop the request and avoid blocking the server.
             env.put("com.sun.jndi.dns.timeout.initial", "2000"); 
             env.put("com.sun.jndi.dns.timeout.retries", "1");
 

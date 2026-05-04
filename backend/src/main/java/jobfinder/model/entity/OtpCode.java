@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "otp_codes", indexes = {
-        // تحسين الـ Index ليشمل used عشان سرعة البحث في الـ Service
         @Index(name = "idx_otp_user_code_status", columnList = "user_id, code, used")
 })
 @Getter
@@ -34,7 +33,7 @@ public class OtpCode {
 
     private boolean used = false;
 
-    @Builder.Default // مهمة جداً عشان الـ Builder يشوف الـ 0
+    @Builder.Default // Important so the Builder preserves the default 0 value.
     @Column(nullable = false)
     private Integer attempts = 0;
 

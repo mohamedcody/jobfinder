@@ -37,7 +37,7 @@ export default function EmployerATSPage() {
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             <Button variant="default" className="w-full sm:w-auto py-3 sm:py-2">Share Job</Button>
-            <Button variant="neon" className="w-full sm:w-auto py-3 sm:py-2">Edit Posting</Button>
+            <Button variant="primary" className="w-full sm:w-auto py-3 sm:py-2">Edit Posting</Button>
           </div>
         </header>
 

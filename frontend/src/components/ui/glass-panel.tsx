@@ -9,7 +9,7 @@ const glassPanelVariants = cva(
       variant: {
         default: "",
         interactive: "hover:bg-white/10 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(34,211,238,0.15)] cursor-pointer hover:-translate-y-0.5",
-        premium: "border-violet-500/30 bg-linear-to-br from-violet-900/20 to-cyan-900/20 shadow-[0_0_20px_rgba(160,32,240,0.15)]",
+        premium: "border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-cyan-900/20 shadow-[0_0_20px_rgba(160,32,240,0.15)]",
       },
       padding: {
         none: "",

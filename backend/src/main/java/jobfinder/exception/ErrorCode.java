@@ -19,22 +19,22 @@ public enum ErrorCode {
     ACCOUNT_LOCKED("ERR_407", "Account is locked due to too many failed attempts. Try again later.", HttpStatus.LOCKED),
 
     // ✅ Email Verification (ERR_410 - ERR_420)
-    EMAIL_NOT_VERIFIED("ERR_410", "Email has not been verified - البريد الإلكتروني لم يتم التحقق منه", HttpStatus.FORBIDDEN),
-    VERIFICATION_CODE_SENT("ERR_411", "Verification code sent to your email - تم إرسال كود التحقق إلى بريدك الإلكتروني", HttpStatus.OK),
-    VERIFICATION_CODE_EXPIRED("ERR_412", "Verification code has expired - انتهت صلاحية كود التحقق", HttpStatus.BAD_REQUEST),
-    INVALID_VERIFICATION_CODE("ERR_413", "Invalid verification code - كود التحقق غير صحيح", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_VERIFIED("ERR_410", "Email has not been verified", HttpStatus.FORBIDDEN),
+    VERIFICATION_CODE_SENT("ERR_411", "Verification code sent to your email", HttpStatus.OK),
+    VERIFICATION_CODE_EXPIRED("ERR_412", "Verification code has expired", HttpStatus.BAD_REQUEST),
+    INVALID_VERIFICATION_CODE("ERR_413", "Invalid verification code", HttpStatus.BAD_REQUEST),
     MAX_OTP_ATTEMPTS_REACHED("ERR_436", "Maximum OTP attempts reached", HttpStatus.TOO_MANY_REQUESTS),
-    EMAIL_VERIFIED_SUCCESSFULLY("ERR_414", "Email verified successfully - تم التحقق من البريد الإلكتروني بنجاح", HttpStatus.OK),
+    EMAIL_VERIFIED_SUCCESSFULLY("ERR_414", "Email verified successfully", HttpStatus.OK),
 
     // 🔒 Password & Security (ERR_430 - ERR_450)
-    WEAK_PASSWORD("ERR_430", "Password is too weak - كلمة المرور ضعيفة جداً", HttpStatus.BAD_REQUEST),
-    PASSWORD_TOO_COMMON("ERR_431", "This password is too common - كلمة المرور شائعة جداً", HttpStatus.BAD_REQUEST),
-    PASSWORD_ALREADY_USED("ERR_432", "Password has been used before - تم استخدام كلمة المرور سابقاً", HttpStatus.BAD_REQUEST),
-    PASSWORDS_DO_NOT_MATCH("ERR_433", "Passwords do not match - كلمات المرور غير متطابقة", HttpStatus.BAD_REQUEST),
-    INVALID_OTP("ERR_434", "Invalid or wrong OTP code - كود OTP غير صحيح", HttpStatus.BAD_REQUEST),
-    OTP_EXPIRED("ERR_435", "OTP code has expired - انتهت صلاحية كود OTP", HttpStatus.BAD_REQUEST),
-    MAX_OTP_ATTEMPTS_EXCEEDED("ERR_436", "Maximum OTP attempts exceeded - تجاوزت الحد الأقصى لمحاولات OTP", HttpStatus.TOO_MANY_REQUESTS),
-    PROVIDE_EMAIL("ERR_437", "Please provide an email address - يرجى تقديم عنوان بريد إلكتروني", HttpStatus.BAD_REQUEST),
+    WEAK_PASSWORD("ERR_430", "Password is too weak", HttpStatus.BAD_REQUEST),
+    PASSWORD_TOO_COMMON("ERR_431", "This password is too common", HttpStatus.BAD_REQUEST),
+    PASSWORD_ALREADY_USED("ERR_432", "Password has been used before", HttpStatus.BAD_REQUEST),
+    PASSWORDS_DO_NOT_MATCH("ERR_433", "Passwords do not match", HttpStatus.BAD_REQUEST),
+    INVALID_OTP("ERR_434", "Invalid or wrong OTP code", HttpStatus.BAD_REQUEST),
+    OTP_EXPIRED("ERR_435", "OTP code has expired", HttpStatus.BAD_REQUEST),
+    MAX_OTP_ATTEMPTS_EXCEEDED("ERR_436", "Maximum OTP attempts exceeded", HttpStatus.TOO_MANY_REQUESTS),
+    PROVIDE_EMAIL("ERR_437", "Please provide an email address", HttpStatus.BAD_REQUEST),
 
     // 💼 Business Errors (ERR_101 - ERR_150)
     JOB_NOT_FOUND("ERR_101", "Job not found", HttpStatus.NOT_FOUND),

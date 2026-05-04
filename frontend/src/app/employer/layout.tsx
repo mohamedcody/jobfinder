@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react";
 import { EmployerSidebar } from "@/components/employer/employer-sidebar";
 import { motion } from "framer-motion";

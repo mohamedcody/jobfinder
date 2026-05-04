@@ -258,7 +258,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        <MobileBottomNav items={menuItems} pathname={pathname} />
+        <MobileBottomNav items={menuItems} />
       </div>
     </div>
   );

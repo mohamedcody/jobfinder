@@ -103,12 +103,8 @@ export const useJobsSearch = () => {
     void loadJobs(toJobFilterParams(appliedFilters));
   }, [appliedFilters, loadJobs]);
 
-  const handleSearch = (e?: React.FormEvent) => {
-    // Safely check if 'e' is a React event with preventDefault
-    if (e && typeof e.preventDefault === "function") {
-      e.preventDefault();
-    }
-    setAppliedFilters(draftFilters);
+  const handleSearch = (filters: JobSearchFormState) => {
+    setAppliedFilters(filters);
   };
 
   const handleClearAll = useCallback(() => {
