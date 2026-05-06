@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Controller for User Profile Management
  * Handles GET and PUT requests for the profile.
+ *
  * All endpoints are protected by JWT authentication and authorization.
  */
 @RestController
@@ -33,6 +34,7 @@ public class UserController {
     /**
      * GET /api/users/profile
      * Get the profile data for the current user.
+     *
      * @return a UserProfileResponse containing all profile data
      */
     @Operation(
@@ -65,8 +67,10 @@ public class UserController {
     /**
      * PUT /api/users/profile
      * Update the profile data for the current user.
+     *
      * Supports partial updates.
      * - You can send only one field and leave the rest unchanged.
+     *
      * @param request the update data (all fields are optional)
      * @return a UserProfileResponse containing the updated data
      */
@@ -106,6 +110,7 @@ public class UserController {
      * GET /api/users/profile/{userId}
      * Get the profile data for a specific user.
      * (For admins or authorized users.)
+     *
      * @param userId the user ID whose profile data should be fetched
      * @return UserProfileResponse
      */

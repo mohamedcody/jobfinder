@@ -1,5 +1,4 @@
 package jobfinder.model.entity;
-
 import jakarta.persistence.*;
 import lombok.*;
 

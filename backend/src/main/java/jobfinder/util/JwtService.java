@@ -81,7 +81,7 @@ public class JwtService {
 
 
 
-    // Parse and return all claims from the token.
+    // التعديل في JwtService.java
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())

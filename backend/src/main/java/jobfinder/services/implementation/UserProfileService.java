@@ -94,4 +94,5 @@ public class UserProfileService implements UserProfileInterface {
                 .updatedAt(p.getUpdatedAt())
                 .build();
     }
+
 }

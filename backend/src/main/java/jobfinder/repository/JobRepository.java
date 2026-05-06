@@ -21,4 +21,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
 
     List<JobEntity> findFirst11ByIdGreaterThanOrderByIdAsc(Long id);
 
+
+
+
+
 }

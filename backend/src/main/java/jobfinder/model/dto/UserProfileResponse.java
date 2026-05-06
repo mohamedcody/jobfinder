@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * Response DTO for User Profile
- * Use this DTO when sending profile data to the frontend.
+ * استخدم هذا الـ DTO عند إرسال بيانات البروفايل للـ Frontend
  */
 @Data
 @NoArgsConstructor

@@ -33,7 +33,7 @@ public class OtpCode {
 
     private boolean used = false;
 
-    @Builder.Default // Important so the Builder preserves the default 0 value.
+    @Builder.Default // مهمة جداً عشان الـ Builder يشوف الـ 0
     @Column(nullable = false)
     private Integer attempts = 0;
 
