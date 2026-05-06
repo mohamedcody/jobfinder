@@ -28,8 +28,10 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -120,8 +122,18 @@ public class JobScraperService implements JobInterface {
         try {
             log.info("💾 Attempting to save {} jobs to the database...", jobList.size());
 
+
+            List<String> links = jobList.stream()
+                    .map(JobResponseDTO::getLink)
+                    .toList();
+            List<String> existingLinks = jobRepository.findExistingLinks(links);
+
+            Set<String> existingSet = new HashSet<>(existingLinks);
+
+
             List<JobEntity> entities = jobList.stream()
-                    .filter(dto -> dto.getLink() != null && !jobRepository.existsByJobUrl(dto.getLink()))
+                    .filter(dto -> dto.getLink() != null
+                            && !existingSet.contains(dto.getLink()))
                     .map((JobResponseDTO dto) -> {
                         CompanyEntity company = companyRepository.findByName(dto.getCompanyName())
                                 .orElseGet(() -> companyRepository.save(
