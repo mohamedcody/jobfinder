@@ -19,7 +19,9 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
 
     boolean existsByJobUrl(String jobUrl );
 
-    List<JobEntity> findFirst11ByIdGreaterThanOrderByIdAsc(Long id);
+
+    @Query("select j.jobUrl from JobEntity j where j.jobUrl in:Links")
+     List<String> findExistingLinks(@Param("jobUrls") List<String> Links);
 
 
 
