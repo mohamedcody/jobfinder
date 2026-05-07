@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jobfinder.model.dto.UpdateUserProfileRequest;
-import jobfinder.model.dto.UserProfileResponse;
+import jobfinder.model.dto.UserProfileResponseDto;
 import jobfinder.services.interfaces.UserProfileInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class UserController {
      * GET /api/users/profile
      * Get the profile data for the current user.
      *
-     * @return a UserProfileResponse containing all profile data
+     * @return a UserProfileResponseDto containing all profile data
      */
     @Operation(
             summary = "Get my profile",
@@ -45,7 +45,7 @@ public class UserController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Profile fetched successfully",
-                    content = @Content(schema = @Schema(implementation = UserProfileResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserProfileResponseDto.class))
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -58,9 +58,9 @@ public class UserController {
     })
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserProfileResponse> getMyProfile() {
+    public ResponseEntity<UserProfileResponseDto> getMyProfile() {
         log.info("User requested their profile data");
-        UserProfileResponse profile = userProfileService.getMyProfile();
+        UserProfileResponseDto profile = userProfileService.getMyProfile();
         return ResponseEntity.ok(profile);
     }
 
@@ -72,7 +72,7 @@ public class UserController {
      * - You can send only one field and leave the rest unchanged.
      *
      * @param request the update data (all fields are optional)
-     * @return a UserProfileResponse containing the updated data
+     * @return a UserProfileResponseDto containing the updated data
      */
     @Operation(
             summary = "Update my profile",
@@ -82,7 +82,7 @@ public class UserController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Profile updated successfully",
-                    content = @Content(schema = @Schema(implementation = UserProfileResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserProfileResponseDto.class))
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -99,10 +99,10 @@ public class UserController {
     })
     @PutMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserProfileResponse> updateMyProfile(
+    public ResponseEntity<UserProfileResponseDto> updateMyProfile(
             @Valid @RequestBody UpdateUserProfileRequest request) {
         log.info("User requested to update their profile");
-        UserProfileResponse updatedProfile = userProfileService.updateMyProfile(request);
+        UserProfileResponseDto updatedProfile = userProfileService.updateMyProfile(request);
         return ResponseEntity.ok(updatedProfile);
     }
 
@@ -112,7 +112,7 @@ public class UserController {
      * (For admins or authorized users.)
      *
      * @param userId the user ID whose profile data should be fetched
-     * @return UserProfileResponse
+     * @return UserProfileResponseDto
      */
     @Operation(
             summary = "Get a specific user's profile",
@@ -122,7 +122,7 @@ public class UserController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Profile fetched successfully",
-                    content = @Content(schema = @Schema(implementation = UserProfileResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserProfileResponseDto.class))
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -139,9 +139,9 @@ public class UserController {
     })
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long userId) {
+    public ResponseEntity<UserProfileResponseDto> getUserProfile(@PathVariable Long userId) {
         log.info("Fetching profile for user: {}", userId);
-        UserProfileResponse profile = userProfileService.getUserProfile(userId);
+        UserProfileResponseDto profile = userProfileService.getUserProfile(userId);
         return ResponseEntity.ok(profile);
     }
 }

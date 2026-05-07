@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 
 /**
  * Response DTO for User Profile
- * استخدم هذا الـ DTO عند إرسال بيانات البروفايل للـ Frontend
+ * Use this DTO when sending profile data to the frontend.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserProfileResponse {
+public class UserProfileResponseDto {
 
     @JsonProperty("id")
     private Long id;

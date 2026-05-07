@@ -1,32 +1,32 @@
 package jobfinder.services.interfaces;
 
 import jobfinder.model.dto.UpdateUserProfileRequest;
-import jobfinder.model.dto.UserProfileResponse;
+import jobfinder.model.dto.UserProfileResponseDto;
 
 /**
  * Interface for User Profile Service
- * يعرّف الوظائف المتاحة للتعامل مع بيانات البروفايل
+ * Defines the available operations for handling profile data.
  */
 public interface UserProfileInterface {
 
     /**
-     * الحصول على بيانات البروفايل للمستخدم الحالي
-     * @return بيانات البروفايل
+     * Get the current user's profile data.
+     * @return the profile data
      */
-    UserProfileResponse getMyProfile();
+    UserProfileResponseDto getMyProfile();
 
     /**
-     * تحديث بيانات البروفايل للمستخدم الحالي
-     * @param request بيانات التحديث
-     * @return البروفايل المحدّث
+     * Update the current user's profile data.
+     * @param request the update payload
+     * @return the updated profile
      */
-    UserProfileResponse updateMyProfile(UpdateUserProfileRequest request);
+    UserProfileResponseDto updateMyProfile(UpdateUserProfileRequest request);
 
     /**
-     * الحصول على بيانات البروفايل لمستخدم معين (للإداريين فقط)
-     * @param userId معرف المستخدم
-     * @return بيانات البروفايل
+     * Get a specific user's profile data (admins only).
+     * @param userId the user identifier
+     * @return the profile data
      */
-    UserProfileResponse getUserProfile(Long userId);
+    UserProfileResponseDto getUserProfile(Long userId);
 }
 

@@ -15,12 +15,12 @@ public class AuthGraphQLController {
     private final AuthInterface authService;
 
     @MutationMapping
-    public AuthResponse register(@Argument RegisterRequest input) {
+    public AuthResponseDto register(@Argument RegisterRequest input) {
         return authService.register(input);
     }
 
     @MutationMapping
-    public AuthResponse login(@Argument LoginRequest input) {
+    public AuthResponseDto login(@Argument LoginRequest input) {
         return authService.login(input);
     }
 

@@ -58,6 +58,7 @@ export function JobsList() {
         error={error}
         stats={stats}
         activeChips={activeChips}
+        searchTerm={appliedFilters.title}
         onRetrySearch={handleRetrySearch}
         onLoadMore={handleLoadMore}
         onRemoveFilter={handleRemoveFilter}

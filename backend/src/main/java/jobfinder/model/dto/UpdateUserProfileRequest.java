@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Request DTO for updating User Profile
- * استخدم هذا الـ DTO عند تحديث بيانات البروفايل
- * كل الحقول اختيارية (Optional) لتسهيل التحديثات الجزئية
+ * Use this DTO when updating profile data.
+ * All fields are optional to support partial updates.
  */
 @Data
 @NoArgsConstructor

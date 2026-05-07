@@ -3,7 +3,7 @@ package jobfinder.services.implementation;
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.UpdateUserProfileRequest;
-import jobfinder.model.dto.UserProfileResponse;
+import jobfinder.model.dto.UserProfileResponseDto;
 import jobfinder.model.entity.User;
 import jobfinder.model.entity.UserProfile;
 import jobfinder.repository.UserProfileRepository;
@@ -25,7 +25,7 @@ public class UserProfileService implements UserProfileInterface {
     private final UserRepository userRepository;
 
     @Override
-    public UserProfileResponse getMyProfile() {
+    public UserProfileResponseDto getMyProfile() {
         User currentUser = getCurrentUser();
         UserProfile profile = userProfileRepository.findByUserId(currentUser.getId())
                 .orElseGet(() -> createDefaultProfile(currentUser));
@@ -34,7 +34,7 @@ public class UserProfileService implements UserProfileInterface {
 
     @Override
     @Transactional
-    public UserProfileResponse updateMyProfile(UpdateUserProfileRequest request) {
+    public UserProfileResponseDto updateMyProfile(UpdateUserProfileRequest request) {
         User currentUser = getCurrentUser();
         UserProfile profile = userProfileRepository.findByUserId(currentUser.getId())
                 .orElseGet(() -> createDefaultProfile(currentUser));
@@ -55,7 +55,7 @@ public class UserProfileService implements UserProfileInterface {
     }
 
     @Override
-    public UserProfileResponse getUserProfile(Long userId) {
+    public UserProfileResponseDto getUserProfile(Long userId) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_INPUT, "Profile not found for user ID: " + userId));
         return mapToResponse(profile);
@@ -75,8 +75,8 @@ public class UserProfileService implements UserProfileInterface {
         return userProfileRepository.save(profile);
     }
 
-    private UserProfileResponse mapToResponse(UserProfile p) {
-        return UserProfileResponse.builder()
+    private UserProfileResponseDto mapToResponse(UserProfile p) {
+        return UserProfileResponseDto.builder()
                 .id(p.getId())
                 .userId(p.getUser().getId())
                 .username(p.getUser().getUsername())

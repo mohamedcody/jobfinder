@@ -42,7 +42,7 @@ public class AuthService implements AuthInterface {
 
 
     @Override
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponseDto register(RegisterRequest request) {
 
         if (!emailValidatorService.isEmailDomainValid(request.email())) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Email domain does not exist!");
@@ -69,12 +69,12 @@ public class AuthService implements AuthInterface {
 
         saveAndSendOtpInterna(user);
 
-        return new AuthResponse(null, user.getEmail(), user.getRole(), "Please verify your email");
+        return new AuthResponseDto(null, user.getEmail(), user.getRole(), "Please verify your email");
     }
 
     @Override
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponseDto login(LoginRequest request) {
         if (request.identifier() == null || request.password() == null) {
             throw new BaseException(ErrorCode.INVALID_INPUT);
         }
@@ -109,7 +109,7 @@ public class AuthService implements AuthInterface {
         }
 
         String token = jwtService.generateToken(createDetails(user));
-        return new AuthResponse(token, user.getEmail(), user.getRole(), "Welcome back!");
+        return new AuthResponseDto(token, user.getEmail(), user.getRole(), "Welcome back!");
     }
 
     @Override

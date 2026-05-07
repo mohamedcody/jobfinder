@@ -78,10 +78,7 @@ public class JwtService {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
-
-
-
-    // التعديل في JwtService.java
+    // Token claims are extracted here.
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())

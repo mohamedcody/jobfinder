@@ -1,5 +1,5 @@
 package jobfinder.controller;
-import jobfinder.model.dto.CursorPageResponse;
+import jobfinder.model.dto.CursorPageResponseDto;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
 import jobfinder.services.implementation.JobScraperService;
@@ -33,7 +33,7 @@ public class JobController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPageResponse<JobResponseDTO>> getAllJobs(
+    public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> getAllJobs(
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -41,7 +41,7 @@ public class JobController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<CursorPageResponse<JobResponseDTO>> searchJobs(
+    public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> searchJobs(
             @RequestParam String title,
             @RequestParam String location,
             @RequestParam(required = false) Long lastId,
@@ -56,7 +56,7 @@ public class JobController {
      * GET /api/jobs/filter?title=engineer&location=cairo&postedAfter=2025-01-01&size=10&lastId=0
      */
     @GetMapping("/filter")
-    public ResponseEntity<CursorPageResponse<JobResponseDTO>> filterJobs(
+    public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> filterJobs(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate postedAfter,

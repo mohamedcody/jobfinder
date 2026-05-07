@@ -45,13 +45,30 @@ public class JobSpecification {
             // 5. Filter by Employment Type (Remote/Full-time etc)
             if (filter.employmentType() != null && !filter.employmentType().trim().isEmpty()) {
                 predicates.add(criteriaBuilder.equal(
-                    criteriaBuilder.lower(root.get("employmentType")), 
+                    criteriaBuilder.lower(root.get("employmentType")),
                     filter.employmentType().toLowerCase()
                 ));
             }
 
-            query.orderBy(criteriaBuilder.desc(root.get("id")));
+            int mode = (int) (System.currentTimeMillis() % 3);
+            if (mode == 0) {
+                // Sort by ID in descending order (Newest first)
+                query.orderBy(criteriaBuilder.desc(root.get("id")));
+            }
+
+            else if (mode == 1) {
+                // Sort by ID in ascending order (Oldest first)
+                query.orderBy(criteriaBuilder.asc(root.get("id")));
+            }
+
+            else {
+                // Sort by scraping timestamp in descending order (Most recently scraped)
+                query.orderBy(criteriaBuilder.desc(root.get("scrapedAt")));
+            }
+
+                // Return the final query predicate as an array
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+
     }
 }

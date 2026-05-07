@@ -2,7 +2,7 @@ package jobfinder.services.implementation;
 
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
-import jobfinder.model.dto.CursorPageResponse;
+import jobfinder.model.dto.CursorPageResponseDto;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
 import jobfinder.model.entity.CompanyEntity;
@@ -17,10 +17,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -176,22 +174,53 @@ public class JobScraperService implements JobInterface {
 
     @Override
     @Cacheable(value = "jobs", key = "{'all', #lastId, #size}")
-    public CursorPageResponse<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
+    public CursorPageResponseDto<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
         // getAllJobs is just searchJobsByFilter with an empty filter
         JobFilterRequest emptyFilter = new JobFilterRequest(null, null, null, null, null);
         return searchJobsByFilter(emptyFilter, lastId, size);
     }
 
+
+
+
+
     @Override
-    public CursorPageResponse<JobResponseDTO> searchJobs(String title, String location, Long lastId, int size) {
-        // searchJobs is just searchJobsByFilter with specific params
-        JobFilterRequest filter = new JobFilterRequest(title, location, null, null, null);
-        return searchJobsByFilter(filter, lastId, size);
+    public CursorPageResponseDto<JobResponseDTO> searchJobs(
+            String title, String location, Long lastId, int size) {
+
+
+        String sanitizedTitle = (title == null || title.isBlank())
+                ? null
+                : title.trim().replaceAll("[!&|():*]", " ");
+
+
+        if (sanitizedTitle == null) {
+            return new CursorPageResponseDto<>(List.of(), 0, null, false);
+        }
+
+        List<JobEntity> results = jobRepository.searchJobsFullText(
+                sanitizedTitle,
+                location,
+                lastId,
+                size + 1
+        );
+        boolean hasNext = results.size() > size;
+        List<JobEntity> pageData = hasNext ? results.subList(0, size) : results;
+        List<JobResponseDTO> dtos = pageData.stream().map(this::convertToDTO).toList();
+        Long nextCursor = (hasNext && !pageData.isEmpty())
+                ? pageData.get(pageData.size() - 1).getId()
+                : null;
+
+
+        return new CursorPageResponseDto<>(dtos, dtos.size(), nextCursor, hasNext);
     }
+
+
+
 
     @Override
     @Cacheable(value = "jobs", key = "{#filter.title(), #filter.location(), #filter.employmentType(), #filter.postedAfter(), #lastId, #size}")
-    public CursorPageResponse<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
+    public CursorPageResponseDto<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
         log.info("🚀 Sovereign Search applied: {}", filter);
 
         try {
@@ -206,14 +235,14 @@ public class JobScraperService implements JobInterface {
             ).getContent();
 
             if (jobList.isEmpty()) {
-                return new CursorPageResponse<>(List.of(), limit, null, false);
+                return new CursorPageResponseDto<>(List.of(), limit, null, false);
             }
 
             boolean hasNext = jobList.size() > limit;
             List<JobEntity> finalContent = hasNext ? jobList.subList(0, limit) : jobList;
             Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
 
-            return new CursorPageResponse<>(
+            return new CursorPageResponseDto<>(
                     finalContent.stream().map(this::convertToDTO).toList(),
                     limit,
                     nextCursor,
@@ -224,6 +253,9 @@ public class JobScraperService implements JobInterface {
             throw new BaseException(ErrorCode.DATABASE_ERROR, "Search engine experienced a synchronization failure.");
         }
     }
+
+
+
 
     @Override
     @Transactional
@@ -242,13 +274,17 @@ public class JobScraperService implements JobInterface {
         return summary;
     }
 
+
+
     public void evictJobsCache() {
         var cache = cacheManager.getCache("jobs");
-        if (cache != null) {
+        if (cache !=  null) {
             cache.clear();
             log.info("🧹 Jobs cache evicted successfully.");
         }
     }
+
+
 
     private JobResponseDTO convertToDTO(JobEntity entity) {
         return JobResponseDTO.builder()

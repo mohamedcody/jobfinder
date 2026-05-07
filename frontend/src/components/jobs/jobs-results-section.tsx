@@ -31,6 +31,7 @@ interface JobsResultsSectionProps {
   error: string | null;
   stats: Array<{ label: string; value: string }>;
   activeChips: Array<{ key: keyof JobSearchFormState; label: string }>;
+  searchTerm?: string;
   onRetrySearch: () => void;
   onLoadMore: () => void;
   onRemoveFilter: (key: keyof JobSearchFormState) => void;
@@ -46,6 +47,7 @@ function JobsResultsSectionComponent({
   error,
   stats,
   activeChips,
+  searchTerm,
   onRetrySearch,
   onLoadMore,
   onRemoveFilter,
@@ -177,7 +179,7 @@ function JobsResultsSectionComponent({
           <>
             <div className="grid gap-6">
               {jobs.map((job, index) => (
-                <JobCard key={`${job.link}-${index}`} job={job} />
+                <JobCard key={`${job.link}-${index}`} job={job} searchTerm={searchTerm} />
               ))}
             </div>
 

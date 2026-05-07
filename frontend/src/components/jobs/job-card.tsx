@@ -18,12 +18,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Job } from "@/lib/jobs/types";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import { formatRelativeTime } from "@/lib/jobs/time-utils";
+import { highlightText } from "@/lib/jobs/highlight-utils";
 
 interface JobCardProps {
   job: Job;
+  searchTerm?: string;
 }
 
-export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
+export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: JobCardProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [summary, setSummary] = useState(job.aiSummary || "");
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
@@ -94,7 +96,7 @@ export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
               )}
             </div>
             <h3 className="text-xl font-black text-white group-hover:text-violet-400 transition-colors truncate tracking-tight">
-              {job.title}
+              {searchTerm ? highlightText(job.title, searchTerm) : job.title}
             </h3>
             <p className="text-sm font-bold text-slate-400 mt-1">{job.companyName}</p>
           </div>
@@ -124,11 +126,13 @@ export const JobCard = memo(function JobCardComponent({ job }: JobCardProps) {
         </div>
       </div>
 
-      {/* 3. AI Intelligence Section */}
-      <div className="space-y-4">
-        <p className="line-clamp-2 text-sm leading-relaxed text-slate-400 font-medium">
-          {job.description || "Advanced role analytics available via JobBot platform."}
-        </p>
+       {/* 3. AI Intelligence Section */}
+       <div className="space-y-4">
+         <p className="line-clamp-2 text-sm leading-relaxed text-slate-400 font-medium">
+           {searchTerm 
+             ? highlightText(job.description || "Advanced role analytics available via JobBot platform.", searchTerm)
+             : (job.description || "Advanced role analytics available via JobBot platform.")}
+         </p>
 
         <div className="pt-2 flex flex-wrap gap-3">
           <button

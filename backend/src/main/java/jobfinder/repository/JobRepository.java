@@ -24,6 +24,37 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
      List<String> findExistingLinks(@Param("jobUrls") List<String> Links);
 
 
+    @Query(value = "SELECT * FROM jobs j WHERE " +
+            "to_tsvector('english', j.title || ' ' || j.description) @@ to_tsquery('english', :searchTerm)",
+            nativeQuery = true)
+    List<JobEntity> searchFullText(@Param("searchTerm") String searchTerm);
+
+
+    @Query(value =
+            "SELECT j.*, " +
+                    "ts_rank( " +
+                    "    to_tsvector('english', COALESCE(j.title,'') || ' ' || COALESCE(j.description,'')), " +
+                    "    websearch_to_tsquery('english', :title) " +
+                    ") AS rank " +
+                    "FROM jobs j " +
+                    "WHERE " +
+                    "to_tsvector('english', COALESCE(j.title,'') || ' ' || COALESCE(j.description,'')) " +
+                    "@@ websearch_to_tsquery('english', :title) " +
+                    "AND (:location IS NULL OR j.location ILIKE %:location%) " +
+                    "AND (:lastId IS NULL OR j.id < :lastId) " +
+                    "ORDER BY rank DESC, j.id DESC " +
+                    "LIMIT :size",
+            nativeQuery = true)
+    List<JobEntity> searchJobsFullText(
+            @Param("title")    String title,
+            @Param("location") String location,
+            @Param("lastId")   Long lastId,
+            @Param("size")     int size
+    );
+
+
+
+
 
 
 

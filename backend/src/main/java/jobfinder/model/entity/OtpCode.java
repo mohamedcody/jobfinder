@@ -32,8 +32,7 @@ public class OtpCode {
     private LocalDateTime expiryTime;
 
     private boolean used = false;
-
-    @Builder.Default // مهمة جداً عشان الـ Builder يشوف الـ 0
+    @Builder.Default // Important so the Builder preserves the default value of 0.
     @Column(nullable = false)
     private Integer attempts = 0;
 

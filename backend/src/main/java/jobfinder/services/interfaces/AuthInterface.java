@@ -1,12 +1,11 @@
 package jobfinder.services.interfaces;
 
-import jakarta.validation.constraints.NotBlank;
 import jobfinder.model.dto.*;
 
 public interface AuthInterface {
 
-    AuthResponse login(LoginRequest request);
-    AuthResponse register(RegisterRequest request);
+    AuthResponseDto login(LoginRequest request);
+    AuthResponseDto register(RegisterRequest request);
     void verifyAccount(String email, String otpCode);
     void resendVerificationOtp(ResendVerificationOtpRequest request);
     void forgetPassword(ForgotPasswordRequest request);
