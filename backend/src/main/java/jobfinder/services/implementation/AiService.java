@@ -23,16 +23,18 @@ public class AiService {
     }
 
     public String summarizeJob(String description) {
+        // check the description is not null or empty
         if (description == null || description.trim().isEmpty()) {
             return "No description available to summarize.";
         }
 
+        // check the API key is present and does not contain unresolved placeholders
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("${")) {
             log.error("❌ Gemini API Key is missing or not resolved! Current value: {}", geminiApiKey);
             return "AI Summary is unavailable: Missing API Key.";
         }
 
-        String prompt = "Summarize this job description in 3-5 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
+        String prompt = "Summarize this job description in 3-4 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
 
         try {
             Map<String, Object> requestBody = Map.of(

@@ -115,6 +115,7 @@ public class AuthService implements AuthInterface {
     @Override
     @Transactional // Main transaction for account verification
     public void verifyAccount(String email, String otpCode) {
+
         if (otpCode != null) otpCode = otpCode.trim();
         // Find the user by email or throw an error if not found.
         User user = userRepository.findByEmail(email)
@@ -147,7 +148,10 @@ public class AuthService implements AuthInterface {
         user.setEmailVerified(true);
         otp.setUsed(true);
 
+        // save as the user
         userRepository.save(user);
+
+        // save as the otp -> user
         otpCodeRepository.save(otp);
 
         log.info("User {} verified successfully", email);
@@ -155,6 +159,7 @@ public class AuthService implements AuthInterface {
 
     @Override
     public void resendVerificationOtp(ResendVerificationOtpRequest request) {
+
         userRepository.findByEmail(request.email())
                 .ifPresentOrElse(
                         user -> {
@@ -190,6 +195,7 @@ public class AuthService implements AuthInterface {
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
+
         if (!request.newPassword().equals(request.confirmPassword())) {
             throw new BaseException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
         }
@@ -205,7 +211,10 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.OTP_EXPIRED);
         }
 
+        // encode the newPassword
         user.setPassword(passwordEncoder.encode(request.newPassword()));
+
+        // set as otp true , because the otp is used for reset password
         otp.setUsed(true);
     }
 
