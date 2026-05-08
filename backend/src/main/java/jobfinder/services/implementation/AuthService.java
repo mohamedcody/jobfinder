@@ -48,14 +48,17 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Email domain does not exist!");
         }
 
+
         // 1. Check for existence
         if (userRepository.existsByEmail(request.email())) {
             throw new BaseException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
+
         if (userRepository.existsByUsername(request.username())) {
             throw new BaseException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
+
 
         User user = User.builder()
                 .username(request.username())
@@ -67,7 +70,9 @@ public class AuthService implements AuthInterface {
                 .build();
         userRepository.save(user);
 
+
         saveAndSendOtpInterna(user);
+
 
         return new AuthResponseDto(null, user.getEmail(), user.getRole(), "Please verify your email");
     }
@@ -75,6 +80,7 @@ public class AuthService implements AuthInterface {
     @Override
     @Transactional
     public AuthResponseDto login(LoginRequest request) {
+
         if (request.identifier() == null || request.password() == null) {
             throw new BaseException(ErrorCode.INVALID_INPUT);
         }
@@ -87,9 +93,11 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
         }
 
+
         if (user.getLockoutTime() != null && user.getLockoutTime().isAfter(LocalDateTime.now())) {
             throw new BaseException(ErrorCode.ACCOUNT_LOCKED);
         }
+
 
         try {
             authenticationManager.authenticate(
@@ -100,6 +108,7 @@ public class AuthService implements AuthInterface {
             loginAttemptService.resetAttempts(user.getEmail());
             user.setLastLoginAt(LocalDateTime.now());
 
+
         } catch (BadCredentialsException e) {
             // The issue is solved here: we call the separate transaction.
             loginAttemptService.updateFailedAttempts(user.getEmail());
@@ -108,9 +117,12 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.INVALID_CREDENTIALS);
         }
 
+
         String token = jwtService.generateToken(createDetails(user));
         return new AuthResponseDto(token, user.getEmail(), user.getRole(), "Welcome back!");
+
     }
+
 
     @Override
     @Transactional // Main transaction for account verification
@@ -204,8 +216,10 @@ public class AuthService implements AuthInterface {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
+
         OtpCode otp = otpCodeRepository.findByUserAndCodeAndUsedFalse(user, request.otpCode())
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
+
 
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new BaseException(ErrorCode.OTP_EXPIRED);

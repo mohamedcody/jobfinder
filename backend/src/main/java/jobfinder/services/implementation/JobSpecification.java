@@ -26,6 +26,7 @@ public class JobSpecification {
                 ));
             }
 
+
             // 3. Filter by Location
             if (filter.location() != null && !filter.location().trim().isEmpty()) {
                 predicates.add(criteriaBuilder.like(
@@ -34,6 +35,7 @@ public class JobSpecification {
                 ));
             }
 
+
             // 4. Filter by Date
             if (filter.postedAfter() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(
@@ -41,6 +43,7 @@ public class JobSpecification {
                     filter.postedAfter().atStartOfDay()
                 ));
             }
+
 
             // 5. Filter by Employment Type (Remote/Full-time etc)
             if (filter.employmentType() != null && !filter.employmentType().trim().isEmpty()) {
@@ -70,5 +73,7 @@ public class JobSpecification {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
+
     }
+
 }

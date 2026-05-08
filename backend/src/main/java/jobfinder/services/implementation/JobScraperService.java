@@ -183,7 +183,6 @@ public class JobScraperService implements JobInterface {
 
 
 
-
     @Override
     public CursorPageResponseDto<JobResponseDTO> searchJobs(
             String title, String location, Long lastId, int size) {
@@ -301,6 +300,8 @@ public class JobScraperService implements JobInterface {
                 .companyLogo(entity.getCompany() != null ? entity.getCompany().getLogoUrl() : null)
                 .build();
     }
+
+
 
 }
 

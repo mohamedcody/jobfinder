@@ -53,9 +53,4 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
     );
 
 
-
-
-
-
-
 }

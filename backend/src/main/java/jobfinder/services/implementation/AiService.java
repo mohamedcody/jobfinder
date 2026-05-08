@@ -23,10 +23,12 @@ public class AiService {
     }
 
     public String summarizeJob(String description) {
+
         // check the description is not null or empty
         if (description == null || description.trim().isEmpty()) {
             return "No description available to summarize.";
         }
+
 
         // check the API key is present and does not contain unresolved placeholders
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("${")) {
@@ -35,6 +37,8 @@ public class AiService {
         }
 
         String prompt = "Summarize this job description in 3-4 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
+
+
 
         try {
             Map<String, Object> requestBody = Map.of(
@@ -56,9 +60,13 @@ public class AiService {
                     .timeout(Duration.ofSeconds(20))
                     .block();
 
+
             if (response != null && response.containsKey("candidates")) {
+
                 List candidates = (List) response.get("candidates");
+
                 if (!candidates.isEmpty()) {
+
                     Map candidate = (Map) candidates.get(0);
                     Map content = (Map) candidate.get("content");
                     List parts = (List) content.get("parts");
@@ -66,8 +74,11 @@ public class AiService {
                         Map part = (Map) parts.get(0);
                         return (String) part.get("text");
                     }
+
                 }
+
             }
+
             log.warn("⚠️ AI Response received but candidates list is empty.");
             return "Could not generate summary at this time.";
         } catch (Exception e) {

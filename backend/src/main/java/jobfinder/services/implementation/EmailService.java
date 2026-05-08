@@ -12,7 +12,9 @@ public class  EmailService {
 
 
 
+
     private final JavaMailSender mailSender ;
+
 
         @Async
     public void sendVerificationEmail(String email, String code) {

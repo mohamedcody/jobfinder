@@ -42,6 +42,9 @@ public class LoginAttemptService {
         userRepository.saveAndFlush(user);
     }
 
+
+
+
     /**
      * Resets failed attempts and unlocks the account after a successful login.
      */
