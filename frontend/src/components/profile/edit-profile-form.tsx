@@ -20,15 +20,15 @@ export function EditProfileForm({
   onCancel,
 }: EditProfileFormProps) {
   const [formData, setFormData] = useState<UpdateProfileRequest>({
-    current_job_title: profile.currentJobTitle || "",
-    years_of_experience: profile.yearsOfExperience || 0,
-    education_level: profile.educationLevel || "",
+    currentJobTitle: profile.currentJobTitle || "",
+    yearsOfExperience: profile.yearsOfExperience || 0,
+    educationLevel: profile.educationLevel || "",
     country: profile.country || "",
     city: profile.city || "",
-    expected_salary: profile.expectedSalary || 0,
+    expectedSalary: profile.expectedSalary || 0,
     currency: profile.currency || "USD",
     bio: profile.bio || "",
-    is_open_to_work: profile.isOpenToWork ?? true,
+    isOpenToWork: profile.isOpenToWork ?? true,
     skills: [],
   });
 
@@ -81,8 +81,8 @@ export function EditProfileForm({
           </label>
           <input
             type="text"
-            name="current_job_title"
-            value={formData.current_job_title || ""}
+            name="currentJobTitle"
+            value={formData.currentJobTitle || ""}
             onChange={handleChange}
             placeholder="e.g., Senior Backend Engineer"
             className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/40 transition-colors"
@@ -97,10 +97,10 @@ export function EditProfileForm({
           </label>
           <input
             type="number"
-            name="years_of_experience"
+            name="yearsOfExperience"
             min="0"
             max="60"
-            value={formData.years_of_experience || 0}
+            value={formData.yearsOfExperience || 0}
             onChange={handleChange}
             className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-500/40 transition-colors"
           />
@@ -113,8 +113,8 @@ export function EditProfileForm({
             Education Level
           </label>
           <select
-            name="education_level"
-            value={formData.education_level || ""}
+            name="educationLevel"
+            value={formData.educationLevel || ""}
             onChange={handleChange}
             className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500/40 transition-colors"
           >
@@ -165,9 +165,9 @@ export function EditProfileForm({
           </label>
           <input
             type="number"
-            name="expected_salary"
+            name="expectedSalary"
             min="0"
-            value={formData.expected_salary || 0}
+            value={formData.expectedSalary || 0}
             onChange={handleChange}
             placeholder="0"
             className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-yellow-500/40 transition-colors"
@@ -251,8 +251,8 @@ export function EditProfileForm({
       <div className="flex items-center gap-3 p-4 rounded-xl bg-white/2 border border-white/5">
         <input
           type="checkbox"
-          name="is_open_to_work"
-          checked={formData.is_open_to_work ?? true}
+          name="isOpenToWork"
+          checked={formData.isOpenToWork ?? true}
           onChange={handleChange}
           className="w-4 h-4 rounded cursor-pointer"
         />
@@ -294,6 +294,3 @@ export function EditProfileForm({
     </motion.form>
   );
 }
-
-
-

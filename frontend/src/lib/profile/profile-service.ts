@@ -45,6 +45,11 @@ profileApiClient.interceptors.response.use(
   },
 );
 
+export interface SkillDto {
+  id: number;
+  name: string;
+}
+
 export interface UserProfileResponse {
   id: number;
   userId: number;
@@ -60,10 +65,44 @@ export interface UserProfileResponse {
   currency?: string;
   isOpenToWork?: boolean;
   bio?: string;
+  skills?: SkillDto[];
   updatedAt?: string;
 }
 
 export interface UpdateProfileRequest {
+  currentJobTitle?: string;
+  yearsOfExperience?: number;
+  educationLevel?: string;
+  country?: string;
+  city?: string;
+  resumeUrl?: string;
+  expectedSalary?: number;
+  currency?: string;
+  isOpenToWork?: boolean;
+  bio?: string;
+  skills?: string[];
+}
+
+interface ApiUserProfileResponse {
+  id: number;
+  user_id: number;
+  username: string;
+  email: string;
+  current_job_title?: string;
+  years_of_experience?: number;
+  education_level?: string;
+  country?: string;
+  city?: string;
+  resume_url?: string;
+  expected_salary?: number;
+  currency?: string;
+  is_open_to_work?: boolean;
+  bio?: string;
+  skills?: SkillDto[];
+  updated_at?: string;
+}
+
+interface ApiUpdateProfileRequest {
   current_job_title?: string;
   years_of_experience?: number;
   education_level?: string;
@@ -77,25 +116,58 @@ export interface UpdateProfileRequest {
   skills?: string[];
 }
 
+const mapProfileFromApi = (data: ApiUserProfileResponse): UserProfileResponse => ({
+  id: data.id,
+  userId: data.user_id,
+  username: data.username,
+  email: data.email,
+  currentJobTitle: data.current_job_title,
+  yearsOfExperience: data.years_of_experience,
+  educationLevel: data.education_level,
+  country: data.country,
+  city: data.city,
+  resumeUrl: data.resume_url,
+  expectedSalary: data.expected_salary,
+  currency: data.currency,
+  isOpenToWork: data.is_open_to_work,
+  bio: data.bio,
+  skills: data.skills,
+  updatedAt: data.updated_at,
+});
+
+const mapProfileToApi = (data: UpdateProfileRequest): ApiUpdateProfileRequest => ({
+  current_job_title: data.currentJobTitle,
+  years_of_experience: data.yearsOfExperience,
+  education_level: data.educationLevel,
+  country: data.country,
+  city: data.city,
+  resume_url: data.resumeUrl,
+  expected_salary: data.expectedSalary,
+  currency: data.currency,
+  is_open_to_work: data.isOpenToWork,
+  bio: data.bio,
+  skills: data.skills,
+});
+
 export const profileService = {
   // جيب البروفايل الخاص بي
   async getMyProfile(): Promise<UserProfileResponse> {
-    const { data } = await profileApiClient.get<UserProfileResponse>("");
-    return data;
+    const { data } = await profileApiClient.get<ApiUserProfileResponse>("");
+    return mapProfileFromApi(data);
   },
 
   // حدث البروفايل بتاعك
   async updateMyProfile(
     request: UpdateProfileRequest,
   ): Promise<UserProfileResponse> {
-    const { data } = await profileApiClient.put<UserProfileResponse>("", request);
-    return data;
+    const { data } = await profileApiClient.put<ApiUserProfileResponse>("", mapProfileToApi(request));
+    return mapProfileFromApi(data);
   },
 
   // جيب بروفايل مستخدم معين (للإدمن)
   async getUserProfile(userId: number): Promise<UserProfileResponse> {
-    const { data } = await profileApiClient.get<UserProfileResponse>(`/${userId}`);
-    return data;
+    const { data } = await profileApiClient.get<ApiUserProfileResponse>(`/${userId}`);
+    return mapProfileFromApi(data);
   },
 };
 

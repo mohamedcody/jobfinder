@@ -60,10 +60,10 @@ const AvailabilityBadge = ({ available }: { available: boolean }) => {
 const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResponse, onEdit: () => void }) => {
   const completeness = useMemo(() => {
     const checks = {
-      hasHeadline: !!profile.headline || !!profile.current_job_title,
-      hasAbout: ((profile.about?.length || 0) > 20) || ((profile.bio?.length || 0) > 20),
-      hasExperience: ((profile.yearsOfExperience || 0) > 0) || ((profile.years_of_experience || 0) > 0),
-      hasSalary: !!profile.expectedSalary || !!profile.expected_salary,
+      hasHeadline: !!profile.currentJobTitle,
+      hasAbout: (profile.bio?.length || 0) > 20,
+      hasExperience: (profile.yearsOfExperience || 0) > 0,
+      hasSalary: !!profile.expectedSalary,
       hasSkills: (profile.skills?.length || 0) > 0,
     };
     const totalChecks = Object.keys(checks).length;
@@ -163,10 +163,10 @@ export default function ProfilePage() {
   const profileCompleteness = useMemo(() => {
     if (!profile) return 0;
     const checks = [
-      !!profile.headline || !!profile.current_job_title,
-      ((profile.about?.length || 0) > 20) || ((profile.bio?.length || 0) > 20),
-      ((profile.yearsOfExperience || 0) > 0) || ((profile.years_of_experience || 0) > 0),
-      !!profile.expectedSalary || !!profile.expected_salary,
+      !!profile.currentJobTitle,
+      (profile.bio?.length || 0) > 20,
+      (profile.yearsOfExperience || 0) > 0,
+      !!profile.expectedSalary,
       (profile.skills?.length || 0) > 0,
     ];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                       <User className="h-10 w-10 text-slate-400" />
                     </div>
                     <div className="absolute -bottom-1 -right-1">
-                      <AvailabilityBadge available={!!profile.availableToWork || !!profile.is_open_to_work} />
+                      <AvailabilityBadge available={!!profile.isOpenToWork} />
                     </div>
                   </div>
                   <div className="flex-1">
@@ -244,10 +244,10 @@ export default function ProfilePage() {
                       <h1 className="text-3xl font-black text-white">{profile.username || "User"}</h1>
                     </div>
                     <p className="text-slate-400 font-medium text-sm mb-3">
-                      {profile.headline || profile.current_job_title || "No headline provided"}
+                      {profile.currentJobTitle || "No headline provided"}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
-                      <span>{profile.location || (profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.country || profile.city || "Location not set")}</span>
+                      <span>{profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.country || profile.city || "Location not set"}</span>
                       <span>&bull;</span>
                       <a href={`mailto:${profile.email}`} className="text-slate-500 hover:text-violet-400 transition-colors">{profile.email}</a>
                     </div>
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                     <h3 className="text-sm font-bold text-white uppercase tracking-widest">About</h3>
                   </div>
                   <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap">
-                    {profile.about || profile.bio || "No summary provided. Click 'Edit Profile' to add one."}
+                    {profile.bio || "No summary provided. Click 'Edit Profile' to add one."}
                   </p>
                 </motion.div>
 
@@ -322,13 +322,13 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-xs text-slate-500 font-bold">Experience</p>
                     <p className="text-2xl font-black text-white">
-                      {(profile.yearsOfExperience || profile.years_of_experience || 0) > 0 ? `${profile.yearsOfExperience || profile.years_of_experience} years` : "Entry-Level"}
+                      {(profile.yearsOfExperience || 0) > 0 ? `${profile.yearsOfExperience} years` : "Entry-Level"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 font-bold">Expected Salary</p>
-                    {profile.expectedSalary || profile.expected_salary ? (
-                      <p className="text-2xl font-black text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: profile.currency || 'EGP', minimumFractionDigits: 0 }).format(profile.expectedSalary || profile.expected_salary || 0)}</p>
+                    {profile.expectedSalary ? (
+                      <p className="text-2xl font-black text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: profile.currency || 'EGP', minimumFractionDigits: 0 }).format(profile.expectedSalary)}</p>
                     ) : (
                       <Button onClick={handleEdit} size="sm" variant="secondary" className="mt-1">
                         <PlusCircle className="h-4 w-4 mr-2" />

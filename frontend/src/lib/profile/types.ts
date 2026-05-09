@@ -8,26 +8,21 @@
  */
 export interface UserProfileResponse {
   id: number;
-  user_id: number;
+  userId: number;
   username: string;
   email: string;
-  current_job_title?: string | null;
-  years_of_experience?: number | null;
-  education_level?: string | null;
+  currentJobTitle?: string | null;
+  yearsOfExperience?: number | null;
+  educationLevel?: string | null;
   country?: string | null;
   city?: string | null;
-  resume_url?: string | null;
-  expected_salary?: number | null;
+  resumeUrl?: string | null;
+  expectedSalary?: number | null;
   currency?: string | null;
-  is_open_to_work?: boolean | null;
+  isOpenToWork?: boolean | null;
   bio?: string | null;
-  updated_at?: string;
-  // Fallbacks for UI that might use old names
-  headline?: string | null;
-  about?: string | null;
   skills?: { id: number; name: string }[] | null;
-  availableToWork?: boolean;
-  location?: string | null;
+  updatedAt?: string;
 }
 
 /**
@@ -35,14 +30,17 @@ export interface UserProfileResponse {
  * جميع الحقول اختيارية (Partial Update)
  */
 export interface UpdateProfileRequest {
-  headline?: string;
-  about?: string;
-  location?: string;
+  currentJobTitle?: string;
   yearsOfExperience?: number;
+  educationLevel?: string;
+  country?: string;
+  city?: string;
+  resumeUrl?: string;
   expectedSalary?: number;
   currency?: string;
-  availableToWork?: boolean;
-  skills?: string[]; // Send an array of skill names
+  isOpenToWork?: boolean;
+  bio?: string;
+  skills?: string[];
 }
 
 /**

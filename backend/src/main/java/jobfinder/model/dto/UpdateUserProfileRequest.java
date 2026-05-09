@@ -57,5 +57,8 @@ public class UpdateUserProfileRequest {
     @JsonProperty("bio")
     @Size(max = 1000, message = "Bio must not exceed 1000 characters")
     private String bio;
+
+    @JsonProperty("skills")
+    private java.util.List<String> skills;
 }
 

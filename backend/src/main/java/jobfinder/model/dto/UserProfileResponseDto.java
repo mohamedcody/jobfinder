@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Response DTO for User Profile
@@ -59,6 +60,9 @@ public class UserProfileResponseDto {
 
     @JsonProperty("bio")
     private String bio;
+
+    @JsonProperty("skills")
+    private List<SkillDto> skills;
 
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;

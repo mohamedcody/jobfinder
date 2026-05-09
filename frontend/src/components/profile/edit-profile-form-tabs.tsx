@@ -44,6 +44,7 @@ export function EditProfileFormTabs({
     currency: profile.currency || "USD",
     bio: profile.bio || "",
     isOpenToWork: profile.isOpenToWork ?? true,
+    skills: profile.skills?.map((s) => s.name) || [],
   });
 
   const [validation, setValidation] = useState<Record<string, ValidationResult>>({});
@@ -59,6 +60,7 @@ export function EditProfileFormTabs({
     currency: profile.currency || "USD",
     bio: profile.bio || "",
     isOpenToWork: profile.isOpenToWork ?? true,
+    skills: profile.skills?.map((s) => s.name) || [],
   });
 
   const handleChange = (
@@ -407,6 +409,46 @@ export function EditProfileFormTabs({
                   Currency and amount are visually linked for clarity
                 </p>
               </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-white/2 border border-white/5">
+                <FieldHelp label="Skills" help="Add your key skills, separated by commas." />
+                <textarea
+                  name="skills"
+                  value={formData.skills?.join(", ") || ""}
+                  onChange={(e) => {
+                    const skills = e.target.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter((s) => s.length > 0);
+                    setFormData((prev) => ({ ...prev, skills }));
+                  }}
+                  placeholder="e.g., Java, Spring Boot, PostgreSQL"
+                  rows={3}
+                  className={`${inputClasses} resize-none`}
+                />
+                {formData.skills && formData.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {formData.skills.map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 rounded-lg bg-violet-500/20 border border-violet-500/30 text-xs font-semibold text-violet-300"
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formData.skills?.filter((_, i) => i !== idx) || [];
+                            setFormData((prev) => ({ ...prev, skills: updated }));
+                          }}
+                          className="ml-2 text-violet-400 hover:text-violet-200"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -490,4 +532,3 @@ export function EditProfileFormTabs({
     </>
   );
 }
-

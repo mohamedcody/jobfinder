@@ -2,12 +2,18 @@ package jobfinder.services.implementation;
 
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
+
+import jobfinder.model.dto.SkillDto;
 import jobfinder.model.dto.UpdateUserProfileRequest;
 import jobfinder.model.dto.UserProfileResponseDto;
 import jobfinder.model.entity.User;
 import jobfinder.model.entity.UserProfile;
+import jobfinder.model.entity.UserSkill;
+import jobfinder.model.entity.Skill;
 import jobfinder.repository.UserProfileRepository;
 import jobfinder.repository.UserRepository;
+import jobfinder.repository.UserSkillRepository;
+import jobfinder.repository.SkillRepository;
 import jobfinder.services.interfaces.UserProfileInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +29,8 @@ public class UserProfileService implements UserProfileInterface {
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
+    private final UserSkillRepository userSkillRepository;
+    private final SkillRepository skillRepository;
 
     @Override
     public UserProfileResponseDto getMyProfile() {
@@ -50,6 +58,10 @@ public class UserProfileService implements UserProfileInterface {
         if (request.getIsOpenToWork() != null) profile.setIsOpenToWork(request.getIsOpenToWork());
         if (request.getBio() != null) profile.setBio(request.getBio());
 
+        if (request.getSkills() != null) {
+            updateUserSkills(currentUser, request.getSkills());
+        }
+
         UserProfile savedProfile = userProfileRepository.save(profile);
         return mapToResponse(savedProfile);
     }
@@ -76,6 +88,13 @@ public class UserProfileService implements UserProfileInterface {
     }
 
     private UserProfileResponseDto mapToResponse(UserProfile p) {
+        var skills = userSkillRepository.findByUserId(p.getUser().getId()).stream()
+                .map(userSkill -> SkillDto.builder()
+                        .id(userSkill.getSkill().getId())
+                        .name(userSkill.getSkill().getName())
+                        .build())
+                .toList();
+
         return UserProfileResponseDto.builder()
                 .id(p.getId())
                 .userId(p.getUser().getId())
@@ -91,8 +110,31 @@ public class UserProfileService implements UserProfileInterface {
                 .currency(p.getCurrency())
                 .isOpenToWork(p.getIsOpenToWork())
                 .bio(p.getBio())
+                .skills(skills)
                 .updatedAt(p.getUpdatedAt())
                 .build();
+    }
+
+    private void updateUserSkills(User user, java.util.List<String> skillNames) {
+        var normalized = skillNames.stream()
+                .map(name -> name == null ? "" : name.trim())
+                .filter(name -> !name.isEmpty())
+                .distinct()
+                .toList();
+
+        userSkillRepository.findByUserId(user.getId())
+                .forEach(userSkillRepository::delete);
+
+        for (String name : normalized) {
+            Skill skill = skillRepository.findByNameIgnoreCase(name)
+                    .orElseGet(() -> skillRepository.save(Skill.builder().name(name).build()));
+
+            UserSkill userSkill = UserSkill.builder()
+                    .user(user)
+                    .skill(skill)
+                    .build();
+            userSkillRepository.save(userSkill);
+        }
     }
 
 
