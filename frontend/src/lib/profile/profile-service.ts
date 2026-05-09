@@ -64,16 +64,17 @@ export interface UserProfileResponse {
 }
 
 export interface UpdateProfileRequest {
-  currentJobTitle?: string;
-  yearsOfExperience?: number;
-  educationLevel?: string;
+  current_job_title?: string;
+  years_of_experience?: number;
+  education_level?: string;
   country?: string;
   city?: string;
-  resumeUrl?: string;
-  expectedSalary?: number;
+  resume_url?: string;
+  expected_salary?: number;
   currency?: string;
-  isOpenToWork?: boolean;
+  is_open_to_work?: boolean;
   bio?: string;
+  skills?: string[];
 }
 
 export const profileService = {
@@ -97,4 +98,5 @@ export const profileService = {
     return data;
   },
 };
+
 

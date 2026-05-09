@@ -36,7 +36,7 @@ public class AiService {
             return "AI Summary is unavailable: Missing API Key.";
         }
 
-        String prompt = "Summarize this job description in 3-4 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
+        String prompt = "Summarize this job description in 2-3 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
 
 
 

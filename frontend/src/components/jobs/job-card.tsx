@@ -19,6 +19,7 @@ import { Job } from "@/lib/jobs/types";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import { formatRelativeTime } from "@/lib/jobs/time-utils";
 import { highlightText } from "@/lib/jobs/highlight-utils";
+import { useSavedJobs } from "@/hooks/use-saved-jobs";
 
 interface JobCardProps {
   job: Job;
@@ -26,7 +27,8 @@ interface JobCardProps {
 }
 
 export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: JobCardProps) {
-  const [isSaved, setIsSaved] = useState(false);
+  const { isSaved: checkIfSaved, toggleSaveJob } = useSavedJobs();
+  const isSaved = checkIfSaved(job.id);
   const [summary, setSummary] = useState(job.aiSummary || "");
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -103,10 +105,11 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
         </div>
 
         <button
-          onClick={() => setIsSaved(!isSaved)}
+          onClick={() => toggleSaveJob(job.id)}
           className={`p-3.5 rounded-2xl transition-all duration-300 border ${
             isSaved ? "bg-pink-500/10 border-pink-500/30 text-pink-500" : "bg-white/5 border-white/5 text-slate-600 hover:text-white"
           }`}
+          title={isSaved ? "Remove from saved jobs" : "Save this job"}
         >
           <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
         </button>
@@ -137,15 +140,27 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
         <div className="pt-2 flex flex-wrap gap-3">
           <button
             onClick={handleSummarize}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+            disabled={isLoadingSummary}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
               showSummary 
                 ? "bg-violet-600 text-white shadow-lg shadow-violet-600/30" 
                 : "bg-violet-600/10 text-violet-400 hover:bg-violet-600/20"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            {summary ? (showSummary ? "Hide Insights" : "AI Insights") : "Generate Insights"}
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showSummary ? "rotate-180" : ""}`} />
+            {isLoadingSummary ? (
+              <>
+                <div className="animate-spin">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                {summary ? (showSummary ? "Hide Insights" : "AI Insights") : "Generate Insights"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showSummary ? "rotate-180" : ""}`} />
+              </>
+            )}
           </button>
 
           <button

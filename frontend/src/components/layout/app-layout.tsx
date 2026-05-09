@@ -68,12 +68,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMounted(true);
-      const saved = localStorage.getItem("sidebar-collapsed");
-      if (saved !== null) setIsCollapsed(saved === "true");
-    }, 0);
-    return () => clearTimeout(timer);
+    // Set mounted first to avoid hydration mismatch
+    setIsMounted(true);
+    
+    // Then read from localStorage (only on client)
+    const saved = typeof window !== 'undefined' ? localStorage.getItem("sidebar-collapsed") : null;
+    if (saved !== null) setIsCollapsed(saved === "true");
   }, []);
 
   useEffect(() => {

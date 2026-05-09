@@ -17,7 +17,7 @@ public class UserProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "current_job_title")
+    @Column(name = "current_job_title" , columnDefinition = "TEXT")
     private String currentJobTitle;
 
     @Column(name = "years_of_experience")
@@ -27,10 +27,10 @@ public class UserProfile {
     private String educationLevel;
 
     // --- Added for Scalability & Precision ---
-    @Column(name = "country")
+    @Column(name = "country" , columnDefinition = "TEXT")
     private String country;
 
-    @Column(name = "city")
+    @Column(name = "city" , columnDefinition = "TEXT")
     private String city;
 
     @Column(name = "resume_url", columnDefinition = "TEXT")

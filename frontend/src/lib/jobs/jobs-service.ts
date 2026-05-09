@@ -44,11 +44,13 @@ jobsApiClient.interceptors.response.use(
     const status = error?.response?.status;
     const isCanceledRequest = error?.code === "ERR_CANCELED";
 
+    // Clear token on auth errors
     if (status === 401 || status === 403) {
       clearToken();
     }
 
-    if (!isCanceledRequest && (!status || status >= 500)) {
+    // Only emit global error for network issues or server errors (not auth/validation errors)
+    if (!isCanceledRequest && (!status || status >= 500 || status === 0)) {
       emitGlobalApiError({
         status,
         message: getGlobalApiErrorMessage(status),

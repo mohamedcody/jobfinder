@@ -64,7 +64,8 @@ export function JobSearchFilter({
   };
 
   const handleClear = () => {
-    onChange(createEmptyJobSearchState());
+    const emptyState = createEmptyJobSearchState();
+    onChange(emptyState);
     onClear();
   };
 

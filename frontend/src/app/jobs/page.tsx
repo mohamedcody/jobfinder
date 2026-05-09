@@ -24,27 +24,32 @@ function JobsListFallback() {
   return (
     <div className="grid grid-cols-1 gap-6">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/5 p-6 space-y-4">
+        <div key={i} className="relative overflow-hidden rounded-[2rem] bg-white/[0.03] border border-white/5 p-6 space-y-4 min-h-[340px]">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-white/5 animate-pulse" />
-              <div className="space-y-2">
+              <div className="h-16 w-16 rounded-2xl bg-white/5 animate-pulse shrink-0" />
+              <div className="space-y-2 flex-1">
                 <div className="h-4 w-32 rounded bg-white/10 animate-pulse" />
                 <div className="h-3 w-20 rounded bg-white/5 animate-pulse" />
               </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-white/5 animate-pulse" />
+            <div className="h-10 w-10 rounded-xl bg-white/5 animate-pulse shrink-0" />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1">
             <div className="h-3 w-full rounded bg-white/5 animate-pulse" />
             <div className="h-3 w-4/5 rounded bg-white/5 animate-pulse" />
+            <div className="h-3 w-3/4 rounded bg-white/5 animate-pulse" />
           </div>
-          <div className="flex gap-2 pt-2">
-            <div className="h-6 w-16 rounded-full bg-white/5 animate-pulse" />
-            <div className="h-6 w-16 rounded-full bg-white/5 animate-pulse" />
+          <div className="flex gap-2 pt-4">
+            <div className="h-6 w-24 rounded-full bg-white/5 animate-pulse" />
+            <div className="h-6 w-24 rounded-full bg-white/5 animate-pulse" />
+          </div>
+          <div className="pt-4 border-t border-white/5 flex gap-3">
+            <div className="flex-1 h-10 rounded-2xl bg-white/5 animate-pulse" />
+            <div className="h-10 w-10 rounded-2xl bg-white/5 animate-pulse" />
           </div>
           {/* Shimmer effect overlay */}
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/[0.03] to-transparent" />
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/[0.03] to-transparent" />
         </div>
       ))}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { EditProfileFormTabs } from "@/components/profile/edit-profile-form-tabs";
@@ -15,34 +15,131 @@ import {
   Calendar,
   Loader2,
   ExternalLink,
+  AlertCircle,
+  CheckCircle,
+  Target,
+  PlusCircle,
+  TrendingUp,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { UserProfileResponse } from "@/lib/profile/profile-service";
+import type { UserProfileResponse } from "@/lib/profile/types";
+import { Button } from "@/components/ui/button";
 
-const MatchGauge = ({ score }: { score: number }) => (
-  <div className="relative flex items-center justify-center h-40 w-40 mx-auto">
-    <svg className="h-full w-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,44,245,0.2)]">
-      <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-white/5" />
-      <motion.circle
-        cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent"
-        strokeDasharray={439.8}
-        initial={{ strokeDashoffset: 439.8 }}
-        animate={{ strokeDashoffset: 439.8 - (439.8 * score) / 100 }}
-        transition={{ duration: 1.5, ease: "circOut" }}
-        className="text-violet-500"
-      />
-    </svg>
-    <div className="absolute inset-0 flex flex-col items-center justify-center">
-      <span className="text-3xl font-black text-white">{score}%</span>
-      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Readiness</span>
+// --- Helper Components ---
+
+const ProfileStrengthIndicator = ({ score }: { score: number }) => {
+  const strength = useMemo(() => {
+    if (score < 40) return { label: "Beginner", color: "text-amber-400" };
+    if (score < 75) return { label: "Intermediate", color: "text-sky-400" };
+    return { label: "Advanced", color: "text-emerald-400" };
+  }, [score]);
+
+  return <span className={`text-xs font-bold ${strength.color}`}>{strength.label} Profile</span>;
+};
+
+const AvailabilityBadge = ({ available }: { available: boolean }) => {
+  if (!available) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-400">
+        <span className="w-2 h-2 rounded-full bg-slate-500" />
+        Not Available
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-400">
+      <span className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+      </span>
+      Open to Work
+    </span>
+  );
+};
+
+const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResponse, onEdit: () => void }) => {
+  const completeness = useMemo(() => {
+    const checks = {
+      hasHeadline: !!profile.headline || !!profile.current_job_title,
+      hasAbout: ((profile.about?.length || 0) > 20) || ((profile.bio?.length || 0) > 20),
+      hasExperience: ((profile.yearsOfExperience || 0) > 0) || ((profile.years_of_experience || 0) > 0),
+      hasSalary: !!profile.expectedSalary || !!profile.expected_salary,
+      hasSkills: (profile.skills?.length || 0) > 0,
+    };
+    const totalChecks = Object.keys(checks).length;
+    const completedChecks = Object.values(checks).filter(Boolean).length;
+    const score = Math.round((completedChecks / totalChecks) * 100);
+    
+    const incompleteTasks = [
+      !checks.hasHeadline && { label: "Add your professional headline", action: () => onEdit() },
+      !checks.hasAbout && { label: "Write a brief summary about yourself", action: () => onEdit() },
+      !checks.hasExperience && { label: "Set your years of experience", action: () => onEdit() },
+      !checks.hasSalary && { label: "Define your expected salary", action: () => onEdit() },
+      !checks.hasSkills && { label: "List your top skills", action: () => onEdit() },
+    ].filter(Boolean) as { label: string, action: () => void }[];
+
+    return { score, incompleteTasks };
+  }, [profile, onEdit]);
+
+  return (
+    <div className="rounded-3xl bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl h-full flex flex-col">
+      <div className="flex items-center gap-2">
+        <Target className="h-4 w-4 text-violet-400" />
+        <h3 className="text-sm font-bold text-white uppercase tracking-widest">Market Readiness</h3>
+      </div>
+      <div className="relative flex items-center justify-center h-40 w-40 mx-auto my-6">
+        <svg className="h-full w-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,44,245,0.2)]">
+          <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
+          <motion.circle
+            cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent"
+            strokeDasharray={439.8}
+            strokeLinecap="round"
+            initial={{ strokeDashoffset: 439.8 }}
+            animate={{ strokeDashoffset: 439.8 - (439.8 * completeness.score) / 100 }}
+            transition={{ duration: 1.5, ease: "circOut" }}
+            className="text-violet-500"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-4xl font-black text-white">{completeness.score}%</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Complete</span>
+        </div>
+      </div>
+      
+      {completeness.incompleteTasks.length > 0 ? (
+        <div className="mt-auto space-y-4">
+          <p className="text-center text-sm font-bold text-slate-300">Complete your profile to get better matches:</p>
+          <ul className="space-y-2">
+            {completeness.incompleteTasks.slice(0, 3).map((task, i) => (
+              <li key={i}>
+                <button onClick={task.action} className="w-full text-left flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <PlusCircle className="h-5 w-5 text-violet-400 shrink-0" />
+                  <span className="text-xs text-slate-400">{task.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="text-center mt-auto">
+          <CheckCircle className="h-10 w-10 text-emerald-400 mx-auto mb-4" />
+          <h4 className="text-lg font-bold text-white">Profile is Ready!</h4>
+          <p className="text-xs text-slate-400 mt-1">You're all set. We'll notify you about top opportunities.</p>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
+
 
 export default function ProfilePage() {
   const { profile, isLoading, isSaving, updateProfile } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
 
   const handleSaveProfile = async (data: UpdateProfileRequest) => {
     await updateProfile(data);
@@ -57,10 +154,28 @@ export default function ProfilePage() {
     });
   };
 
+  const handleEdit = () => {
+    startTransition(() => {
+      setIsEditing(true);
+    });
+  };
+
+  const profileCompleteness = useMemo(() => {
+    if (!profile) return 0;
+    const checks = [
+      !!profile.headline || !!profile.current_job_title,
+      ((profile.about?.length || 0) > 20) || ((profile.bio?.length || 0) > 20),
+      ((profile.yearsOfExperience || 0) > 0) || ((profile.years_of_experience || 0) > 0),
+      !!profile.expectedSalary || !!profile.expected_salary,
+      (profile.skills?.length || 0) > 0,
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  }, [profile]);
+
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-violet-500 mx-auto" />
             <p className="text-slate-400">Loading your profile...</p>
@@ -73,15 +188,20 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center space-y-4">
-            <p className="text-red-400 font-bold">Profile not found</p>
-            <p className="text-slate-400 text-sm">Trying to create your profile automatically...</p>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="rounded-3xl border border-dashed border-red-500/20 bg-red-500/5 p-12 text-center max-w-md">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
+              <AlertCircle className="h-8 w-8 text-red-400" />
+            </div>
+            <h3 className="text-xl font-black text-white mb-2">Unable to Load Profile</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              We encountered an issue loading your profile. This might be a temporary network issue. Please try again.
+            </p>
             <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+              onClick={handleRetry}
+              className="w-full px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold transition-colors"
             >
-              Refresh Page
+              Try Again
             </button>
           </div>
         </div>
@@ -91,7 +211,7 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-8 pb-10">
         {isEditing ? (
           <EditProfileFormTabs
             profile={profile}
@@ -100,153 +220,126 @@ export default function ProfilePage() {
             onCancel={handleCancelEdit}
           />
         ) : (
-          <>
-            {/* Header Section: Identity Banner */}
-            <section className="relative overflow-hidden rounded-[2.5rem] bg-[#0a0c24] border border-white/5 p-8 sm:p-10 shadow-2xl">
-              <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-violet-600/10 to-transparent pointer-events-none" />
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-linear-to-r from-violet-600 to-cyan-500 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                  <div className="relative h-32 w-32 rounded-[2.2rem] bg-[#07091a] border border-white/10 flex items-center justify-center overflow-hidden">
-                    <User className="h-16 w-16 text-slate-400" />
-                    <div className="absolute inset-0 bg-linear-to-tr from-violet-600/20 to-transparent" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Profile Header Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="rounded-3xl bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl"
+              >
+                <div className="flex flex-col sm:flex-row items-start gap-6">
+                  <div className="relative shrink-0">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600/20 to-indigo-600/20 flex items-center justify-center border-2 border-slate-800">
+                      <User className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1">
+                      <AvailabilityBadge available={!!profile.availableToWork || !!profile.is_open_to_work} />
+                    </div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white border-4 border-[#0a0c24] shadow-xl">
-                    {profile.isOpenToWork ? (
-                      <Zap className="h-5 w-5" />
-                    ) : (
-                      <span className="text-xs font-black">🔒</span>
-                    )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-2">
+                      <h1 className="text-3xl font-black text-white">{profile.username || "User"}</h1>
+                    </div>
+                    <p className="text-slate-400 font-medium text-sm mb-3">
+                      {profile.headline || profile.current_job_title || "No headline provided"}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
+                      <span>{profile.location || (profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.country || profile.city || "Location not set")}</span>
+                      <span>&bull;</span>
+                      <a href={`mailto:${profile.email}`} className="text-slate-500 hover:text-violet-400 transition-colors">{profile.email}</a>
+                    </div>
+                    <ProfileStrengthIndicator score={profileCompleteness} />
                   </div>
+                  <Button onClick={handleEdit} variant="outline" className="shrink-0">
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
                 </div>
+              </motion.div>
 
-                <div className="text-center md:text-left flex-1">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-3">
-                    <h1 className="text-4xl font-black text-white tracking-tight">{profile.username}</h1>
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      profile.isOpenToWork 
-                        ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" 
-                        : "bg-slate-500/10 border border-slate-500/20 text-slate-400"
-                    }`}>
-                      {profile.isOpenToWork ? "Open to Work" : "Not Available"}
-                    </span>
+              {/* Details Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* About Card */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="rounded-3xl bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <User className="h-4 w-4 text-violet-400" />
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">About</h3>
                   </div>
-
-                  {/* Trust Badges */}
-                  <div className="mb-4 flex justify-center md:justify-start">
-                    <ProfileBadges 
-                      isOpenToWork={profile.isOpenToWork}
-                      yearsOfExperience={profile.yearsOfExperience}
-                    />
-                  </div>
-
-                  <p className="text-lg font-medium text-slate-400 mb-6 flex items-center justify-center md:justify-start gap-2">
-                    {profile.currentJobTitle || "Professional"} 
-                    <span className="h-1 w-1 rounded-full bg-slate-700" /> 
-                    {profile.city && profile.country ? `${profile.city}, ${profile.country}` : "Location not set"}
+                  <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-wrap">
+                    {profile.about || profile.bio || "No summary provided. Click 'Edit Profile' to add one."}
                   </p>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                      <Mail className="h-4 w-4 text-violet-400" /> {profile.email}
-                    </div>
-                    {profile.resumeUrl && (
-                      <a 
-                        href={profile.resumeUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 px-4 py-2 rounded-xl border border-white/5 hover:border-violet-500/40 transition-colors"
-                      >
-                        📄 Resume <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                </div>
+                </motion.div>
 
-                <button 
-                  onClick={() => setIsEditing(true)}
-                  className="hidden lg:flex items-center gap-2 bg-violet-600/20 border border-violet-500/40 px-6 py-3 rounded-2xl text-sm font-bold hover:bg-violet-600/30 transition-all text-violet-300"
+                {/* Skills Card */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="rounded-3xl bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl"
                 >
-                  <Edit3 className="h-4 w-4" /> Edit Profile
-                </button>
-              </div>
-            </section>
-          </>
-        )}
-
-        {!isEditing && (
-          <>
-            {/* Bento Grid: Core Data */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* Profile Info Cards */}
-              <section className="lg:col-span-8 space-y-4">
-                {/* Experience & Education */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-2xl bg-white/3 border border-white/5 p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Zap className="h-5 w-5 text-cyan-400" />
-                      <p className="text-xs font-black uppercase tracking-widest text-slate-500">Experience</p>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Code2 className="h-4 w-4 text-violet-400" />
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Skills</h3>
+                  </div>
+                  {profile.skills && profile.skills.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.skills.map(skill => (
+                        <span key={skill.id} className="px-3 py-1 rounded-lg bg-white/5 text-xs font-semibold text-slate-300 border border-white/10">
+                          {skill.name}
+                        </span>
+                      ))}
                     </div>
-                    <p className="text-2xl font-black text-white">
-                      {profile.yearsOfExperience ?? 0} <span className="text-sm text-slate-400">years</span>
-                    </p>
-                    {profile.educationLevel && (
-                      <p className="text-xs text-slate-400 mt-2">📚 {profile.educationLevel}</p>
-                    )}
-                  </div>
-
-                  <div className="rounded-2xl bg-white/3 border border-white/5 p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Code2 className="h-5 w-5 text-violet-400" />
-                      <p className="text-xs font-black uppercase tracking-widest text-slate-500">Expected Salary</p>
-                    </div>
-                    <p className="text-2xl font-black text-white">
-                      {profile.expectedSalary ? `${profile.expectedSalary.toLocaleString()}` : "Not set"} 
-                      <span className="text-sm text-slate-400 ml-2">{profile.currency || "USD"}</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Bio Section */}
-                {profile.bio && (
-                  <div className="rounded-2xl bg-white/3 border border-white/5 p-6">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">About</p>
-                    <p className="text-sm text-slate-300 leading-relaxed">{profile.bio}</p>
-                  </div>
-                )}
-
-                {/* Last Updated */}
-                {profile.updatedAt && (
-                  <div className="rounded-2xl bg-white/3 border border-white/5 p-4 flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-slate-500" />
-                    <span className="text-xs text-slate-500">
-                      Last updated: {new Date(profile.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </section>
-
-              {/* Readiness Card - Compact & Visual */}
-              <section className="lg:col-span-4 rounded-[2.5rem] bg-linear-to-br from-violet-600/10 to-transparent border border-violet-500/10 p-8 text-center flex flex-col justify-center items-center">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-violet-300 mb-8">Market Readiness</h3>
-                <MatchGauge score={calculateReadiness(profile)} />
-                <div className="mt-8 space-y-2">
-                  <p className="text-sm font-bold text-white">Profile Complete</p>
-                  <p className="text-xs text-slate-500 leading-relaxed">Keep your profile updated for better opportunities.</p>
-                </div>
-              </section>
-
-              {/* Mobile Edit Button */}
-              <div className="lg:hidden lg:col-span-12">
-                <button 
-                  onClick={() => setIsEditing(true)}
-                  className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl px-6 py-3 transition-colors"
-                >
-                  <Edit3 className="h-4 w-4" /> Edit Profile
-                </button>
+                  ) : (
+                     <p className="text-sm text-slate-500">No skills listed. Add your skills to attract recruiters.</p>
+                  )}
+                </motion.div>
               </div>
             </div>
-          </>
+
+            {/* Right Sidebar */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="space-y-8"
+            >
+              <ProfileCompletenessCard profile={profile} onEdit={handleEdit} />
+
+              <div className="rounded-3xl bg-[#0a0c24]/60 border border-white/5 p-8 backdrop-blur-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="h-4 w-4 text-violet-400" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-widest">Career Stats</h3>
+                </div>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold">Experience</p>
+                    <p className="text-2xl font-black text-white">
+                      {(profile.yearsOfExperience || profile.years_of_experience || 0) > 0 ? `${profile.yearsOfExperience || profile.years_of_experience} years` : "Entry-Level"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold">Expected Salary</p>
+                    {profile.expectedSalary || profile.expected_salary ? (
+                      <p className="text-2xl font-black text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: profile.currency || 'EGP', minimumFractionDigits: 0 }).format(profile.expectedSalary || profile.expected_salary || 0)}</p>
+                    ) : (
+                      <Button onClick={handleEdit} size="sm" variant="secondary" className="mt-1">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Salary
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </div>
     </AppLayout>
@@ -267,4 +360,3 @@ function calculateReadiness(profile: UserProfileResponse): number {
 
   return Math.min(score, 100); // Cap at 100
 }
-

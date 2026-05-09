@@ -31,6 +31,8 @@ export const useJobsSearch = () => {
 
   const requestIdRef = useRef(0);
   const activeControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFilterStateRef = useRef<string>("");
 
   const cancelInFlightRequest = useCallback(() => {
     activeControllerRef.current?.abort();
@@ -81,18 +83,37 @@ export const useJobsSearch = () => {
     return () => cancelInFlightRequest();
   }, [cancelInFlightRequest]);
 
-  // Debounced search logic for instant feedback
+  // Debounced search logic for instant feedback - only call when filters actually change
   useEffect(() => {
-    // Don't search if it's the initial load or if filters haven't changed
+    // Check if filters have actually changed
+    const currentFilterState = JSON.stringify(draftFilters);
+    if (currentFilterState === lastFilterStateRef.current) {
+      return;
+    }
+
+    // Don't search if it's the initial load
     const isInitial = Object.values(draftFilters).every(v => v === "" || v === "any");
-    if (isInitial) return;
+    if (isInitial) {
+      lastFilterStateRef.current = currentFilterState;
+      return;
+    }
 
-    const timer = setTimeout(() => {
-      // Trigger search automatically
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounce timer
+    debounceTimerRef.current = setTimeout(() => {
+      lastFilterStateRef.current = currentFilterState;
       setAppliedFilters(draftFilters);
-    }, 500); // 500ms wait
+    }, 300); // Reduced from 500ms for better responsiveness
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [draftFilters]);
 
   // Sync applied filters to actual search logic

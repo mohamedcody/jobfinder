@@ -22,23 +22,27 @@ export interface UserProfileResponse {
   is_open_to_work?: boolean | null;
   bio?: string | null;
   updated_at?: string;
+  // Fallbacks for UI that might use old names
+  headline?: string | null;
+  about?: string | null;
+  skills?: { id: number; name: string }[] | null;
+  availableToWork?: boolean;
+  location?: string | null;
 }
 
 /**
  * Request لتحديث البروفايل
  * جميع الحقول اختيارية (Partial Update)
  */
-export interface UpdateUserProfileRequest {
-  current_job_title?: string;
-  years_of_experience?: number;
-  education_level?: string;
-  country?: string;
-  city?: string;
-  resume_url?: string;
-  expected_salary?: number;
+export interface UpdateProfileRequest {
+  headline?: string;
+  about?: string;
+  location?: string;
+  yearsOfExperience?: number;
+  expectedSalary?: number;
   currency?: string;
-  is_open_to_work?: boolean;
-  bio?: string;
+  availableToWork?: boolean;
+  skills?: string[]; // Send an array of skill names
 }
 
 /**

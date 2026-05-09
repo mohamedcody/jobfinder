@@ -160,18 +160,22 @@ function JobsResultsSectionComponent({
                 <Filter className="h-10 w-10 text-violet-400" />
               </div>
             </div>
-            <h3 className="text-3xl font-black text-white tracking-tight">No Matches in this Quadrant</h3>
+            <h3 className="text-3xl font-black text-white tracking-tight">Ready to Search?</h3>
             <p className="mx-auto mt-4 max-w-md text-lg text-slate-400 leading-relaxed">
-              Your current filters are too specific. Try expanding your search to discover hidden opportunities.
+              Enter a job title, location, or skill above to discover matching opportunities tailored to your profile.
             </p>
-            <div className="mt-10">
-              <button
-                onClick={onClearAll}
-                className="btn-glow-primary px-10 py-4 rounded-2xl font-bold text-sm group"
-              >
-                Reset All Parameters
-                <X className="ml-2 h-4 w-4 inline-block transition-transform group-hover:rotate-90" />
-              </button>
+            <div className="mt-8 space-y-3">
+              <p className="text-sm text-slate-500">Popular searches:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {["React Developer", "Full Stack", "Remote"].map((term) => (
+                  <button
+                    key={term}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-violet-400 border border-slate-700 hover:border-violet-500/30 transition-all"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
             </div>
           </motion.div>
         ) : (

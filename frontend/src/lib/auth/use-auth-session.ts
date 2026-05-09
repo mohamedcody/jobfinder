@@ -14,14 +14,37 @@ export const useAuthSession = () => {
   const [token, setToken] = useState<string | null>(null);
   const [isSessionReady, setIsSessionReady] = useState(false);
   const isMountedRef = useRef(true);
+  const tokenCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const syncToken = useCallback(() => {
     if (!isMountedRef.current) {
       return;
     }
 
-    setToken(hasValidToken() ? getToken() : null);
+    // Check if token exists AND is still valid
+    const currentToken = hasValidToken() ? getToken() : null;
+    setToken(currentToken);
     setIsSessionReady(true);
+  }, []);
+
+  // Periodic token validation - check every minute
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const currentToken = getToken();
+      if (currentToken && !hasValidToken()) {
+        // Token expired, clear it
+        clearToken();
+        setToken(null);
+      }
+    };
+
+    tokenCheckIntervalRef.current = setInterval(checkTokenExpiry, 60000); // Check every minute
+
+    return () => {
+      if (tokenCheckIntervalRef.current) {
+        clearInterval(tokenCheckIntervalRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
