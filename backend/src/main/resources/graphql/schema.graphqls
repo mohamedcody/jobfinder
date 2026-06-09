@@ -1,0 +1,46 @@
+type Query {
+    # اختبار الاتصال بالسيرفر
+    ping: String
+}
+
+type Mutation {
+    # تسجيل حساب جديد - بياخد RegisterRequest ويرجع AuthResponse
+    register(input: RegisterRequest!): AuthResponse!
+
+    # تسجيل الدخول - بياخد LoginRequest ويرجع AuthResponse
+    login(input: LoginRequest!): AuthResponse!
+
+    # طلب كود استعادة الباسورد (OTP)
+    forgotPassword(email: String!): String!
+
+    # إعادة تعيين الباسورد باستخدام الـ OTP
+    resetPassword(input: ResetPasswordRequest!): String!
+}
+
+# الـ Inputs لازم تطابق الـ Java Records بتاعتك بالظبط
+input RegisterRequest {
+    username: String!
+    email: String!
+    password: String!
+}
+
+input LoginRequest {
+    identifier: String!
+    password: String!
+}
+
+input ResetPasswordRequest {
+    email: String!
+    otpCode: String!
+    newPassword: String!
+}
+
+# هنا "الإتقان" في الرد اللي الفرونت اند هيستلمه
+type AuthResponse {
+    token: String
+    email: String
+    # خليناها role (سمول) عشان الـ JSON Standard
+    role: String
+    message: String
+
+}

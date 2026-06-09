@@ -1,0 +1,153 @@
+package jobfinder.services.implementation;
+
+import jobfinder.exception.BaseException;
+import jobfinder.exception.ErrorCode;
+
+import jobfinder.model.dto.SkillDto;
+import jobfinder.model.dto.UpdateUserProfileRequest;
+import jobfinder.model.dto.UserProfileResponseDto;
+import jobfinder.model.entity.User;
+import jobfinder.model.entity.UserProfile;
+import jobfinder.model.entity.UserSkill;
+import jobfinder.model.entity.Skill;
+import jobfinder.repository.UserProfileRepository;
+import jobfinder.repository.UserRepository;
+import jobfinder.repository.UserSkillRepository;
+import jobfinder.repository.SkillRepository;
+import jobfinder.services.interfaces.UserProfileInterface;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class UserProfileService implements UserProfileInterface {
+
+    private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
+    private final UserSkillRepository userSkillRepository;
+    private final SkillRepository skillRepository;
+
+    @Override
+    public UserProfileResponseDto getMyProfile() {
+        User currentUser = getCurrentUser();
+        UserProfile profile = userProfileRepository.findByUserId(currentUser.getId())
+                .orElseGet(() -> createDefaultProfile(currentUser));
+        return mapToResponse(profile);
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponseDto updateMyProfile(UpdateUserProfileRequest request) {
+        User currentUser = getCurrentUser();
+        UserProfile profile = userProfileRepository.findByUserId(currentUser.getId())
+                .orElseGet(() -> createDefaultProfile(currentUser));
+
+        if (request.getCurrentJobTitle() != null) profile.setCurrentJobTitle(request.getCurrentJobTitle());
+        if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
+        if (request.getEducationLevel() != null) profile.setEducationLevel(request.getEducationLevel());
+        if (request.getCountry() != null) profile.setCountry(request.getCountry());
+        if (request.getCity() != null) profile.setCity(request.getCity());
+        if (request.getResumeUrl() != null) profile.setResumeUrl(request.getResumeUrl());
+        if (request.getExpectedSalary() != null) profile.setExpectedSalary(request.getExpectedSalary());
+        if (request.getCurrency() != null) profile.setCurrency(request.getCurrency());
+        if (request.getIsOpenToWork() != null) profile.setIsOpenToWork(request.getIsOpenToWork());
+        if (request.getBio() != null) profile.setBio(request.getBio());
+
+        if (request.getSkills() != null) {
+            updateUserSkills(currentUser, request.getSkills());
+        }
+
+        UserProfile savedProfile = userProfileRepository.save(profile);
+        return mapToResponse(savedProfile);
+    }
+
+    @Override
+    public UserProfileResponseDto getUserProfile(Long userId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new BaseException(ErrorCode.INVALID_INPUT, "Profile not found for user ID: " + userId));
+        return mapToResponse(profile);
+    }
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+    }
+
+    private UserProfile createDefaultProfile(User user) {
+        UserProfile profile = UserProfile.builder()
+                .user(user)
+                .isOpenToWork(true)
+                .build();
+        return userProfileRepository.save(profile);
+    }
+
+    private UserProfileResponseDto mapToResponse(UserProfile p) {
+        var skills = userSkillRepository.findByUserId(p.getUser().getId()).stream()
+                .map(userSkill -> SkillDto.builder()
+                        .id(userSkill.getSkill().getId())
+                        .name(userSkill.getSkill().getName())
+                        .build())
+                .toList();
+
+        return UserProfileResponseDto.builder()
+                .id(p.getId())
+                .userId(p.getUser().getId())
+                .username(p.getUser().getUsername())
+                .email(p.getUser().getEmail())
+                .currentJobTitle(p.getCurrentJobTitle())
+                .yearsOfExperience(p.getYearsOfExperience())
+                .educationLevel(p.getEducationLevel())
+                .country(p.getCountry())
+                .city(p.getCity())
+                .resumeUrl(p.getResumeUrl())
+                .expectedSalary(p.getExpectedSalary())
+                .currency(p.getCurrency())
+                .isOpenToWork(p.getIsOpenToWork())
+                .bio(p.getBio())
+                .skills(skills)
+                .updatedAt(p.getUpdatedAt())
+                .build();
+    }
+
+    private void updateUserSkills(User user, java.util.List<String> skillNames) {
+        var normalized = skillNames.stream()
+                .map(name -> name == null ? "" : name.trim())
+                .map(String::toLowerCase)
+                .filter(name -> !name.isEmpty())
+                .distinct()
+                .toList();
+
+        userSkillRepository.deleteByUserId(user.getId());
+        userSkillRepository.flush();
+
+        Set<Long> skillIds = new HashSet<>();
+
+        for (String name : normalized) {
+            Skill skill = skillRepository.findByNameIgnoreCase(name)
+                    .orElseGet(() -> skillRepository.save(Skill.builder().name(name).build()));
+
+            if (!skillIds.add(skill.getId())) {
+                continue;
+            }
+
+            UserSkill userSkill = UserSkill.builder()
+                    .user(user)
+                    .skill(skill)
+                    .build();
+            userSkillRepository.save(userSkill);
+        }
+    }
+
+
+
+
+}
