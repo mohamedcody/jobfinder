@@ -42,9 +42,14 @@ public class AutonomousJobScraperService {
     @Value("${apify.token}")
     private String apifyToken;
 
-    private static final String APIFY_ACTOR_URL = "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs";
-    private static final String APIFY_RUN_STATUS_URL = "https://api.apify.com/v2/actor-runs/";
-    private static final String APIFY_DATASET_URL = "https://api.apify.com/v2/datasets/";
+    @Value("${apify.api.actor-url}")
+    private String apifyActorUrl;
+
+    @Value("${apify.api.status-url}")
+    private String apifyStatusUrl;
+
+    @Value("${apify.api.dataset-url}")
+    private String apifyDatasetUrl;
 
     // Executes every 24 hours
     @Scheduled(fixedDelay = 86400000)
@@ -126,7 +131,7 @@ public class AutonomousJobScraperService {
     }
 
     private Map<?, ?> startApifyScraper(String keyword) {
-        String runUrl = APIFY_ACTOR_URL + "?token=" + apifyToken.trim();
+        String runUrl = apifyActorUrl + "?token=" + apifyToken.trim();
         String encodedKeyword = URLEncoder.encode(keyword.trim(), StandardCharsets.UTF_8);
         String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword;
 
@@ -148,8 +153,8 @@ public class AutonomousJobScraperService {
     }
 
     private void waitForRunToComplete(String runId) throws InterruptedException {
-        String statusUrl = APIFY_RUN_STATUS_URL + runId + "?token=" + apifyToken.trim();
-        int maxAttempts = 24; // 2 minutes max (24 * 5 seconds)
+        String statusUrl = apifyStatusUrl + runId + "?token=" + apifyToken.trim();
+        int maxAttempts = 24;
         int attempts = 0;
 
         while (attempts < maxAttempts) {
@@ -180,7 +185,8 @@ public class AutonomousJobScraperService {
     }
 
     private List<JobResponseDTO> fetchScrapedData(String datasetId) {
-        String datasetUrl = APIFY_DATASET_URL + datasetId + "/items?token=" + apifyToken.trim();
+        // Fixed: Variable names updated to match fields
+        String datasetUrl = apifyDatasetUrl + datasetId + "/items?token=" + apifyToken.trim();
         return webClient.get()
                 .uri(datasetUrl)
                 .retrieve()

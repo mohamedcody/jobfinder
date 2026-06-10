@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -44,4 +45,14 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
             "JOIN FETCH up.user u " +
             "WHERE up.user.id = :userId")
     Optional<UserProfile> findByUserIdWithUser(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT DISTINCT LOWER(TRIM(up.currentJobTitle))
+        FROM UserProfile up
+        WHERE up.currentJobTitle IS NOT NULL
+          AND TRIM(up.currentJobTitle) <> ''
+        ORDER BY 1
+        """)
+    List<String> findDistinctCurrentJobTitles();
 }
+
