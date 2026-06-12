@@ -275,6 +275,7 @@ public class AuthService implements AuthInterface {
                 || user.getLockoutTime().isBefore(LocalDateTime.now());
 
         return new CustomUserDetails(
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 user.isEnabled(),

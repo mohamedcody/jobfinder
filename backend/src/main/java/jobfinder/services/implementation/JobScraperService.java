@@ -95,6 +95,7 @@ public class JobScraperService implements JobInterface {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "jobs", allEntries = true)
     public String generateAiSummary(Long jobId) {
         JobEntity job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new BaseException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + jobId));

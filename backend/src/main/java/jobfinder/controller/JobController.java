@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import org.springframework.security.core.Authentication;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -56,9 +57,13 @@ public class JobController {
             @RequestParam(required = false) String employmentType,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "false") boolean refresh
+            @RequestParam(defaultValue = "false") boolean refresh,
+            Authentication authentication
     ) {
         if (refresh) {
+            if (authentication == null || authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
             jobScraperService.evictJobsCache();
         }
         JobFilterRequest filter = new JobFilterRequest(title, location, minSalary, postedAfter, employmentType);

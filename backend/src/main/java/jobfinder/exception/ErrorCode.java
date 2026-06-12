@@ -48,7 +48,8 @@ public enum ErrorCode {
     DATABASE_ERROR("ERR_301", "Database operation failed", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // ⚠️ General Errors (ERR_999)
-    INTERNAL_ERROR("ERR_999", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_ERROR("ERR_999", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
+    ALREADY_EXISTS("ERR_003", "Resource already exists or process is already running", HttpStatus.CONFLICT);
 
 
     private final String code;

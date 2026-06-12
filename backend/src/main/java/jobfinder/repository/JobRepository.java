@@ -20,8 +20,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
     boolean existsByJobUrl(String jobUrl );
 
 
-    @Query("select j.jobUrl from JobEntity j where j.jobUrl in:Links")
-     List<String> findExistingLinks(@Param("jobUrls") List<String> Links);
+    @Query("select j.jobUrl from JobEntity j where j.jobUrl in :jobUrls")
+    List<String> findExistingLinks(@Param("jobUrls") List<String> links);
 
 
     @Query(value = "SELECT * FROM jobs j WHERE " +

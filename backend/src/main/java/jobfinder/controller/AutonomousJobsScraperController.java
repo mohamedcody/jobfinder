@@ -4,6 +4,7 @@ import jobfinder.services.implementation.AutonomousJobScraperService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,19 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/scraper") // مسار الـ API
+@RequestMapping("/api/v1/scraper")
 @RequiredArgsConstructor
 public class AutonomousJobsScraperController {
 
     private final AutonomousJobScraperService scraperService;
 
     @PostMapping("/trigger")
-    public ResponseEntity<String> triggerScraperManually(@RequestParam String keyword) {
-        log.info("🎯 Manual scrape triggered via API for keyword: {}", keyword);
-
-
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> triggerScraper(@RequestParam String keyword) {
         String result = scraperService.scrapeAndSaveAllInOne(keyword);
-
         return ResponseEntity.ok(result);
     }
 }

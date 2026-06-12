@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { EditProfileFormTabs } from "@/components/profile/edit-profile-form-tabs";
 import { CareerIntelligenceHub } from "@/components/profile/career-intelligence-hub";
-import type { UpdateProfileRequest } from "@/lib/profile/profile-service";
+import type { UpdateProfileRequest } from "@/lib/profile/types";
 import { escapeHtml } from "@/lib/security/sanitization";
 import {
   User, 
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                     </div>
                     {profile.skills && profile.skills.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {profile.skills.map(skill => (
+                        {profile.skills.map((skill: { id: number; name: string }) => (
                           <span key={skill.id} className="px-3 py-1 rounded-full bg-white/5 text-xs font-semibold text-slate-200 border border-white/10 shadow-sm">
                             {skill.name}
                           </span>

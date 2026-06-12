@@ -21,10 +21,7 @@ import reactor.core.publisher.Mono;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -38,6 +35,7 @@ public class AutonomousJobScraperService {
     private final WebClient webClient;
 
     private final AtomicBoolean isApifyBlocked = new AtomicBoolean(false);
+    private final AtomicBoolean isScrapingInProgress = new AtomicBoolean(false);
 
     @Value("${apify.token}")
     private String apifyToken;
@@ -95,9 +93,15 @@ public class AutonomousJobScraperService {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Keyword cannot be empty.");
         }
 
+        // 🔒 1. بنحاول نقفل السكرابر لو فاضي، لو لقیناه مشغول بنرفض الطلب فوراً
+        if (!isScrapingInProgress.compareAndSet(false, true)) {
+            log.warn("⚠️ A scraping process is already running. Request for keyword [{}] rejected.", keyword);
+            throw new BaseException(ErrorCode.ALREADY_EXISTS, "The scraper is currently busy processing another request. Please try again later.");
+        }
+
         try {
             Map<?, ?> runResponse = startApifyScraper(keyword);
-            
+
             if (runResponse == null || !runResponse.containsKey("data")) {
                 throw new BaseException(ErrorCode.EXTERNAL_API_ERROR, "Failed to receive valid response from Apify.");
             }
@@ -127,6 +131,9 @@ public class AutonomousJobScraperService {
         } catch (Exception e) {
             log.error("❌ Unexpected error during scraping for keyword [{}]: ", keyword, e);
             throw new BaseException(ErrorCode.INTERNAL_ERROR, "Scraping failed: " + e.getMessage());
+        } finally {
+            // 🔓 2. أول ما السكرابر يخلص (سواء نجح أو ضرب إيرور)، بنفتح القفل تاني عشان يستقبل كلمات جديدة
+            isScrapingInProgress.set(false);
         }
     }
 
@@ -193,6 +200,8 @@ public class AutonomousJobScraperService {
                 .bodyToFlux(JobResponseDTO.class)
                 .collectList()
                 .block();
+
+
     }
 
     @Transactional
@@ -204,7 +213,7 @@ public class AutonomousJobScraperService {
                     .map(JobResponseDTO::getLink)
                     .filter(link -> link != null && !link.isBlank())
                     .toList();
-                    
+
             if (links.isEmpty()) {
                 log.warn("⚠️ No valid job links found in the scraped data.");
                 return;
@@ -213,15 +222,68 @@ public class AutonomousJobScraperService {
             List<String> existingLinks = jobRepository.findExistingLinks(links);
             Set<String> existingSet = new HashSet<>(existingLinks);
 
-            List<JobEntity> entities = jobList.stream()
+            // Filter out only the new jobs that don't exist in our system yet
+            List<JobResponseDTO> newJobsDto = jobList.stream()
                     .filter(dto -> dto.getLink() != null && !dto.getLink().isBlank() && !existingSet.contains(dto.getLink()))
+                    .toList();
+
+            if (newJobsDto.isEmpty()) {
+                log.info("ℹ️ No new jobs found. All items already exist in the database.");
+                return;
+            }
+
+            // =========================================================================
+            // ✅ BUG FIX: Prevent duplicate company creation and DataIntegrity crashes
+            // =========================================================================
+
+            // Step 1: Collect all unique company names from the new incoming jobs
+            Set<String> uniqueCompanyNames = new HashSet<>();
+            for (JobResponseDTO dto : newJobsDto) {
+                if (dto.getCompanyName() != null && !dto.getCompanyName().isBlank()) {
+                    uniqueCompanyNames.add(dto.getCompanyName().trim());
+                }
+            }
+
+            // Step 2: Fetch existing companies from DB and put them into a Map for fast lookup
+            Map<String, CompanyEntity> companyMap = new HashMap<>();
+            for (String name : uniqueCompanyNames) {
+                companyRepository.findByName(name).ifPresent(c -> companyMap.put(name, c));
+            }
+
+            // Step 3: Identify missing companies, create them, and save them using Batch Save (saveAll)
+            List<CompanyEntity> companiesToSave = new ArrayList<>();
+            for (JobResponseDTO dto : newJobsDto) {
+                String name = dto.getCompanyName();
+                if (name != null && !name.isBlank()) {
+                    String trimmedName = name.trim();
+                    // If the company is not in our Map, create it now
+                    if (!companyMap.containsKey(trimmedName)) {
+                        CompanyEntity newCompany = CompanyEntity.builder()
+                                .name(trimmedName)
+                                .logoUrl(dto.getCompanyLogo())
+                                .build();
+                        companiesToSave.add(newCompany);
+                        // Add a temporary reference to the map to avoid duplicate rows inside this loop
+                        companyMap.put(trimmedName, newCompany);
+                    }
+                }
+            }
+
+            // Perform a safe batch save for all new companies and update our lookup map
+            if (!companiesToSave.isEmpty()) {
+                List<CompanyEntity> savedCompanies = companyRepository.saveAll(companiesToSave);
+                for (CompanyEntity c : savedCompanies) {
+                    companyMap.put(c.getName(), c);
+                }
+            }
+
+            // Step 4: Map the new job DTOs to entities safely using our ready-to-use local map
+            List<JobEntity> entities = newJobsDto.stream()
                     .map((JobResponseDTO dto) -> {
-                        CompanyEntity company = companyRepository.findByName(dto.getCompanyName())
-                                .orElseGet(() -> companyRepository.save(
-                                        CompanyEntity.builder()
-                                                .name(dto.getCompanyName())
-                                                .logoUrl(dto.getCompanyLogo())
-                                                .build()));
+                        CompanyEntity company = null;
+                        if (dto.getCompanyName() != null && !dto.getCompanyName().isBlank()) {
+                            company = companyMap.get(dto.getCompanyName().trim());
+                        }
 
                         return JobEntity.builder()
                                 .title(dto.getTitle())
@@ -237,11 +299,7 @@ public class AutonomousJobScraperService {
                                 .build();
                     }).toList();
 
-            if (entities.isEmpty()) {
-                log.info("ℹ️ No new jobs found. All items already exist in the database.");
-                return;
-            }
-
+            // Save all the processed jobs safely in bulk
             jobRepository.saveAll(entities);
             log.info("✅ Successfully saved {} new jobs.", entities.size());
 
@@ -250,5 +308,7 @@ public class AutonomousJobScraperService {
             throw new BaseException(ErrorCode.INTERNAL_ERROR, "Database persistence failed: " + e.getMessage());
         }
     }
+
+
 }
 

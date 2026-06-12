@@ -51,7 +51,7 @@ public class AiService {
 
             Map response = webClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/v1beta/models/gemini-flash-latest:generateContent")
+                            .path("/v1beta/models/gemini-1.5-flash:generateContent")
                             .queryParam("key", geminiApiKey)
                             .build())
                     .bodyValue(requestBody)

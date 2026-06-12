@@ -20,27 +20,41 @@ import java.time.LocalDateTime;
 public class JobResponseDTO {
 
     private Long id;
+    @JsonProperty("title")
     private String title;
+
+    @JsonProperty("companyName")
     private String companyName;
+
+    @JsonProperty("location")
     private String location;
+
+    @JsonProperty("link")
     private String link;
-    
+
     @JsonProperty("description")
     private String descriptionText;
-    
+
     @JsonProperty("companyLogo")
     private String companyLogo;
-    
+
+    @JsonProperty("companyWebsite")
     private String companyWebsite;
+
+    @JsonProperty("companyDescription")
     private String companyDescription;
+
+    @JsonProperty("seniorityLevel")
     private String seniorityLevel;
-    
-    @JsonProperty("jobType") // Apify common field for employment type
+
+    // التعديل الأهم هنا: الـ JSON يحتوي على employmentType
+    @JsonProperty("employmentType")
     private String employmentType;
-    
-    @JsonProperty("salary") // Apify common field for salary
+
+    @JsonProperty("salary")
     private String salaryRange;
 
+    @JsonProperty("aiSummary")
     private String aiSummary;
 
     @Builder.Default
