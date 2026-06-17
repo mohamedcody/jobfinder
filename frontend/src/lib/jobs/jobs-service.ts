@@ -81,7 +81,11 @@ export const jobsService = {
       return this.getAllJobs(lastId, size, options);
     }
 
-    const queryParams: Record<string, string | number> = { title, size };
+    const queryParams: Record<string, string | number> = {
+      title,
+      location: params.location ?? "",
+      size,
+    };
     if (lastId !== undefined && lastId !== null) {
       queryParams.lastId = lastId;
     }
