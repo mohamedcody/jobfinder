@@ -14,10 +14,14 @@ import java.time.LocalDateTime;
 public class SavedJobResponse {
 
 
-    private Long id;
+    private Long savedJobId;
     private Long jobId;
     private String jobTitle;
     private String companyName;
+    private String companyLogo;
+    private String location;
+    private String jobUrl;
+    private String employmentType;
     private LocalDateTime savedAt;
     private String notes;
 

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 
 
@@ -22,6 +23,13 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>  , JpaSpec
 
     @Query("select j.jobUrl from JobEntity j where j.jobUrl in :jobUrls")
     List<String> findExistingLinks(@Param("jobUrls") List<String> links);
+
+
+    // ✅ جديد: بيجيب الـ Job مع الـ Company سوا في query واحد بـ JOIN FETCH
+    // قبل كده job.getCompany() كان بيعمل query تاني لوحده (company كانت LAZY)
+    // ده بيقلل round-trip للداتابيز من 2 لـ 1 في كل عملية saveJob
+    @Query("SELECT j FROM JobEntity j LEFT JOIN FETCH j.company WHERE j.id = :id")
+    Optional<JobEntity> findByIdWithCompany(@Param("id") Long id);
 
 
     @Query(value = "SELECT * FROM jobs j WHERE " +

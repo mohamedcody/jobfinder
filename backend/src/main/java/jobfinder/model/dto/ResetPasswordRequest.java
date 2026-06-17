@@ -14,7 +14,6 @@ public record ResetPasswordRequest(
         String newPassword,
 
         @NotBlank(message = "Confirm password is required")
-        String
-        confirmPassword
+        String confirmPassword
 ){}
 

@@ -4,7 +4,7 @@ package jobfinder.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-
+import java.util.List;
 
 
 @Entity
@@ -62,10 +62,10 @@ public class JobEntity {
 
     // --- Added Bidirectional Mappings for Cascade Deletes ---
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<JobSkill> skills;
+    private List<JobSkill> skills;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<UserInteraction> interactions;
+    private List<UserInteraction> interactions;
 
 }
 
