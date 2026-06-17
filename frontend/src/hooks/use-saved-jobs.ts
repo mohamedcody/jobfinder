@@ -1,72 +1,206 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
+import { hasValidToken } from "@/lib/auth/token-storage";
+import { savedJobsService, type SavedJob } from "@/lib/jobs/saved-jobs-service";
 
 const SAVED_JOBS_KEY = "jobfinder.saved-jobs";
+const EMPTY_JOB_IDS: number[] = [];
 
 interface SavedJobsStore {
   [jobId: number]: boolean;
 }
 
+const readCachedSavedJobs = (): SavedJobsStore => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const stored = window.localStorage.getItem(SAVED_JOBS_KEY);
+    return stored ? (JSON.parse(stored) as SavedJobsStore) : {};
+  } catch {
+    return {};
+  }
+};
+
+const toSavedJobsStore = (jobIds: number[]): SavedJobsStore =>
+  jobIds.reduce<SavedJobsStore>((acc, jobId) => {
+    acc[jobId] = true;
+    return acc;
+  }, {});
+
+const persistSavedJobs = (jobs: SavedJobsStore) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(jobs));
+};
+
 /**
- * Hook for managing saved jobs locally and with backend
- * Provides save/unsave functionality with optimistic updates
+ * Backend-first saved jobs hook with optimistic UI and localStorage fallback.
+ * Pass visible job IDs from list pages to sync all cards in one batch request.
  */
-export const useSavedJobs = () => {
-  const [savedJobs, setSavedJobs] = useState<SavedJobsStore>(() => {
-    if (typeof window === "undefined") return {};
-    const stored = localStorage.getItem(SAVED_JOBS_KEY);
-    return stored ? JSON.parse(stored) : {};
-  });
+export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
+  const [savedJobs, setSavedJobs] = useState<SavedJobsStore>(() => readCachedSavedJobs());
+  const [savedJobDetails, setSavedJobDetails] = useState<SavedJob[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingJobIds, setPendingJobIds] = useState<Set<number>>(() => new Set());
+  const requestIdRef = useRef(0);
 
-  // Persist to localStorage
-  const persistSavedJobs = useCallback((jobs: SavedJobsStore) => {
-    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(jobs));
-  }, []);
-
-  const isSaved = useCallback((jobId: number): boolean => {
-    return savedJobs[jobId] === true;
-  }, [savedJobs]);
-
-  const toggleSaveJob = useCallback(
-    async (jobId: number, onServerToggle?: () => Promise<void>) => {
-      const wasStored = savedJobs[jobId];
-      
-      // Optimistic update
-      const newState = { ...savedJobs, [jobId]: !wasStored };
-      setSavedJobs(newState);
-      persistSavedJobs(newState);
-
-      // Attempt server sync
-      try {
-        if (onServerToggle) {
-          await onServerToggle();
-        }
-        const action = !wasStored ? "added to" : "removed from";
-        toast.success(`Job ${action} saved jobs`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_) {
-        // Revert optimistic update on error
-        setSavedJobs(savedJobs);
-        persistSavedJobs(savedJobs);
-        toast.error("Failed to save job. Please try again.");
-      }
-    },
-    [savedJobs, persistSavedJobs]
+  const visibleJobIdsKey = visibleJobIds.join(",");
+  const normalizedVisibleIds = useMemo(
+    () => Array.from(new Set(visibleJobIds.filter(Number.isFinite))).sort((a, b) => a - b),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleJobIdsKey],
   );
 
-  const clearSavedJobs = useCallback(() => {
-    setSavedJobs({});
-    localStorage.removeItem(SAVED_JOBS_KEY);
-    toast.success("All saved jobs cleared");
+  const updateSavedJobs = useCallback((updater: (current: SavedJobsStore) => SavedJobsStore) => {
+    setSavedJobs((current) => {
+      const next = updater(current);
+      persistSavedJobs(next);
+      return next;
+    });
   }, []);
+
+  const syncVisibleSavedStatus = useCallback(
+    async (signal?: AbortSignal) => {
+      if (normalizedVisibleIds.length === 0 || !hasValidToken()) return;
+
+      const requestId = ++requestIdRef.current;
+      setIsSyncing(true);
+
+      try {
+        const savedIds = await savedJobsService.getSavedJobIds(normalizedVisibleIds, { signal });
+        if (requestId !== requestIdRef.current) return;
+
+        updateSavedJobs((current) => {
+          const next = { ...current };
+          const savedSet = new Set(savedIds);
+
+          for (const jobId of normalizedVisibleIds) {
+            if (savedSet.has(jobId)) {
+              next[jobId] = true;
+            } else {
+              delete next[jobId];
+            }
+          }
+
+          return next;
+        });
+      } catch (error) {
+        if (!isRequestCanceled(error)) {
+          console.error("Failed to sync saved job status", error);
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsSyncing(false);
+        }
+      }
+    },
+    [normalizedVisibleIds, updateSavedJobs],
+  );
+
+  const fetchSavedJobs = useCallback(async (signal?: AbortSignal) => {
+    if (!hasValidToken()) return [];
+
+    setIsSyncing(true);
+    try {
+      const saved = await savedJobsService.getSavedJobs({ signal });
+      setSavedJobDetails(saved);
+      updateSavedJobs(() => toSavedJobsStore(saved.map((job) => job.jobId)));
+      return saved;
+    } catch (error) {
+      if (!isRequestCanceled(error)) {
+        toast.error(getApiErrorMessage(error));
+      }
+      return [];
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [updateSavedJobs]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void syncVisibleSavedStatus(controller.signal);
+    return () => controller.abort();
+  }, [syncVisibleSavedStatus]);
+
+  const isSaved = useCallback((jobId: number): boolean => savedJobs[jobId] === true, [savedJobs]);
+
+  const isPending = useCallback((jobId: number): boolean => pendingJobIds.has(jobId), [pendingJobIds]);
+
+  const setPending = useCallback((jobId: number, pending: boolean) => {
+    setPendingJobIds((current) => {
+      const next = new Set(current);
+      if (pending) next.add(jobId);
+      else next.delete(jobId);
+      return next;
+    });
+  }, []);
+
+  const toggleSaveJob = useCallback(
+    async (jobId: number, payload?: { notes?: string }) => {
+      if (isPending(jobId)) return;
+
+      const wasSaved = savedJobs[jobId] === true;
+      setPending(jobId, true);
+
+      updateSavedJobs((current) => {
+        const next = { ...current };
+        if (wasSaved) delete next[jobId];
+        else next[jobId] = true;
+        return next;
+      });
+
+      try {
+        if (wasSaved) {
+          await savedJobsService.unsaveJob(jobId);
+          setSavedJobDetails((current) => current.filter((job) => job.jobId !== jobId));
+          toast.success("Removed from saved jobs");
+        } else {
+          const saved = await savedJobsService.saveJob(jobId, payload);
+          setSavedJobDetails((current) => [saved, ...current.filter((job) => job.jobId !== jobId)]);
+          toast.success("Saved job successfully");
+        }
+      } catch (error) {
+        updateSavedJobs((current) => {
+          const next = { ...current };
+          if (wasSaved) next[jobId] = true;
+          else delete next[jobId];
+          return next;
+        });
+        toast.error(getApiErrorMessage(error));
+      } finally {
+        setPending(jobId, false);
+      }
+    },
+    [isPending, savedJobs, setPending, updateSavedJobs],
+  );
+
+  const clearSavedJobs = useCallback(async () => {
+    const jobsToRemove = Object.keys(savedJobs).map(Number).filter(Number.isFinite);
+    const previous = savedJobs;
+
+    updateSavedJobs(() => ({}));
+    setSavedJobDetails([]);
+
+    try {
+      await Promise.all(jobsToRemove.map((jobId) => savedJobsService.unsaveJob(jobId)));
+      toast.success("All saved jobs cleared");
+    } catch (error) {
+      updateSavedJobs(() => previous);
+      toast.error(getApiErrorMessage(error));
+    }
+  }, [savedJobs, updateSavedJobs]);
 
   return {
     savedJobs,
+    savedJobDetails,
+    isSyncing,
     isSaved,
+    isPending,
     toggleSaveJob,
     clearSavedJobs,
+    fetchSavedJobs,
+    syncVisibleSavedStatus,
   };
 };
-

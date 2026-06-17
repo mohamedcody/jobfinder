@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useSavedJobs } from "@/hooks/use-saved-jobs";
 import { 
@@ -15,7 +15,9 @@ import {
   Calendar,
   Database,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  Loader2,
+  ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -27,6 +29,8 @@ interface KanbanJob {
   location: string;
   status: "saved" | "applied" | "interview" | "offer";
   date: string;
+  jobUrl: string | null;
+  notes: string | null;
 }
 
 const COLUMN_CONFIG = [
@@ -100,6 +104,7 @@ const JobCard = ({ job, onMove }: { job: KanbanJob; onMove: (id: string, newStat
         {job.title}
       </h4>
       <p className="text-xs text-slate-400 mb-3">{job.company}</p>
+      {job.notes && <p className="mb-3 line-clamp-2 text-[11px] text-slate-500">{job.notes}</p>}
       
       <div className="flex flex-col gap-1.5 border-t border-white/5 pt-3">
         <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
@@ -110,14 +115,30 @@ const JobCard = ({ job, onMove }: { job: KanbanJob; onMove: (id: string, newStat
           <Calendar className="h-3 w-3" />
           {job.date}
         </div>
+        {job.jobUrl && (
+          <a
+            href={job.jobUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-cyan-400 hover:text-cyan-300"
+          >
+            Open Job <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
     </motion.div>
   );
 };
 
 export default function SavedMatchesPage() {
-  const [jobs, setJobs] = useState<KanbanJob[]>([]);
-  const { savedJobs } = useSavedJobs();
+  const { savedJobs, savedJobDetails, isSyncing, fetchSavedJobs } = useSavedJobs();
+  const [jobStatuses, setJobStatuses] = useState<Record<string, KanbanJob["status"]>>({});
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchSavedJobs(controller.signal);
+    return () => controller.abort();
+  }, [fetchSavedJobs]);
 
   const savedIds = useMemo(() => {
     return Object.keys(savedJobs)
@@ -125,10 +146,24 @@ export default function SavedMatchesPage() {
       .filter((id) => Number.isFinite(id) && savedJobs[id]);
   }, [savedJobs]);
 
+  const jobs = useMemo<KanbanJob[]>(() => {
+    return savedJobDetails.map((saved) => {
+      const id = String(saved.jobId);
+      return {
+        id,
+        title: saved.jobTitle,
+        company: saved.companyName || "Unknown company",
+        location: saved.location || "Remote",
+        status: jobStatuses[id] || "saved",
+        date: new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(saved.savedAt)),
+        jobUrl: saved.jobUrl,
+        notes: saved.notes,
+      };
+    });
+  }, [jobStatuses, savedJobDetails]);
+
   const handleMoveJob = (id: string, newStatus: KanbanJob["status"]) => {
-    setJobs((prev) => prev.map((job) => 
-      job.id === id ? { ...job, status: newStatus } : job
-    ));
+    setJobStatuses((prev) => ({ ...prev, [id]: newStatus }));
     const statusLabel = COLUMN_CONFIG.find((col) => col.id === newStatus)?.title ?? newStatus;
     toast.success(`Moved to ${statusLabel}`);
   };
@@ -160,12 +195,12 @@ export default function SavedMatchesPage() {
                 <h2 className="text-sm font-black uppercase tracking-widest text-white">Data Source Status</h2>
               </div>
               <p className="text-sm text-slate-400">
-                Backend is not connected yet, so this board shows no fake jobs. Once the API is ready, real saved jobs will appear here.
+                Connected to the saved-jobs API. Your real saved jobs appear here with optimistic updates and no fake data.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] font-bold text-amber-300">
               <ShieldCheck className="h-3 w-3" />
-              Waiting for API
+              Live Backend Data
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
@@ -190,7 +225,7 @@ export default function SavedMatchesPage() {
             <ArrowRight className="h-4 w-4 text-violet-400" />
             <h2 className="text-sm font-black uppercase tracking-widest text-white">Expected Data Shape</h2>
           </div>
-          <p className="text-xs text-slate-400 mb-3">These fields will be filled from backend later.</p>
+          <p className="text-xs text-slate-400 mb-3">The board is populated from the authenticated saved-jobs endpoints.</p>
           <div className="flex flex-wrap gap-2">
             {EXPECTED_FIELDS.map((field) => (
               <span key={field} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-300">
@@ -228,9 +263,11 @@ export default function SavedMatchesPage() {
               {jobs.filter((j) => j.status === col.id).length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                   <div className="h-10 w-10 rounded-full bg-white/5 border border-dashed border-white/10 flex items-center justify-center mb-3">
-                    <Plus className="h-4 w-4 text-slate-600" />
+                    {isSyncing ? <Loader2 className="h-4 w-4 animate-spin text-violet-400" /> : <Plus className="h-4 w-4 text-slate-600" />}
                   </div>
-                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">No real data yet</p>
+                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                    {isSyncing ? "Loading saved jobs" : "No jobs in this stage"}
+                  </p>
                 </div>
               )}
             </div>

@@ -9,7 +9,7 @@
 
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { 
   AlertCircle, 
   Filter, 
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { JobCard } from "@/components/jobs/job-card";
+import { useSavedJobs } from "@/hooks/use-saved-jobs";
 import type { Job } from "@/lib/jobs/types";
 import type { JobSearchFormState } from "@/components/jobs/job-search-filter";
 
@@ -53,6 +54,8 @@ function JobsResultsSectionComponent({
   onClearAll,
   onRefresh,
 }: JobsResultsSectionProps) {
+  const visibleJobIds = useMemo(() => jobs.map((job) => job.id), [jobs]);
+  const { isSaved, isPending, toggleSaveJob } = useSavedJobs(visibleJobIds);
   const showError = error && jobs.length === 0;
   const showEmpty = !isLoading && !showError && jobs.length === 0;
 
@@ -182,7 +185,14 @@ function JobsResultsSectionComponent({
           <>
             <div className="grid gap-6">
               {jobs.map((job, index) => (
-                <JobCard key={`${job.link}-${index}`} job={job} searchTerm={searchTerm} />
+                <JobCard
+                  key={`${job.link}-${index}`}
+                  job={job}
+                  searchTerm={searchTerm}
+                  isSaved={isSaved(job.id)}
+                  isSavePending={isPending(job.id)}
+                  onToggleSave={toggleSaveJob}
+                />
               ))}
             </div>
 

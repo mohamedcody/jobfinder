@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -37,54 +38,49 @@ public class SavedJobService implements jobSaveInterface {
     public SavedJobResponse saveJob(Long jobId, SaveJobRequest request) {
         Long currentUserId = getCurrentUserId();
 
-        // ✅ نتأكد إن الوظيفة موجودة بـ findById (فيها SELECT فعلي)
         JobEntity job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new BaseException(ErrorCode.JOB_NOT_FOUND, "Job not found: " + jobId));
 
-        // ✅ نشيك إذا كانت محفوظة قبل كده بـ query خفيفة (EXISTS)
-        if (savedJobRepository.isJobSaved(currentUserId, jobId)) {
-            throw new BaseException(ErrorCode.INVALID_INPUT, "Job already saved.");
+        SavedJob savedJob = savedJobRepository.findByUser_IdAndJob_Id(currentUserId, jobId)
+                .orElse(null);
+
+        if (savedJob != null && !savedJob.isDeleted()) {
+            if (request != null) {
+                savedJob.setNotes(request.getNotes());
+            }
+            return toResponse(savedJob, job);
         }
 
-        // ✅ Limit عشان منسمحش بـ unlimited saves
         long count = savedJobRepository.countSavedJobsByUserId(currentUserId);
         if (count >= MAX_SAVED_JOBS) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "You can save up to " + MAX_SAVED_JOBS + " jobs only.");
         }
 
-        // ✅ لو فيه row قديم اتعمله soft delete (unsave قبل كده) بنرجّعه بدل ما ننشئ row جديد
-        // كده مفيش تراكم rows ميتة، وكل user+job ليهم row واحد بس طول الوقت
-        SavedJob savedJob = savedJobRepository.findByUser_IdAndJob_Id(currentUserId, jobId)
-                .orElseGet(SavedJob::new);
+        if (savedJob == null) {
+            savedJob = new SavedJob();
+            savedJob.setUser(userRepository.getReferenceById(currentUserId));
+            savedJob.setJob(job);
+        }
 
-        savedJob.setUser(userRepository.getReferenceById(currentUserId)); // proxy بس، مفيش SELECT تاني
-        savedJob.setJob(job);
-        savedJob.setNotes(request != null ? request.getNotes() : null);
+        savedJob.setNotes(request != null ? request.getNotes() : savedJob.getNotes());
         savedJob.setDeleted(false);
         savedJob.setSavedAt(LocalDateTime.now());
 
         try {
-            savedJobRepository.save(savedJob);
+            savedJob = savedJobRepository.save(savedJob);
         } catch (DataIntegrityViolationException e) {
-            // ✅ لو حصل race condition (two requests في نفس اللحظة) الـ unique constraint
-            // على الـ DB هيرفض الـ insert التاني، ونحولها لرسالة واضحة بدل ما تبقى 500
-            throw new BaseException(ErrorCode.INVALID_INPUT, "Job already saved.");
+            SavedJob existing = savedJobRepository.findByUser_IdAndJob_Id(currentUserId, jobId)
+                    .orElseThrow(() -> e);
+            existing.setDeleted(false);
+            if (request != null) {
+                existing.setNotes(request.getNotes());
+            }
+            savedJob = savedJobRepository.save(existing);
         }
 
         log.info("✅ Job {} saved by user {}", jobId, currentUserId);
 
-        return SavedJobResponse.builder()
-                .savedJobId(savedJob.getId())
-                .jobId(job.getId())
-                .jobTitle(job.getTitle())
-                .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
-                .companyLogo(job.getCompany() != null ? job.getCompany().getLogoUrl() : null)
-                .location(job.getLocation())
-                .jobUrl(job.getJobUrl())
-                .employmentType(job.getEmploymentType())
-                .savedAt(savedJob.getSavedAt())
-                .notes(savedJob.getNotes())
-                .build();
+        return toResponse(savedJob, job);
     }
 
     @Override
@@ -96,7 +92,8 @@ public class SavedJobService implements jobSaveInterface {
         int updated = savedJobRepository.softDeleteByUserIdAndJobId(currentUserId, jobId);
 
         if (updated == 0) {
-            throw new BaseException(ErrorCode.INVALID_INPUT, "Saved job not found.");
+            log.debug("Job {} was already unsaved for user {}", jobId, currentUserId);
+            return;
         }
 
         log.info("🗑️ Job {} unsaved by user {}", jobId, currentUserId);
@@ -115,7 +112,36 @@ public class SavedJobService implements jobSaveInterface {
 
     @Override
     public List<Long> getSavedJobIds(List<Long> jobIds) {
-        return List.of();
+        if (jobIds == null || jobIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> distinctJobIds = new LinkedHashSet<>(jobIds).stream()
+                .filter(id -> id != null && id > 0)
+                .limit(200)
+                .toList();
+
+        if (distinctJobIds.isEmpty()) {
+            return List.of();
+        }
+
+        return savedJobRepository.findSavedJobIdsByUserIdAndJobIds(getCurrentUserId(), distinctJobIds);
+    }
+
+
+    private SavedJobResponse toResponse(SavedJob savedJob, JobEntity job) {
+        return SavedJobResponse.builder()
+                .savedJobId(savedJob.getId())
+                .jobId(job.getId())
+                .jobTitle(job.getTitle())
+                .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
+                .companyLogo(job.getCompany() != null ? job.getCompany().getLogoUrl() : null)
+                .location(job.getLocation())
+                .jobUrl(job.getJobUrl())
+                .employmentType(job.getEmploymentType())
+                .savedAt(savedJob.getSavedAt())
+                .notes(savedJob.getNotes())
+                .build();
     }
 
     // ✅ مفيش داعي لأي DB query هنا: الـ id موجود جاهز جوه الـ principal من وقت الـ authentication

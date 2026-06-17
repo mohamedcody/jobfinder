@@ -19,16 +19,22 @@ import { Job } from "@/lib/jobs/types";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import { formatRelativeTime } from "@/lib/jobs/time-utils";
 import { highlightText } from "@/lib/jobs/highlight-utils";
-import { useSavedJobs } from "@/hooks/use-saved-jobs";
 
 interface JobCardProps {
   job: Job;
   searchTerm?: string;
+  isSaved?: boolean;
+  isSavePending?: boolean;
+  onToggleSave?: (jobId: number) => void;
 }
 
-export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: JobCardProps) {
-  const { isSaved: checkIfSaved, toggleSaveJob } = useSavedJobs();
-  const isSaved = checkIfSaved(job.id);
+export const JobCard = memo(function JobCardComponent({
+  job,
+  searchTerm = "",
+  isSaved = false,
+  isSavePending = false,
+  onToggleSave,
+}: JobCardProps) {
   const [summary, setSummary] = useState(job.aiSummary || "");
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -105,10 +111,11 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
         </div>
 
         <button
-          onClick={() => toggleSaveJob(job.id)}
+          onClick={() => onToggleSave?.(job.id)}
+          disabled={isSavePending}
           className={`p-3.5 rounded-2xl transition-all duration-300 border ${
             isSaved ? "bg-pink-500/10 border-pink-500/30 text-pink-500" : "bg-white/5 border-white/5 text-slate-600 hover:text-white"
-          }`}
+          } ${isSavePending ? "cursor-wait opacity-70" : ""}`}
           title={isSaved ? "Remove from saved jobs" : "Save this job"}
         >
           <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />

@@ -52,10 +52,22 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, Long> {
     List<SavedJobResponse> findAllSavedJobsByUserId(@Param("userId") Long userId);
 
     // ✅ Soft delete بـ UPDATE مش DELETE — أسرع وبيحافظ على الـ data
-    @Modifying
-    @Query("UPDATE SavedJob s SET s.isDeleted = true WHERE s.user.id = :userId AND s.job.id = :jobId")
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE SavedJob s SET s.isDeleted = true WHERE s.user.id = :userId AND s.job.id = :jobId AND s.isDeleted = false")
     int softDeleteByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
     @Query("SELECT COUNT(s) FROM SavedJob s WHERE s.user.id = :userId AND s.isDeleted = false")
     long countSavedJobsByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT s.job.id
+            FROM SavedJob s
+            WHERE s.user.id = :userId
+              AND s.isDeleted = false
+              AND s.job.id IN :jobIds
+            """)
+    List<Long> findSavedJobIdsByUserIdAndJobIds(
+            @Param("userId") Long userId,
+            @Param("jobIds") List<Long> jobIds
+    );
 }
