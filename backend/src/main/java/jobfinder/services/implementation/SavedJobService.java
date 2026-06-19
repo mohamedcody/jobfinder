@@ -57,12 +57,17 @@ public class SavedJobService implements jobSaveInterface {
         SavedJob savedJob = savedJobRepository.findByUser_IdAndJob_Id(currentUserId, jobId)
                 .orElseGet(SavedJob::new);
 
-        savedJob.setUser(userRepository.getReferenceById(currentUserId)); // proxy بس، مفيش SELECT تاني
+        boolean isNewSave = savedJob.getId() == null;
+
+        savedJob.setUser(userRepository.getReferenceById(currentUserId));
         savedJob.setJob(job);
         savedJob.setNotes(request != null ? request.getNotes() : null);
-        savedJob.setDeleted(false);
-        savedJob.setSavedAt(LocalDateTime.now());
 
+        if (isNewSave) {
+            savedJob.setSavedAt(LocalDateTime.now());
+        }
+
+        savedJob.setDeleted(false);
         try {
             savedJobRepository.save(savedJob);
         } catch (DataIntegrityViolationException e) {
@@ -110,13 +115,18 @@ public class SavedJobService implements jobSaveInterface {
 
     @Override
     public boolean isJobSaved(Long jobId) {
-        return savedJobRepository.isJobSaved(getCurrentUserId(), jobId);
+        return false;
     }
 
     @Override
     public List<Long> getSavedJobIds(List<Long> jobIds) {
-        return List.of();
+        Long userId = getCurrentUserId();
+        return jobIds.stream()
+                .filter(jobId -> savedJobRepository.isJobSaved(userId, jobId))
+                .toList();
     }
+
+
 
     // ✅ مفيش داعي لأي DB query هنا: الـ id موجود جاهز جوه الـ principal من وقت الـ authentication
     // (الفرق عن النسخة القديمة اللي كانت بتعمل findByEmail كل مرة)

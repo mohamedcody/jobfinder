@@ -23,6 +23,7 @@ export interface CursorPageResponse<T> {
 
 export interface JobsSearchParams {
   title?: string;
+  location?: string;
   lastId?: number;
   size?: number;
 }

@@ -28,10 +28,12 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, Long> {
     Optional<SavedJob> findByUser_IdAndJob_Id(Long userId, Long jobId);
 
     // ✅ JPQL Projection — بنجيب الـ fields المطلوبة بس من JOIN واحد
+    // ⚠️ **CRITICAL FIX**: استخدام الـ full qualified name للـ DTO
+    // بدون ده Hibernate مش عارفة فين الـ class وبتطلع semantic exception
     // ⚠️ LEFT JOIN على company لأن فيه jobs ممكن تكون من غير company (company_id = null)
     // لو سيبناها INNER JOIN زي ما كانت، الـ saved job ده كان هيختفي تمامًا من القايمة عند اليوزر
     @Query("""
-            SELECT new SavedJobResponse(
+            SELECT new jobfinder.model.dto.SavedJobResponse(
                 s.id,
                 j.id,
                 j.title,
@@ -52,10 +54,15 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, Long> {
     List<SavedJobResponse> findAllSavedJobsByUserId(@Param("userId") Long userId);
 
     // ✅ Soft delete بـ UPDATE مش DELETE — أسرع وبيحافظ على الـ data
+    // @Modifying عشان ده UPDATE query مش SELECT
     @Modifying
-    @Query("UPDATE SavedJob s SET s.isDeleted = true WHERE s.user.id = :userId AND s.job.id = :jobId")
+    @Query("UPDATE SavedJob s SET s.isDeleted = true, s.deletedAt = CURRENT_TIMESTAMP WHERE s.user.id = :userId AND s.job.id = :jobId AND s.isDeleted = false")
     int softDeleteByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
+    // ✅ COUNT بـ query محسّن للأداء
     @Query("SELECT COUNT(s) FROM SavedJob s WHERE s.user.id = :userId AND s.isDeleted = false")
     long countSavedJobsByUserId(@Param("userId") Long userId);
+
+    // ✅ جديد: بتشيك إذا الـ user عمل unsave لـ job معين بسرعة (للـ restore functionality)
+    boolean existsByUser_IdAndJob_IdAndIsDeletedTrue(Long userId, Long jobId);
 }
