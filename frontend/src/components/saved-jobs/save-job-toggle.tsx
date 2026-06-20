@@ -13,9 +13,9 @@ interface SaveJobToggleProps {
 }
 
 export function SaveJobToggle({ jobId, request, className, iconClassName }: SaveJobToggleProps) {
-    const { isSaved, isJobLoading, toggleSaveJob } = useSavedJobs();
+    const { isSaved, isPending, toggleSaveJob } = useSavedJobs();
     const saved = isSaved(jobId);
-    const loading = isJobLoading(jobId);
+    const loading = isPending(jobId);
 
     return (
         <button

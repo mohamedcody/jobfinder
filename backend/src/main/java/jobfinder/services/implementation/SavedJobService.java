@@ -115,7 +115,7 @@ public class SavedJobService implements jobSaveInterface {
 
     @Override
     public boolean isJobSaved(Long jobId) {
-        return false;
+        return savedJobRepository.isJobSaved(getCurrentUserId(), jobId);
     }
 
     @Override

@@ -1,16 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getSavedJobsErrorMessage, savedJobsService } from "@/lib/saved-jobs/saved-jobs-service";
-import type { SaveJobRequest, SaveJobStatus, SavedJobResponse } from "@/lib/saved-jobs/types";
+import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
+import { hasValidToken } from "@/lib/auth/token-storage";
+
+import { savedJobsService } from "@/lib/saved-jobs/saved-jobs-service";
+import type { SavedJobResponse as SavedJob } from "@/lib/saved-jobs/types";
 
 const SAVED_JOBS_KEY = "jobfinder.saved-jobs";
+const EMPTY_JOB_IDS: number[] = [];
 
-type SavedJobsStore = Record<number, boolean>;
-type LoadingStore = Record<number, boolean>;
+interface SavedJobsStore {
+  [jobId: number]: boolean;
+}
 
-const readLocalSavedJobs = (): SavedJobsStore => {
+const readCachedSavedJobs = (): SavedJobsStore => {
   if (typeof window === "undefined") return {};
 
   try {
@@ -21,142 +26,183 @@ const readLocalSavedJobs = (): SavedJobsStore => {
   }
 };
 
-export const useSavedJobs = () => {
-  const [savedJobs, setSavedJobs] = useState<SavedJobsStore>(() => readLocalSavedJobs());
-  const [savedJobDetails, setSavedJobDetails] = useState<SavedJobResponse[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState<LoadingStore>({});
-  const [status, setStatus] = useState<SaveJobStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
+const toSavedJobsStore = (jobIds: number[]): SavedJobsStore =>
+  jobIds.reduce<SavedJobsStore>((acc, jobId) => {
+    acc[jobId] = true;
+    return acc;
+  }, {});
 
-  const persistSavedJobs = useCallback((jobs: SavedJobsStore) => {
-    window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(jobs));
+const persistSavedJobs = (jobs: SavedJobsStore) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(jobs));
+};
+
+/**
+ * Backend-first saved jobs hook with optimistic UI and localStorage fallback.
+ * Pass visible job IDs from list pages to sync all cards in one batch request.
+ */
+export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
+  const [savedJobs, setSavedJobs] = useState<SavedJobsStore>(() => readCachedSavedJobs());
+  const [savedJobDetails, setSavedJobDetails] = useState<SavedJob[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingJobIds, setPendingJobIds] = useState<Set<number>>(() => new Set());
+  const requestIdRef = useRef(0);
+
+  const visibleJobIdsKey = visibleJobIds.join(",");
+  const normalizedVisibleIds = useMemo(
+    () => Array.from(new Set(visibleJobIds.filter(Number.isFinite))).sort((a, b) => a - b),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleJobIdsKey],
+  );
+
+  const updateSavedJobs = useCallback((updater: (current: SavedJobsStore) => SavedJobsStore) => {
+    setSavedJobs((current) => {
+      const next = updater(current);
+      persistSavedJobs(next);
+      return next;
+    });
   }, []);
 
-  const applySavedJobs = useCallback((jobs: SavedJobsStore) => {
-    setSavedJobs(jobs);
-    if (typeof window !== "undefined") {
-      persistSavedJobs(jobs);
-    }
-  }, [persistSavedJobs]);
+  const syncVisibleSavedStatus = useCallback(
+    async (signal?: AbortSignal) => {
+      if (normalizedVisibleIds.length === 0 || !hasValidToken()) return;
 
-  const isSaved = useCallback((jobId: number): boolean => savedJobs[jobId] === true, [savedJobs]);
-  const isJobLoading = useCallback((jobId: number): boolean => loadingJobs[jobId] === true, [loadingJobs]);
+      const requestId = ++requestIdRef.current;
+      setIsSyncing(true);
 
-  const setJobLoading = useCallback((jobId: number, isLoading: boolean) => {
-    setLoadingJobs((current) => ({ ...current, [jobId]: isLoading }));
-  }, []);
+      try {
+        const savedIds = await savedJobsService.getSavedJobIds(normalizedVisibleIds, { signal });
+        if (requestId !== requestIdRef.current) return;
 
-  const refreshSavedJobs = useCallback(async () => {
-    setStatus("loading");
-    setError(null);
+        updateSavedJobs((current) => {
+          const next = { ...current };
+          const savedSet = new Set(savedIds);
 
+          for (const jobId of normalizedVisibleIds) {
+            if (savedSet.has(jobId)) {
+              next[jobId] = true;
+            } else {
+              delete next[jobId];
+            }
+          }
+
+          return next;
+        });
+      } catch (error) {
+        if (!isRequestCanceled(error)) {
+          console.error("Failed to sync saved job status", error);
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsSyncing(false);
+        }
+      }
+    },
+    [normalizedVisibleIds, updateSavedJobs],
+  );
+
+  const fetchSavedJobs = useCallback(async (signal?: AbortSignal) => {
+    if (!hasValidToken()) return [];
+
+    setIsSyncing(true);
     try {
-      const response = await savedJobsService.getMySavedJobs();
-      const nextSavedJobs = response.reduce<SavedJobsStore>((acc, savedJob) => {
-        acc[savedJob.jobId] = true;
-        return acc;
-      }, {});
-
-      setSavedJobDetails(response);
-      applySavedJobs(nextSavedJobs);
-      setStatus("success");
-      return response;
-    } catch (caughtError) {
-      const message = getSavedJobsErrorMessage(caughtError);
-      setError(message);
-      setStatus("error");
-      toast.error(message);
-      throw caughtError;
+      const saved = await savedJobsService.getMySavedJobs({ signal });
+      setSavedJobDetails(saved);
+      updateSavedJobs(() => toSavedJobsStore(saved.map((job) => job.jobId)));
+      return saved;
+    } catch (error) {
+      if (!isRequestCanceled(error)) {
+        toast.error(getApiErrorMessage(error));
+      }
+      return [];
+    } finally {
+      setIsSyncing(false);
     }
-  }, [applySavedJobs]);
+  }, [updateSavedJobs]);
 
   useEffect(() => {
-    void refreshSavedJobs().catch(() => undefined);
-  }, [refreshSavedJobs]);
+    const controller = new AbortController();
+    void syncVisibleSavedStatus(controller.signal);
+    return () => controller.abort();
+  }, [syncVisibleSavedStatus]);
 
-  const saveJob = useCallback(async (jobId: number, request?: SaveJobRequest) => {
-    const previousSavedJobs = savedJobs;
-    const nextSavedJobs = { ...savedJobs, [jobId]: true };
+  const isSaved = useCallback((jobId: number): boolean => savedJobs[jobId] === true, [savedJobs]);
 
-    applySavedJobs(nextSavedJobs);
-    setJobLoading(jobId, true);
-    setStatus("loading");
-    setError(null);
+  const isPending = useCallback((jobId: number): boolean => pendingJobIds.has(jobId), [pendingJobIds]);
 
-    try {
-      const savedJob = await savedJobsService.saveJob(jobId, request);
-      setSavedJobDetails((current) => [savedJob, ...current.filter((item) => item.jobId !== jobId)]);
-      setStatus("success");
-      toast.success("Job added to saved jobs.");
-      return savedJob;
-    } catch (caughtError) {
-      applySavedJobs(previousSavedJobs);
-      const message = getSavedJobsErrorMessage(caughtError);
-      setError(message);
-      setStatus("error");
-      toast.error(message);
-      throw caughtError;
-    } finally {
-      setJobLoading(jobId, false);
-    }
-  }, [applySavedJobs, savedJobs, setJobLoading]);
+  const setPending = useCallback((jobId: number, pending: boolean) => {
+    setPendingJobIds((current) => {
+      const next = new Set(current);
+      if (pending) next.add(jobId);
+      else next.delete(jobId);
+      return next;
+    });
+  }, []);
 
-  const unsaveJob = useCallback(async (jobId: number) => {
-    const previousSavedJobs = savedJobs;
-    const nextSavedJobs = { ...savedJobs, [jobId]: false };
+  const toggleSaveJob = useCallback(
+    async (jobId: number, payload?: { notes?: string }) => {
+      if (isPending(jobId)) return;
 
-    applySavedJobs(nextSavedJobs);
-    setJobLoading(jobId, true);
-    setStatus("loading");
-    setError(null);
+      const wasSaved = savedJobs[jobId] === true;
+      setPending(jobId, true);
 
-    try {
-      await savedJobsService.unsaveJob(jobId);
-      setSavedJobDetails((current) => current.filter((item) => item.jobId !== jobId));
-      setStatus("success");
-      toast.success("Job removed from saved jobs.");
-    } catch (caughtError) {
-      applySavedJobs(previousSavedJobs);
-      const message = getSavedJobsErrorMessage(caughtError);
-      setError(message);
-      setStatus("error");
-      toast.error(message);
-      throw caughtError;
-    } finally {
-      setJobLoading(jobId, false);
-    }
-  }, [applySavedJobs, savedJobs, setJobLoading]);
+      updateSavedJobs((current) => {
+        const next = { ...current };
+        if (wasSaved) delete next[jobId];
+        else next[jobId] = true;
+        return next;
+      });
 
-  const toggleSaveJob = useCallback(async (jobId: number, request?: SaveJobRequest) => {
-    if (isSaved(jobId)) {
-      await unsaveJob(jobId);
-      return;
-    }
+      try {
+        if (wasSaved) {
+          await savedJobsService.unsaveJob(jobId);
+          setSavedJobDetails((current) => current.filter((job) => job.jobId !== jobId));
+          toast.success("Removed from saved jobs");
+        } else {
+          const saved = await savedJobsService.saveJob(jobId, payload);
+          setSavedJobDetails((current) => [saved, ...current.filter((job) => job.jobId !== jobId)]);
+          toast.success("Saved job successfully");
+        }
+      } catch (error) {
+        updateSavedJobs((current) => {
+          const next = { ...current };
+          if (wasSaved) next[jobId] = true;
+          else delete next[jobId];
+          return next;
+        });
+        toast.error(getApiErrorMessage(error));
+      } finally {
+        setPending(jobId, false);
+      }
+    },
+    [isPending, savedJobs, setPending, updateSavedJobs],
+  );
 
-    await saveJob(jobId, request);
-  }, [isSaved, saveJob, unsaveJob]);
+  const clearSavedJobs = useCallback(async () => {
+    const jobsToRemove = Object.keys(savedJobs).map(Number).filter(Number.isFinite);
+    const previous = savedJobs;
 
-  const clearSavedJobs = useCallback(() => {
-    applySavedJobs({});
+    updateSavedJobs(() => ({}));
     setSavedJobDetails([]);
-    setStatus("idle");
-    setError(null);
-  }, [applySavedJobs]);
 
-  return useMemo(() => ({
+    try {
+      await Promise.all(jobsToRemove.map((jobId) => savedJobsService.unsaveJob(jobId)));
+      toast.success("All saved jobs cleared");
+    } catch (error) {
+      updateSavedJobs(() => previous);
+      toast.error(getApiErrorMessage(error));
+    }
+  }, [savedJobs, updateSavedJobs]);
+
+  return {
     savedJobs,
     savedJobDetails,
-    status,
-    isLoading: status === "loading",
-    isSuccess: status === "success",
-    isError: status === "error",
-    error,
+    isSyncing,
     isSaved,
-    isJobLoading,
-    saveJob,
-    unsaveJob,
+    isPending,
     toggleSaveJob,
-    refreshSavedJobs,
     clearSavedJobs,
-  }), [clearSavedJobs, error, isJobLoading, isSaved, refreshSavedJobs, saveJob, savedJobDetails, savedJobs, status, toggleSaveJob, unsaveJob]);
+    fetchSavedJobs,
+    syncVisibleSavedStatus,
+  };
 };
