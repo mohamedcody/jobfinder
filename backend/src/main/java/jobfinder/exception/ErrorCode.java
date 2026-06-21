@@ -52,6 +52,7 @@ public enum ErrorCode {
     ALREADY_EXISTS("ERR_003", "Resource already exists or process is already running", HttpStatus.CONFLICT);
 
 
+
     private final String code;
     private final String message;
     private final HttpStatus httpStatus;
