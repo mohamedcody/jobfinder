@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getToken, isTokenExpired, clearToken } from "@/lib/auth/token-storage";
 import type { UserProfileResponse, UpdateProfileRequest } from "./types";
+export type { UserProfileResponse, UpdateProfileRequest } from "./types";
 
 const PROFILE_API_BASE_URL = 
   process.env.NEXT_PUBLIC_PROFILE_API_URL || "http://localhost:8080/api/users/profile";

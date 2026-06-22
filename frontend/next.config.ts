@@ -14,6 +14,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   reactCompiler: true,
   poweredByHeader: false,
   allowedDevOrigins: [ngrokDevOrigin, locaUiOrigin, locaApiOrigin, "localhost:3000"],

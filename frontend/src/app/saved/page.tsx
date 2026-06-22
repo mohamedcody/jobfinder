@@ -217,9 +217,6 @@ export default function SavedMatchesPage() {
     await toggleSaveJob(jobId);
   };
 
-  // Stats for the header
-  const totalSaved = kanbanJobs.filter((j) => j.kanbanStatus === "saved").length;
-  const totalApplied = kanbanJobs.filter((j) => j.kanbanStatus === "applied").length;
 
   return (
     <AppLayout>

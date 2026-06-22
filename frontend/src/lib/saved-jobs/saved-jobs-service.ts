@@ -7,11 +7,7 @@ interface RequestOptions {
     signal?: AbortSignal;
 }
 
-const SAVED_JOBS_API_BASE_URL = process.env.NEXT_PUBLIC_SAVED_JOBS_API_URL;
-
-if (!SAVED_JOBS_API_BASE_URL) {
-    throw new Error("NEXT_PUBLIC_SAVED_JOBS_API_URL is required for the saved jobs API client.");
-}
+const SAVED_JOBS_API_BASE_URL = process.env.NEXT_PUBLIC_SAVED_JOBS_API_URL || "/api/saved-jobs";
 
 export class SavedJobsApiError extends Error {
     constructor(

@@ -36,7 +36,7 @@ public class SecurityConfig {
                                 .requestMatchers("/actuator/health").permitAll()
 
                                 // 2. السماح بطلب الـ API الخاص بـ GraphQL فقط وإغلاق واجهة المطورين الـ graphiql
-                                .requestMatchers("/graphql").permitAll()
+                                .requestMatchers("/graphql").authenticated()
                                 .requestMatchers("/graphiql/**").hasRole("ADMIN")
 
                                 // 3. حماية مسارات Swagger و OpenAPI وقصرها على الـ ADMIN فقط لحماية الـ Schema

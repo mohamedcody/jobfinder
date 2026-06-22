@@ -6,7 +6,7 @@ import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
 import { hasValidToken } from "@/lib/auth/token-storage";
 
 import { savedJobsService } from "@/lib/saved-jobs/saved-jobs-service";
-import type { SavedJobResponse as SavedJob } from "@/lib/saved-jobs/types";
+import type { SaveJobRequest, SavedJobResponse as SavedJob } from "@/lib/saved-jobs/types";
 
 const SAVED_JOBS_KEY = "jobfinder.saved-jobs";
 const EMPTY_JOB_IDS: number[] = [];
@@ -140,7 +140,7 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
   }, []);
 
   const toggleSaveJob = useCallback(
-    async (jobId: number, payload?: { notes?: string }) => {
+    async (jobId: number, payload?: SaveJobRequest) => {
       if (isPending(jobId)) return;
 
       const wasSaved = savedJobs[jobId] === true;
