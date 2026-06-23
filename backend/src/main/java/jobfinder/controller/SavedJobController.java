@@ -40,6 +40,7 @@ public class SavedJobController {
         return ResponseEntity.noContent().build();
     }
 
+
     @Operation(summary = "Get all my saved jobs")
     @GetMapping
     @PreAuthorize("isAuthenticated()")

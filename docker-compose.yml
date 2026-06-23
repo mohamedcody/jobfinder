@@ -1,35 +1,18 @@
 services:
-  postgres:
-    image: postgres:18-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-jobfinder}
-      POSTGRES_USER: ${POSTGRES_USER:-jobfinder}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   backend:
     build: ./backend
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-jobfinder}
-      DB_USER: ${POSTGRES_USER:-jobfinder}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      MY_SECRET_KEY: ${MY_SECRET_KEY:?MY_SECRET_KEY is required}
-      MY_EXPIRATION_TIME: ${MY_EXPIRATION_TIME:-86400000}
-      MY_APIFY_TOKEN: ${MY_APIFY_TOKEN:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # هنا الدوكر هيقرأ القيم مباشرة من ملف الـ .env بتاعك
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MY_SECRET_KEY: ${MY_SECRET_KEY}
+      MY_EXPIRATION_TIME: ${MY_EXPIRATION_TIME}
+      MY_APIFY_TOKEN: ${MY_APIFY_TOKEN}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
@@ -72,7 +55,7 @@ services:
     image: grafana/grafana:12.3.0
     restart: unless-stopped
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -80,6 +63,5 @@ services:
       - "3001:3000"
 
 volumes:
-  postgres_data:
   prometheus_data:
   grafana_data:

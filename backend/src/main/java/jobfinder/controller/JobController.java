@@ -25,6 +25,7 @@ public class JobController {
 
 
 
+
     @GetMapping
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> getAllJobs(
             @RequestParam(required = false) Long lastId,
@@ -32,6 +33,7 @@ public class JobController {
     ) {
         return ResponseEntity.ok(jobScraperService.getJobsAdvanced(lastId, size));
     }
+
 
     @GetMapping("/search")
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> searchJobs(
@@ -42,12 +44,14 @@ public class JobController {
         return ok(jobScraperService.searchJobs(title, location, lastId, size));
     }
 
+
     /**
      * Advanced filtering endpoint using JPA Specifications.
      * All parameters are optional — only active filters are applied.
      *
      * GET /api/jobs/filter?title=engineer&location=cairo&postedAfter=2025-01-01&size=10&lastId=0
      */
+
     @GetMapping("/filter")
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> filterJobs(
             @RequestParam(required = false) String title,
@@ -70,11 +74,13 @@ public class JobController {
         return ok(jobScraperService.searchJobsByFilter(filter, lastId, size));
     }
 
+
     @PostMapping("/{id}/summarize")
     public ResponseEntity<Map<String, String>> summarizeJob(@PathVariable Long id) {
         String summary = jobScraperService.generateAiSummary(id);
         return ResponseEntity.ok(Map.of("summary", summary));
     }
+
 
 }
 

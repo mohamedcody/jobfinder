@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AutonomousJobsScraperController {
 
+
     private final AutonomousJobScraperService scraperService;
+
 
     @PostMapping("/trigger")
     @PreAuthorize("hasRole('ADMIN')")

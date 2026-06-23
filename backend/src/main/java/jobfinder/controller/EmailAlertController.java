@@ -31,6 +31,7 @@ public class EmailAlertController {
         return ResponseEntity.ok(emailAlertService.getAlertSettings(principal.getId()));
     }
 
+
     @Operation(summary = "Update email alert settings", description = "Toggle daily digest and change minimum matching score threshold")
     @PutMapping
     @PreAuthorize("isAuthenticated()")
@@ -40,6 +41,7 @@ public class EmailAlertController {
         return ResponseEntity.ok(emailAlertService.updateAlertSettings(principal.getId(), request));
     }
 
+
     @Operation(summary = "Trigger test email alert", description = "Generates and sends a daily digest matching email to the logged-in user immediately for testing")
     @PostMapping("/test")
     @PreAuthorize("isAuthenticated()")
@@ -48,4 +50,5 @@ public class EmailAlertController {
         // Simple heuristic: if the message starts with "Please", it's an instruction/warning (treated as bad request equivalent earlier, though now handled by exceptions partially. We'll return 200 OK with the message or let exceptions handle 400).
         return ResponseEntity.ok(resultMessage);
     }
+
 }

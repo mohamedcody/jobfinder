@@ -31,6 +31,7 @@ public class UserController {
 
     private final UserProfileInterface userProfileService;
 
+
     /**
      * GET /api/users/profile
      * Get the profile data for the current user.
@@ -97,6 +98,7 @@ public class UserController {
                     description = "Profile not found"
             )
     })
+
     @PutMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserProfileResponseDto> updateMyProfile(
@@ -137,6 +139,7 @@ public class UserController {
                     description = "User or profile not found"
             )
     })
+
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<UserProfileResponseDto> getUserProfile(@PathVariable Long userId) {
@@ -144,5 +147,6 @@ public class UserController {
         UserProfileResponseDto profile = userProfileService.getUserProfile(userId);
         return ResponseEntity.ok(profile);
     }
+
 }
 
