@@ -138,15 +138,16 @@ public class AutonomousJobScraperService {
     }
 
     private Map<?, ?> startApifyScraper(String keyword) {
-        String runUrl = apifyActorUrl + "?token=" + apifyToken.trim();
+        String runUrl = apifyActorUrl + "?token=" + apifyToken.trim() + "&maxItems=10";
         String encodedKeyword = URLEncoder.encode(keyword.trim(), StandardCharsets.UTF_8);
-        String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword;
+        String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword + "&position=1&pageNum=0";
 
-        Map<String, Object> input = Map.of(
-                "urls", List.of(searchUrl),
-                "limitPerQuery", 10,
-                "proxyConfiguration", Map.of("useApifyProxy", true)
-        );
+        Map<String, Object> input = new HashMap<>();
+        input.put("urls", List.of(searchUrl));
+        input.put("count", 10);
+        input.put("scrapeCompany", true);
+
+        log.info("🔍 Sending to Apify: URL={}, Input={}", runUrl, input);
 
         return webClient.post()
                 .uri(runUrl)

@@ -30,23 +30,28 @@ import java.util.List;
  * account never aborts the batch for the remaining users.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-@Slf4j
-@Service
-@RequiredArgsConstructor
+@Slf4j // Create a logger for tracking application events and errors.
+@Service // Register this class as a Spring Service Bean.
+@RequiredArgsConstructor // Generate constructor for all final dependencies.
 public class JobAlertScheduler {
 
+    // Repository responsible for loading users' email alert settings.
     private final EmailAlertSettingRepository emailAlertSettingRepository;
+    // Service responsible for calculating job matches.
     private final JobMatchingService          jobMatchingService;
+    // Service مسؤولة عن إرسال رسائل البريد الإلكتروني.
     private final EmailNotificationService    emailNotificationService;
+    // Repository responsible for retrieving jobs from the database.
     private final JobRepository jobRepository;
 
-    /** Maximum jobs included in a single digest email. */
+    // Maximum number of jobs to include in one email.
     private static final int MAX_JOBS_PER_EMAIL = 8;
 
-    @Scheduled(cron = "0 0 9 * * ?")   // 09:00 every day
+    @Scheduled(cron = "0 */5 * * * ?")   // 09:00 every day
     public void sendDailyJobAlerts() {
         log.info("📬 [JobAlertScheduler] Starting daily job-alert batch process...");
 
+        // Load recent active jobs from the last 7 days.
         // Fetch jobs exactly ONCE for the entire batch to avoid redundant DB calls
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
                 LocalDateTime.now().minusDays(7),
@@ -55,19 +60,37 @@ public class JobAlertScheduler {
 
         if (recentJobs.isEmpty()) {
             log.warn("⚠️ [JobAlertScheduler] No recent active jobs found in the last 7 days. Aborting batch.");
+            // Exit the method immediately.
             return;
         }
         log.info("💼 [JobAlertScheduler] Fetched {} recent active jobs for matching.", recentJobs.size());
 
+        // Current page number for pagination.
         int pageNumber = 0;
-        final int CHUNK_SIZE = 500;
-        int totalSent = 0;
-        int totalSkipped = 0;
-        int totalErrors = 0;
-        int totalProcessed = 0;
 
+// Number of users processed in one database query.
+        final int CHUNK_SIZE = 500;
+
+// Statistics used for the final execution report.
+
+        int totalSent = 0;       // Successfully sent emails.
+
+
+        int totalSkipped = 0;    // Users with no matching jobs.
+
+
+        int totalErrors = 0;     // Failed users.
+
+
+        int totalProcessed = 0;  // Total processed users.
+
+
+        // Keep processing user batches until no more users are available.
         while (true) {
+
+            // Load one batch of users who enabled email alerts.
             List<EmailAlertSetting> optedInUsers = emailAlertSettingRepository.findAllOptedInWithProfile(
+                    // Request the current page with the configured batch size.
                     PageRequest.of(pageNumber, CHUNK_SIZE)
             );
 
@@ -80,6 +103,7 @@ public class JobAlertScheduler {
             for (EmailAlertSetting setting : optedInUsers) {
                 totalProcessed++;
                 try {
+                    // Extract the current user from the email alert configuration.
                     User user = setting.getUser();
                     UserProfile profile = user.getProfile();
 
@@ -123,3 +147,22 @@ public class JobAlertScheduler {
         return parts[0];
     }
 }
+//الساعة 9 صباحاً
+//      ↓
+//جيب كل الوظائف الحديثة (7 أيام)
+//      ↓
+//جيب 500 مستخدم
+//      ↓
+//لكل مستخدم:
+//        ↓
+//جيب الوظائف المناسبة له
+//  ↓
+//فلتر (أفضل 8 فقط، وأعلى من نسبته المطلوبة)
+//  ↓
+//هل في وظائف؟
+//نعم → ابعت إيميل ✅
+//لا → تخطي ⏭️
+//        ↓
+//انتقل للمستخدم التالي
+//      ↓
+//اطبع التقرير النهائي
