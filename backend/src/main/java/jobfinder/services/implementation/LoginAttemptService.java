@@ -26,14 +26,17 @@ public class LoginAttemptService {
         User user = userRepository.findByEmailOrUsername(identifier)
                 .orElse(null);
 
+
         if (user == null) {
             // Log a warning if the user doesn't exist to avoid revealing info via errors
             log.warn("Skipping failed-attempt update: user not found for identifier={}", identifier);
             return;
         }
 
+
         int newAttempts = (user.getFailedAttempts() == null ? 0 : user.getFailedAttempts()) + 1;
         user.setFailedAttempts(newAttempts);
+
 
         // Lock account if failed attempts reach 5
         if (newAttempts >= 5) {

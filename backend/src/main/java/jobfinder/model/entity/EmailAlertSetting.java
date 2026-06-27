@@ -42,3 +42,4 @@ public class EmailAlertSetting {
     @Column(name = "min_match_score", nullable = false)
     private Integer minMatchScore = 60;
 }
+

@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 @Slf4j // 👈 تفعيل الـ Logger على الكلاس
 public class GlobalExceptionHandler {
 
+
     // 1. معالجة الأخطاء الخاصة بالـ Business (الأخطاء المتوقعة من قِبلنا)
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex, HttpServletRequest request) {
