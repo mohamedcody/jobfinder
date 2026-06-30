@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS app_users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON app_users (email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON app_users (username);
 
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     scraped_at TIMESTAMPTZ,
     company_id BIGINT REFERENCES companies(id) ON DELETE SET NULL
     );
+
 CREATE INDEX IF NOT EXISTS idx_job_title ON jobs (title);
 CREATE INDEX IF NOT EXISTS idx_job_location ON jobs (location);
 CREATE INDEX IF NOT EXISTS idx_job_employment_type ON jobs (employment_type);
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     failed_attempts INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
 CREATE INDEX IF NOT EXISTS idx_otp_user_code_status ON otp_codes (user_id, code, used);
 CREATE INDEX IF NOT EXISTS idx_otp_user_created ON otp_codes (user_id, created_at DESC);
 
@@ -67,6 +70,7 @@ CREATE TABLE IF NOT EXISTS saved_jobs (
     deleted_at TIMESTAMPTZ,
     CONSTRAINT uk_saved_jobs_user_job UNIQUE (user_id, job_id)
     );
+
 CREATE INDEX IF NOT EXISTS idx_saved_jobs_user_active ON saved_jobs (user_id, is_deleted);
 CREATE INDEX IF NOT EXISTS idx_saved_jobs_job ON saved_jobs (job_id);
 CREATE INDEX IF NOT EXISTS idx_saved_jobs_created ON saved_jobs (saved_at);
@@ -87,6 +91,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     updated_at TIMESTAMPTZ,
     years_of_experience INTEGER
     );
+
 CREATE TABLE IF NOT EXISTS user_preferences (
                                                 id BIGSERIAL PRIMARY KEY,
                                                 user_id BIGINT NOT NULL UNIQUE REFERENCES app_users(id) ON DELETE CASCADE,
@@ -94,15 +99,59 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     job_type VARCHAR(255),
     willing_to_relocate BOOLEAN
     );
-CREATE TABLE IF NOT EXISTS user_pref_titles (preference_id BIGINT NOT NULL REFERENCES user_preferences(id) ON DELETE CASCADE, job_title VARCHAR(255));
-CREATE TABLE IF NOT EXISTS user_pref_locations (preference_id BIGINT NOT NULL REFERENCES user_preferences(id) ON DELETE CASCADE, location VARCHAR(255));
 
-CREATE TABLE IF NOT EXISTS skills (id BIGSERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL UNIQUE, category VARCHAR(255), is_approved BOOLEAN);
+CREATE TABLE IF NOT EXISTS user_pref_titles (
+                                                preference_id BIGINT NOT NULL REFERENCES user_preferences(id) ON DELETE CASCADE,
+    job_title VARCHAR(255)
+    );
+
+CREATE TABLE IF NOT EXISTS user_pref_locations (
+                                                   preference_id BIGINT NOT NULL REFERENCES user_preferences(id) ON DELETE CASCADE,
+    location VARCHAR(255)
+    );
+
+CREATE TABLE IF NOT EXISTS skills (
+                                      id BIGSERIAL PRIMARY KEY,
+                                      name VARCHAR(255) NOT NULL UNIQUE,
+    category VARCHAR(255),
+    is_approved BOOLEAN
+    );
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_name ON skills (name);
-CREATE TABLE IF NOT EXISTS user_skills (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, skill_id BIGINT NOT NULL REFERENCES skills(id) ON DELETE CASCADE, years_of_experience INTEGER, proficiency_score INTEGER, CONSTRAINT uk_user_skill UNIQUE(user_id, skill_id));
-CREATE TABLE IF NOT EXISTS job_skills (id BIGSERIAL PRIMARY KEY, job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE, skill_id BIGINT NOT NULL REFERENCES skills(id) ON DELETE CASCADE, is_mandatory BOOLEAN, min_years_of_experience INTEGER, CONSTRAINT uk_job_skill UNIQUE(job_id, skill_id));
-CREATE TABLE IF NOT EXISTS user_interactions (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE, interaction_type VARCHAR(50) NOT NULL, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS user_skills (
+                                           id BIGSERIAL PRIMARY KEY,
+                                           user_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    skill_id BIGINT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+    years_of_experience INTEGER,
+    proficiency_score INTEGER,
+    CONSTRAINT uk_user_skill UNIQUE(user_id, skill_id)
+    );
+
+CREATE TABLE IF NOT EXISTS job_skills (
+                                          id BIGSERIAL PRIMARY KEY,
+                                          job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    skill_id BIGINT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+    is_mandatory BOOLEAN,
+    min_years_of_experience INTEGER,
+    CONSTRAINT uk_job_skill UNIQUE(job_id, skill_id)
+    );
+
+CREATE TABLE IF NOT EXISTS user_interactions (
+                                                 id BIGSERIAL PRIMARY KEY,
+                                                 user_id BIGINT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    interaction_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+
 CREATE INDEX IF NOT EXISTS idx_interaction_user_job ON user_interactions(user_id, job_id);
 
-CREATE TABLE IF NOT EXISTS email_alert_settings (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL UNIQUE REFERENCES app_users(id) ON DELETE CASCADE, daily_digest_enabled BOOLEAN NOT NULL DEFAULT TRUE, min_match_score INTEGER NOT NULL DEFAULT 60);
+CREATE TABLE IF NOT EXISTS email_alert_settings (
+                                                    id BIGSERIAL PRIMARY KEY,
+                                                    user_id BIGINT NOT NULL UNIQUE REFERENCES app_users(id) ON DELETE CASCADE,
+    daily_digest_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    min_match_score INTEGER NOT NULL DEFAULT 60
+    );
+
 CREATE INDEX IF NOT EXISTS idx_email_alert_user ON email_alert_settings(user_id);

@@ -1,4 +1,5 @@
 package jobfinder.services.implementation;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class AiService {
                 .build();
     }
 
+    @CircuitBreaker(name = "geminiApi", fallbackMethod = "fallbackSummarizeJob")
     public String summarizeJob(String description) {
 
         // check the description is not null or empty
@@ -85,5 +87,10 @@ public class AiService {
             log.error("❌ Error during AI summarization: {}", e.getMessage(), e);
             return "AI Summary is currently unavailable. Please try again later.";
         }
+    }
+
+    public String fallbackSummarizeJob(String description, Throwable t) {
+        log.error("🛑 Gemini API Circuit Breaker activated! Fallback executing due to: {}", t.getMessage());
+        return "AI Summary is temporarily unavailable due to high load. Please try again later.";
     }
 }

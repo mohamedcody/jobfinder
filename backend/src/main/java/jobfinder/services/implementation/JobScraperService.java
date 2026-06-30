@@ -15,21 +15,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,75 +34,150 @@ public class JobScraperService implements JobInterface {
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
     private final AiService aiService;
-    private final WebClient webClient;
     private final CacheManager cacheManager;
 
+
     @Override
-    @Cacheable(value = "jobs", key = "{'all', #lastId, #size}")
+    @Cacheable(
+            value = "jobs",
+            key = "'all_' + #lastId + '_' + #size",
+            cacheManager = "cacheManager"
+    )
     public CursorPageResponseDto<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
         JobFilterRequest emptyFilter = new JobFilterRequest(null, null, null, null, null);
         return searchJobsByFilter(emptyFilter, lastId, size);
     }
 
+
     @Override
     public CursorPageResponseDto<JobResponseDTO> searchJobs(String title, String location, Long lastId, int size) {
-        String sanitizedTitle = (title == null || title.isBlank()) ? null : title.trim().replaceAll("[!&|():*]", " ");
+        // تنظيف البحث
+        String sanitizedTitle = sanitizeSearchTerm(title);
 
-        if (sanitizedTitle == null) {
+        if (sanitizedTitle == null || sanitizedTitle.isBlank()) {
             return new CursorPageResponseDto<>(List.of(), 0, null, false);
         }
 
-        List<JobEntity> results = jobRepository.searchJobsFullText(sanitizedTitle, location, lastId, size + 1);
-        boolean hasNext = results.size() > size;
-        List<JobEntity> pageData = hasNext ? results.subList(0, size) : results;
-        List<JobResponseDTO> dtos = pageData.stream().map(this::convertToDTO).toList();
-        Long nextCursor = (hasNext && !pageData.isEmpty()) ? pageData.get(pageData.size() - 1).getId() : null;
+        try {
 
-        return new CursorPageResponseDto<>(dtos, dtos.size(), nextCursor, hasNext);
+            List<JobEntity> results = jobRepository.searchJobsFullText(
+                    sanitizedTitle,
+                    location,
+                    lastId,
+                    size + 1
+            );
+
+            boolean hasNext = results.size() > size;
+            List<JobEntity> pageData = hasNext ? results.subList(0, size) : results;
+
+
+            List<JobResponseDTO> dtos = pageData.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            Long nextCursor = (hasNext && !pageData.isEmpty())
+                    ? pageData.get(pageData.size() - 1).getId()
+                    : null;
+
+            log.info("🔍 Search completed: {} results, hasNext: {}", dtos.size(), hasNext);
+            return new CursorPageResponseDto<>(dtos, dtos.size(), nextCursor, hasNext);
+
+        } catch (Exception e) {
+            log.error("❌ Search failed: ", e);
+            throw new BaseException(ErrorCode.DATABASE_ERROR, "Search failed: " + e.getMessage());
+        }
     }
 
+
     @Override
-    @Cacheable(value = "jobs", key = "{#filter.title(), #filter.location(), #filter.employmentType(), #filter.postedAfter(), #lastId, #size}")
+    @Cacheable(
+            value = "jobs",
+            key = "#filter.title() + '_' + #filter.location() + '_' + #filter.employmentType() + '_' + #lastId + '_' + #size",
+            cacheManager = "cacheManager"
+    )
     public CursorPageResponseDto<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
-        log.info("🚀 Sovereign Search applied: {}", filter);
+        log.info("🚀 Filtered search: {}", filter);
+
         try {
-            int limit = (size <= 0 || size > 100) ? 10 : size;
+            int limit = Math.min(Math.max(size, 1), 100); // 1-100 max
+
 
             Specification<JobEntity> spec = JobSpecification.filterJobs(filter, lastId);
 
-            List<JobEntity> jobList = jobRepository.findAll(spec, PageRequest.of(0, limit + 1)).getContent();
+            List<JobEntity> jobList = jobRepository.findAll(
+                    spec,
+                    PageRequest.of(0, limit + 1)
+            ).getContent();
 
             if (jobList.isEmpty()) {
-                return new CursorPageResponseDto<>(List.of(), limit, null, false);
+                return new CursorPageResponseDto<>(List.of(), 0, null, false);
             }
 
             boolean hasNext = jobList.size() > limit;
-            List<JobEntity> finalContent = hasNext ? jobList.subList(0, limit) : jobList;
-            Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
+            List<JobEntity> finalContent = hasNext
+                    ? jobList.subList(0, limit)
+                    : jobList;
 
-            return new CursorPageResponseDto<>(finalContent.stream().map(this::convertToDTO).toList(), limit, nextCursor, hasNext);
+            List<JobResponseDTO> dtos = finalContent.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            Long nextCursor = !finalContent.isEmpty()
+                    ? finalContent.get(finalContent.size() - 1).getId()
+                    : null;
+
+            return new CursorPageResponseDto<>(dtos, limit, nextCursor, hasNext);
 
         } catch (Exception e) {
-            log.error("❌ Critical logic failure in search: ", e);
-            throw new BaseException(ErrorCode.DATABASE_ERROR, "Search engine experienced a synchronization failure.");
+            log.error("❌ Filter search failed: ", e);
+            throw new BaseException(ErrorCode.DATABASE_ERROR, "Filter search failed: " + e.getMessage());
         }
     }
 
+    public CursorPageResponseDto<JobResponseDTO> getRecentJobs(LocalDateTime since, Long lastId, int size) {
+        int limit = Math.min(Math.max(size, 1), 100);
+
+        List<JobEntity> jobs = jobRepository.findRecentActiveJobs(
+                since,
+                PageRequest.of(0, limit + 1)
+        );
+
+        boolean hasNext = jobs.size() > limit;
+        List<JobEntity> pageData = hasNext ? jobs.subList(0, limit) : jobs;
+
+        List<JobResponseDTO> dtos = pageData.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        Long nextCursor = !pageData.isEmpty()
+                ? pageData.get(pageData.size() - 1).getId()
+                : null;
+
+        return new CursorPageResponseDto<>(dtos, limit, nextCursor, hasNext);
+    }
+
+
     @Override
     @Transactional
-    @org.springframework.cache.annotation.CacheEvict(value = "jobs", allEntries = true)
+    @CacheEvict(value = "jobs", allEntries = true)
     public String generateAiSummary(Long jobId) {
         JobEntity job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new BaseException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + jobId));
+                .orElseThrow(() -> new BaseException(
+                        ErrorCode.JOB_NOT_FOUND,
+                        "Job not found: " + jobId
+                ));
 
-        if (job.getAiSummary() != null && !job.getAiSummary().isEmpty()) {
+        // لو كان في summary بالفعل
+        if (job.getAiSummary() != null && !job.getAiSummary().isBlank()) {
             return job.getAiSummary();
         }
 
+        // توليد Summary باستخدام AI
         String summary = aiService.summarizeJob(job.getDescription());
         job.setAiSummary(summary);
         jobRepository.save(job);
 
+        log.info("✅ AI Summary generated for job: {}", jobId);
         return summary;
     }
 
@@ -115,11 +185,20 @@ public class JobScraperService implements JobInterface {
         var cache = cacheManager.getCache("jobs");
         if (cache != null) {
             cache.clear();
-            log.info("🧹 Jobs cache evicted successfully.");
+            log.info("🧹 Jobs cache cleared");
         }
     }
 
+
     private JobResponseDTO convertToDTO(JobEntity entity) {
+        String companyName = "Unknown";
+        String companyLogo = null;
+
+        if (entity.getCompany() != null) {
+            companyName = entity.getCompany().getName();
+            companyLogo = entity.getCompany().getLogoUrl();
+        }
+
         return JobResponseDTO.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -130,18 +209,27 @@ public class JobScraperService implements JobInterface {
                 .aiSummary(entity.getAiSummary())
                 .link(entity.getJobUrl())
                 .scrapedAt(entity.getScrapedAt())
-                .companyName(entity.getCompany() != null ? entity.getCompany().getName() : "N/A")
-                .companyLogo(entity.getCompany() != null ? entity.getCompany().getLogoUrl() : null)
+                .companyName(companyName)
+                .companyLogo(companyLogo)
                 .build();
     }
 
 
+    private String sanitizeSearchTerm(String term) {
+        if (term == null || term.isBlank()) {
+            return null;
+        }
+
+        String sanitized = term.trim();
 
 
+        sanitized = sanitized.replaceAll("[!&|():*\"\\\\]", " ");
 
 
+        if (sanitized.length() > 100) {
+            sanitized = sanitized.substring(0, 100);
+        }
 
-
+        return sanitized.isBlank() ? null : sanitized;
+    }
 }
-
-    

@@ -1,6 +1,7 @@
 package jobfinder.services.implementation;
 
 import jakarta.transaction.Transactional;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.JobResponseDTO;
@@ -86,6 +87,7 @@ public class AutonomousJobScraperService {
         log.info("✅ Scheduled scraping task completed.");
     }
 
+    @CircuitBreaker(name = "apifyApi", fallbackMethod = "fallbackScrapeAndSaveAllInOne")
     public String scrapeAndSaveAllInOne(String keyword) {
         log.info("🚀 Starting comprehensive scraping process for keyword: {}", keyword);
 
@@ -310,6 +312,11 @@ public class AutonomousJobScraperService {
         }
     }
 
+    public String fallbackScrapeAndSaveAllInOne(String keyword, Throwable t) {
+        log.error("🛑 Apify API Circuit Breaker activated for keyword [{}]! Error: {}", keyword, t.getMessage());
+        // إرجاع رسالة واضحة للمستخدم أن الخدمة غير متاحة حالياً
+        return "The scraping service is temporarily unavailable due to high load or external API issues. Please try again later.";
+    }
 
 }
 

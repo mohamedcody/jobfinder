@@ -15,9 +15,14 @@ import org.springframework.security.core.Authentication;
 
 import static org.springframework.http.ResponseEntity.ok;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
+
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
+@Validated
 public class JobController {
 
     private final JobScraperService jobScraperService;
@@ -29,7 +34,7 @@ public class JobController {
     @GetMapping
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> getAllJobs(
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
     ) {
         return ResponseEntity.ok(jobScraperService.getJobsAdvanced(lastId, size));
     }
@@ -40,7 +45,7 @@ public class JobController {
             @RequestParam String title,
             @RequestParam String location,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         return ok(jobScraperService.searchJobs(title, location, lastId, size));
     }
 
@@ -60,7 +65,7 @@ public class JobController {
             @RequestParam(required = false) String minSalary,
             @RequestParam(required = false) String employmentType,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(defaultValue = "false") boolean refresh,
             Authentication authentication
     ) {

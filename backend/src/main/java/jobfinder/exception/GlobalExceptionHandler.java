@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,25 @@ public class GlobalExceptionHandler {
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .errorCode("ERR_VALIDATION_001")
+                .message(errorMessage)
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 2.5 معالجة أخطاء الـ @Validated (مثل @Max و @Min في الـ RequestParam)
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex, HttpServletRequest request) {
+        String errorMessage = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("Constraint validation failed at path: {} - Errors: {}", request.getRequestURI(), errorMessage);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .errorCode("ERR_VALIDATION_002")
                 .message(errorMessage)
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
