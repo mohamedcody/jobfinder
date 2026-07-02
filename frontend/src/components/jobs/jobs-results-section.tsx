@@ -9,7 +9,7 @@
 
 "use client";
 
-import { memo } from "react";
+import { memo, useRef, useEffect } from "react";
 import { 
   AlertCircle, 
   Filter, 
@@ -17,7 +17,7 @@ import {
   Sparkles, 
   X 
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { JobCard } from "@/components/jobs/job-card";
 import type { Job } from "@/lib/jobs/types";
 import type { JobSearchFormState } from "@/components/jobs/job-search-filter";
@@ -55,6 +55,15 @@ function JobsResultsSectionComponent({
 }: JobsResultsSectionProps) {
   const showError = error && jobs.length === 0;
   const showEmpty = !isLoading && !showError && jobs.length === 0;
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const isLoadMoreInView = useInView(loadMoreRef, { margin: "200px" });
+
+  useEffect(() => {
+    if (isLoadMoreInView && hasMore && !isLoadingMore) {
+      onLoadMore();
+    }
+  }, [isLoadMoreInView, hasMore, isLoadingMore, onLoadMore]);
 
   return (
     <div className="space-y-6">
@@ -187,7 +196,7 @@ function JobsResultsSectionComponent({
             </div>
 
             {hasMore && (
-              <div className="mt-10 flex justify-center">
+              <div ref={loadMoreRef} className="mt-10 flex justify-center">
                 <button
                   onClick={onLoadMore}
                   disabled={isLoadingMore}
