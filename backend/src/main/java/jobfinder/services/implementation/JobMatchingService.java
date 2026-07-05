@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -40,81 +41,80 @@ public class JobMatchingService {
     private final JobRepository jobRepository;
     private final UserSkillRepository userSkillRepository;
 
-    // How many recent jobs we pull for each user. Keeps memory bounded.
     private static final int RECENT_JOB_LIMIT = 200;
-    // Jobs scraped within this many hours are considered "fresh"
     private static final long FRESH_HOURS = 48;
 
-    /**
-     * الميثود دي عشان الـ Controller والـ Test API
-     * (بتجيب الوظايف من الداتابيز بنفسها)
-     */
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile, int topN) {
-        // Pull the N most-recently-scraped active jobs from DB (one query)
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
                 LocalDateTime.now().minusDays(7),
                 PageRequest.of(0, RECENT_JOB_LIMIT)
         );
-
-        // Pass the fetched jobs to the main logic
         return findTopMatchesForUser(profile, recentJobs, topN);
     }
 
-    /**
-     * الميثود دي عشان الـ Scheduler
-     * (بتاخد الوظايف جاهزة عشان متعملش ضغط على الداتابيز جوة اللوب)
-     */
-    public List<JobMatchDto> findTopMatchesForUser(UserProfile profile, List<JobEntity> recentJobs, int topN) {
-        // 1. Load user skills (names, lowercase for comparison)
+    public List<JobMatchDto> findTopMatchesForUser(UserProfile profile,
+                                                   List<JobEntity> recentJobs,
+                                                   int topN) {
+        // 1. جهّز الـ skills مرة واحدة بره اللوب
         List<String> skillNames = userSkillRepository
                 .findByUserId(profile.getUser().getId())
                 .stream()
                 .map(us -> us.getSkill().getName().toLowerCase(Locale.ROOT))
                 .toList();
 
-        // 2. Score each job
+        // 2. جهّز الـ Patterns مرة واحدة بره اللوب
+        List<Pattern> titlePatterns = buildTitlePatterns(profile.getCurrentJobTitle());
+        List<Pattern> skillPatterns = buildSkillPatterns(skillNames);
+
         List<JobMatchDto> scored = new ArrayList<>();
         for (JobEntity job : recentJobs) {
-            int score = computeScore(job, profile, skillNames);
+            String jobText = buildSearchText(job);
+            int score = computeScore(job, jobText, titlePatterns, skillPatterns);
             if (score > 0) {
                 scored.add(toDto(job, score));
             }
         }
 
-        // 3. Sort DESC and take topN
         scored.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
         return scored.stream().limit(topN).toList();
     }
 
-    // ─── Private helpers ──────────────────────────────────────────────────────
+    private List<Pattern> buildTitlePatterns(String currentJobTitle) {
+        if (currentJobTitle == null || currentJobTitle.isBlank()) return List.of();
 
-    private int computeScore(JobEntity job, UserProfile profile, List<String> skillNames) {
+        return Arrays.stream(currentJobTitle.toLowerCase(Locale.ROOT).split("\\s+"))
+                .filter(word -> word.length() > 2)
+                .map(word -> Pattern.compile("\\b" + Pattern.quote(word) + "\\b",
+                        Pattern.CASE_INSENSITIVE | Pattern.DOTALL))
+                .toList();
+    }
+
+    private List<Pattern> buildSkillPatterns(List<String> skillNames) {
+        return skillNames.stream()
+                .map(skill -> Pattern.compile("\\b" + Pattern.quote(skill) + "\\b",
+                        Pattern.CASE_INSENSITIVE | Pattern.DOTALL))
+                .toList();
+    }
+
+    private int computeScore(JobEntity job,
+                             String jobText,
+                             List<Pattern> titlePatterns,
+                             List<Pattern> skillPatterns) {
         int score = 0;
-        String jobText = buildSearchText(job);  // lowercased concat of title+description
 
-        // ① Title keyword match (+50)
-        if (profile.getCurrentJobTitle() != null) {
-            String userTitle = profile.getCurrentJobTitle().toLowerCase(Locale.ROOT);
-            // Split on spaces so "senior java developer" matches "java developer" jobs
-            for (String word : userTitle.split("\\s+")) {
-                if (word.length() > 2) {
-                    // استخدام Regex عشان كلمة java متعملش ماتش مع javascript
-                    String wordRegex = ".*\\b" + Pattern.quote(word) + "\\b.*";
-                    if (jobText.matches(wordRegex)) {
-                        score += 50;
-                        break;
-                    }
-                }
+        // ① Title match (+50)
+        for (Pattern p : titlePatterns) {
+            if (p.matcher(jobText).find()) {
+                score += 50;
+                break;
             }
         }
 
-        // ② Skill keyword match (max +30, +5 per matching skill)
+        // ② Skill match (max +30)
         int skillPoints = 0;
-        for (String skill : skillNames) {
+        for (Pattern p : skillPatterns) {
             if (skillPoints >= 30) break;
-            // استخدام Regex لنفس السبب
-            String skillRegex = ".*\\b" + Pattern.quote(skill) + "\\b.*";
-            if (jobText.matches(skillRegex)) {
+            if (p.matcher(jobText).find()) {
                 skillPoints += 5;
             }
         }
@@ -126,14 +126,15 @@ public class JobMatchingService {
             score += 10;
         }
 
-        // Cap at 100
         return Math.min(score, 100);
     }
 
     private String buildSearchText(JobEntity job) {
         StringBuilder sb = new StringBuilder();
-        if (job.getTitle() != null) sb.append(job.getTitle().toLowerCase(Locale.ROOT)).append(" ");
-        if (job.getDescription() != null) sb.append(job.getDescription().toLowerCase(Locale.ROOT));
+        if (job.getTitle() != null)
+            sb.append(job.getTitle().toLowerCase(Locale.ROOT)).append(" ");
+        if (job.getDescription() != null)
+            sb.append(job.getDescription().toLowerCase(Locale.ROOT));
         return sb.toString();
     }
 
@@ -151,4 +152,6 @@ public class JobMatchingService {
                 .matchScore(score)
                 .build();
     }
+
+
 }
