@@ -56,6 +56,7 @@ public class SavedJobController {
     }
 
 
+
     @Operation(summary = "Check saved status for multiple jobs at once (for list/grid pages)")
     @PostMapping("/status/batch")
     @PreAuthorize("isAuthenticated()")

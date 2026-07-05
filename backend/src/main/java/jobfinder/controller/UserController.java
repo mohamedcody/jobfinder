@@ -32,6 +32,7 @@ public class UserController {
     private final UserProfileInterface userProfileService;
 
 
+
     /**
      * GET /api/users/profile
      * Get the profile data for the current user.

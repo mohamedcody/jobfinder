@@ -51,4 +51,5 @@ public class EmailAlertController {
         return ResponseEntity.ok(resultMessage);
     }
 
+
 }
