@@ -19,16 +19,15 @@ public class GlobalExceptionHandler {
     // 1. معالجة الأخطاء الخاصة بالـ Business (الأخطاء المتوقعة من قِبلنا)
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex, HttpServletRequest request) {
-        // تسجيل الأخطاء المتوقعة كـ Warn لمتابعتها بدون ملء الـ Logs بتفاصيل ضخمة
         log.warn("Business Exception [{}] triggered at path: {}. Message: {}",
                 ex.getErrorCode().getCode(), request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode(ex.getErrorCode().getCode())
-                .message(ex.getMessage())
-                .timestamp(LocalDateTime.now())
-                .path(request.getRequestURI())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse(
+                ex.getErrorCode().getCode(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
 
         return new ResponseEntity<>(errorResponse, ex.getErrorCode().getHttpStatus());
     }
@@ -42,12 +41,12 @@ public class GlobalExceptionHandler {
 
         log.warn("Validation failed at path: {} - Errors: {}", request.getRequestURI(), errorMessage);
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode("ERR_VALIDATION_001")
-                .message(errorMessage)
-                .timestamp(LocalDateTime.now())
-                .path(request.getRequestURI())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse(
+                "ERR_VALIDATION_001",
+                errorMessage,
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -61,31 +60,47 @@ public class GlobalExceptionHandler {
 
         log.warn("Constraint validation failed at path: {} - Errors: {}", request.getRequestURI(), errorMessage);
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode("ERR_VALIDATION_002")
-                .message(errorMessage)
-                .timestamp(LocalDateTime.now())
-                .path(request.getRequestURI())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse(
+                "ERR_VALIDATION_002",
+                errorMessage,
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    // 3. خط الدفاع الأخير: معالجة الأخطاء غير المتوقعة (مثل أخطاء قاعدة البيانات أو الـ Runtime)
+    // 3. CV Parsing: Malformed AI Response (logs raw output for debugging, returns clean 422)
+    @ExceptionHandler(MalformedAiResponseException.class)
+    public ResponseEntity<ErrorResponse> handleMalformedAiResponse(MalformedAiResponseException ex, HttpServletRequest request) {
+        log.error("MALFORMED AI RESPONSE at path: [{}]. Raw AI output (truncated): {}",
+                request.getRequestURI(),
+                ex.getRawAiOutput() != null
+                        ? ex.getRawAiOutput().substring(0, Math.min(ex.getRawAiOutput().length(), 2000))
+                        : "null");
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                ex.getErrorCode().getCode(),
+                "The AI returned an invalid response. Please try uploading your CV again.",
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    // 4. خط الدفاع الأخير: معالجة الأخطاء غير المتوقعة (مثل أخطاء قاعدة البيانات أو الـ Runtime)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
-
-        // 👈 هذا هو السطر الأهم لحل مشكلة الـ Audit!
-        // نقوم بطباعة الـ Stack Trace كاملاً في السيرفر لنعرف سبب المشكلة الحقيقي وحلها فوراً
         log.error("CRITICAL: Unexpected error occurred at path [{}]. Message: {}",
                 request.getRequestURI(), ex.getMessage(), ex);
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode("ERR_500")
-                .message("An internal server error occurred. Please try again later.")
-                .timestamp(LocalDateTime.now())
-                .path(request.getRequestURI())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse(
+                "ERR_500",
+                "An internal server error occurred. Please try again later.",
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }

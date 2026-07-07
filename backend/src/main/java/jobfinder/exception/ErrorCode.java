@@ -44,6 +44,11 @@ public enum ErrorCode {
     EXTERNAL_API_ERROR("ERR_201", "External service connection failed", HttpStatus.BAD_GATEWAY),
     APIFY_TIMEOUT("ERR_202", "External service timed out", HttpStatus.GATEWAY_TIMEOUT),
 
+    // 📄 CV Parsing Module (ERR_501 - ERR_550)
+    CV_EXTRACTION_FAILED("ERR_501", "Failed to extract text from the uploaded CV", HttpStatus.BAD_REQUEST),
+    AI_SERVICE_TIMEOUT("ERR_502", "AI service timed out while processing the CV", HttpStatus.GATEWAY_TIMEOUT),
+    MALFORMED_AI_RESPONSE("ERR_503", "AI returned an invalid or unparseable response", HttpStatus.UNPROCESSABLE_ENTITY),
+
     // 🗄️ Database Errors (ERR_301 - ERR_350)
     DATABASE_ERROR("ERR_301", "Database operation failed", HttpStatus.INTERNAL_SERVER_ERROR),
 

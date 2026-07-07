@@ -31,18 +31,20 @@ public class SecurityConfig {
                         .cors(Customizer.withDefaults())
                         .csrf(AbstractHttpConfigurer::disable)
                         .authorizeHttpRequests(auth -> auth
-                                // 1. مسارات التوثيق مفتوحة للجميع
+
+                                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                                .requestMatchers("/error").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/actuator/health").permitAll()
 
-                                // 2. السماح بطلب الـ API الخاص بـ GraphQL فقط وإغلاق واجهة المطورين الـ graphiql
+
                                 .requestMatchers("/graphql").authenticated()
                                 .requestMatchers("/graphiql/**").hasRole("ADMIN")
 
-                                // 3. حماية مسارات Swagger و OpenAPI وقصرها على الـ ADMIN فقط لحماية الـ Schema
+
                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")
 
-                                // 4. باقي الطلبات تتطلب تسجيل دخول
+
                                 .anyRequest().authenticated())
                         .sessionManagement(session -> session
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -36,7 +36,6 @@ public class JobController {
         return ResponseEntity.ok(jobScraperService.getJobsAdvanced(lastId, size));
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> searchJobs(
             @RequestParam String title,

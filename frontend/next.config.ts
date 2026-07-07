@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         source: "/api/saved-jobs/:path*",
         destination: `${backendOrigin}/api/saved-jobs/:path*`,
       },
+      {
+        source: "/api/cv/:path*",
+        destination: `${backendOrigin}/api/cv/:path*`,
+      },
     ];
   },
   async headers() {

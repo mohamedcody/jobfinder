@@ -9,6 +9,7 @@ import {
   Briefcase,
   Bookmark,
   User,
+  FileText,
   Settings,
   ChevronLeft,
   Sparkles,
@@ -94,6 +95,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { icon: Briefcase, label: "Explore Jobs", href: "/jobs" },
     { icon: Bookmark, label: "Saved Matches", href: "/saved" },
     { icon: User, label: "My Profile", href: "/profile" },
+    { icon: FileText, label: "CV Parser", href: "/profile/cv-upload" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
@@ -102,6 +104,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { icon: Briefcase, label: "Search All Jobs", href: "/jobs" },
     { icon: Bookmark, label: "View Saved", href: "/saved" },
     { icon: User, label: "Manage Profile", href: "/profile" },
+    { icon: FileText, label: "Upload CV (AI Parse)", href: "/profile/cv-upload" },
     { icon: Sparkles, label: "Talk to AI", action: () => window.dispatchEvent(new CustomEvent("trigger-ai-chat", { detail: { text: "", autoSend: false } })) },
   ].filter(cmd => cmd.label.toLowerCase().includes(searchQuery.toLowerCase()));
 

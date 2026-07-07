@@ -873,6 +873,24 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* ─── Skeleton Pulse (CV Parser Loading State) ───────── */
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 4%) 25%,
+    rgb(255 255 255 / 10%) 50%,
+    rgb(255 255 255 / 4%) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
 @keyframes mesh-shift {
   0% { background-position: 0% 40%; }
   50% { background-position: 100% 60%; }

@@ -54,7 +54,7 @@ public class JobAlertScheduler {
         // Load recent active jobs from the last 7 days.
         // Fetch jobs exactly ONCE for the entire batch to avoid redundant DB calls
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
-                LocalDateTime.now().minusDays(7),
+                LocalDateTime.now().minusDays(100),
                 PageRequest.of(0, 200)
         );
 

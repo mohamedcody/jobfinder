@@ -11,45 +11,136 @@ import {
   ChevronRight,
   Clock,
   CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Loader2,
+  Search,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useSavedJobs } from "@/hooks/use-saved-jobs";
+import { jobsService } from "@/lib/jobs/jobs-service";
+import type { Job } from "@/lib/jobs/types";
+import { getApiErrorMessage } from "@/lib/auth/api-error";
 
-const STATS = [
-  { label: "Active Applications", value: "12", icon: Zap, color: "text-violet-400", bg: "bg-violet-400/10", border: "border-violet-500/20" },
-  { label: "New Jobs Today", value: "48", icon: Briefcase, color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-500/20" },
-  { label: "Market Readiness", value: "85%", icon: Target, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-500/20" },
-];
+// Simple relative time formatter to avoid external dependencies
+function getTimeAgo(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-const FEATURED_JOBS = [
-  { title: "Senior React Engineer", company: "Airtable", salary: "$140k - $180k", match: "98%", time: "2h ago", color: "from-violet-600/20 to-transparent" },
-  { title: "Full Stack Developer", company: "Stripe", salary: "$130k - $170k", match: "95%", time: "5h ago", color: "from-cyan-600/20 to-transparent" },
-  { title: "Product Designer", company: "Linear", salary: "$120k - $160k", match: "92%", time: "1d ago", color: "from-indigo-600/20 to-transparent" },
-];
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "1d ago";
+    return `${diffDays}d ago`;
+  } catch {
+    return "Recently";
+  }
+}
 
 export default function DashboardPage() {
-  const [tasks, setTasks] = useState([
-    { id: 1, label: "Update Resume", done: false },
-    { id: 2, label: "Apply to 3 Jobs", done: false },
-    { id: 3, label: "Refine Tech Stack", done: false },
-    { id: 4, label: "Check Messages", done: false },
-  ]);
-  const { profile } = useUserProfile();
+  const { profile, isLoading: isProfileLoading } = useUserProfile();
+  const { fetchSavedJobs } = useSavedJobs();
+
+  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+  const [isJobsLoading, setIsJobsLoading] = useState(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+
+  const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+
+  const fetchDashboardData = useCallback(async () => {
+    // 1. Fetch recent jobs
+    try {
+      setIsJobsLoading(true);
+      setJobsError(null);
+      // Realistically we'd pass user skills as filters here, 
+      // but a basic recent jobs query simulates matches.
+      const res = await jobsService.filterJobs({ size: 3 });
+      setRecentJobs(res.data);
+    } catch (err) {
+      setJobsError(getApiErrorMessage(err));
+    } finally {
+      setIsJobsLoading(false);
+    }
+
+    // 2. Fetch saved jobs count
+    try {
+      setIsStatsLoading(true);
+      const saved = await fetchSavedJobs();
+      setSavedCount(saved.length);
+    } catch (err) {
+      console.error(err);
+      setSavedCount(0);
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, [fetchSavedJobs]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Derived Data
   const displayName = profile?.username?.trim() || "User";
+  const hasResume = !!profile?.resumeUrl;
+  const hasSkills = !!(profile?.skills && profile.skills.length > 0);
+  const hasJobTitle = !!profile?.currentJobTitle;
+  const hasBio = !!profile?.bio;
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
-  };
+  // Dynamic market readiness score based on profile completion
+  const marketReadiness = useMemo(() => {
+    let score = 20; // Base active score
+    if (hasResume) score += 20;
+    if (hasSkills) score += 20;
+    if (hasJobTitle) score += 20;
+    if (hasBio) score += 20;
+    return score;
+  }, [hasResume, hasSkills, hasJobTitle, hasBio]);
 
-  const completedTasks = tasks.filter(t => t.done).length;
+  // Dynamic Tasks based on realistic profile states
+  const tasks = useMemo(() => [
+    { id: 1, label: "Add Current Job Title", done: hasJobTitle, href: "/profile" },
+    { id: 2, label: "Upload Resume", done: hasResume, href: "/profile" },
+    { id: 3, label: "Refine Tech Stack (Skills)", done: hasSkills, href: "/profile" },
+    { id: 4, label: "Save an Application", done: (savedCount ?? 0) > 0, href: "/jobs" },
+  ], [hasJobTitle, hasResume, hasSkills, savedCount]);
+
+  const completedTasks = tasks.filter((t) => t.done).length;
+  const progressPercentage = (completedTasks / tasks.length) * 100;
+
+  // Dynamic Stats
+  const STATS = [
+    { 
+      label: "Saved Applications", 
+      value: isStatsLoading ? "..." : (savedCount?.toString() || "0"), 
+      icon: Zap, color: "text-violet-400", bg: "bg-violet-400/10", border: "border-violet-500/20" 
+    },
+    { 
+      label: "Recent Matches", 
+      value: isJobsLoading ? "..." : (recentJobs.length > 0 ? `${recentJobs.length}+` : "0"), 
+      icon: Briefcase, color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-500/20" 
+    },
+    { 
+      label: "Market Readiness", 
+      value: isProfileLoading ? "..." : `${marketReadiness}%`, 
+      icon: Target, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-500/20" 
+    },
+  ];
 
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Welcome Hero: Identity Banner */}
+        {/* Welcome Hero */}
         <section className="relative overflow-hidden rounded-[2.5rem] bg-[#0a0c24] border border-white/5 p-8 sm:p-12 shadow-2xl group">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
           <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
@@ -63,10 +154,14 @@ export default function DashboardPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
                 <h1 className="text-4xl sm:text-6xl font-black text-white leading-[1.1] tracking-tight mb-6">
-                  Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-white to-cyan-400">{displayName}</span>.
+                  {isProfileLoading ? (
+                    <span className="animate-pulse bg-white/10 text-transparent rounded-lg">Hello, User...</span>
+                  ) : (
+                    <>Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-white to-cyan-400">{displayName}</span>.</>
+                  )}
                 </h1>
                 <p className="text-lg text-slate-400 max-w-lg leading-relaxed">
-                  The market is active today. We identified <span className="text-white font-bold underline decoration-violet-500 decoration-2 underline-offset-4">12 elite roles</span> that perfectly align with your engineering profile.
+                  The market is active today. We identified <span className="text-white font-bold underline decoration-violet-500 decoration-2 underline-offset-4">{isJobsLoading ? "..." : recentJobs.length} new roles</span> that align with your current trajectory.
                 </p>
               </div>
               
@@ -116,36 +211,75 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4">
-              {FEATURED_JOBS.map((job) => (
-                <div key={job.title} className="group relative overflow-hidden rounded-3xl bg-[#0a0c24] border border-white/5 p-6 hover:border-violet-500/30 transition-all">
-                  <div className={`absolute top-0 left-0 h-full w-1 bg-gradient-to-b ${job.color.replace('from-', 'from-').replace('to-', 'to-')}`} />
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                      <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
-                        <Briefcase className="h-7 w-7 text-slate-500 group-hover:text-violet-400 transition-colors" />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black text-white tracking-tight leading-none mb-2">{job.title}</h4>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{job.company} <span className="mx-2 opacity-30">|</span> {job.salary}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right hidden sm:block">
-                        <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 border border-emerald-500/20">
-                          {job.match} Match
-                        </div>
-                        <div className="flex items-center justify-end gap-2 mt-2">
-                          <Clock className="h-3 w-3 text-slate-600" />
-                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{job.time}</span>
-                        </div>
-                      </div>
-                      <button className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-violet-600 hover:text-white transition-all shadow-xl">
-                        <ArrowUpRight className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
+              {isJobsLoading ? (
+                // Loading Skeletons
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="animate-pulse rounded-3xl bg-white/5 border border-white/5 p-6 h-28 flex items-center gap-6" />
+                ))
+              ) : jobsError ? (
+                // Error State
+                <div className="rounded-3xl bg-[#0a0c24] border border-red-500/20 p-8 text-center space-y-4">
+                  <AlertTriangle className="h-8 w-8 text-red-400 mx-auto" />
+                  <p className="text-slate-400 text-sm">{jobsError}</p>
+                  <button onClick={fetchDashboardData} className="text-xs font-bold text-violet-400 hover:text-violet-300 inline-flex items-center gap-2 uppercase tracking-widest">
+                    <RefreshCw className="h-3 w-3" /> Retry
+                  </button>
                 </div>
-              ))}
+              ) : recentJobs.length === 0 ? (
+                // Empty State
+                <div className="rounded-3xl bg-[#0a0c24] border border-white/5 p-12 text-center space-y-4">
+                  <Search className="h-10 w-10 text-slate-600 mx-auto" />
+                  <h3 className="text-lg font-bold text-white">No perfect matches right now</h3>
+                  <p className="text-slate-400 text-sm max-w-sm mx-auto">Try refining your profile skills or check back later as we scrape new roles hourly.</p>
+                  <Link href="/profile" className="inline-block mt-4 text-xs font-black text-violet-400 hover:text-violet-300 uppercase tracking-widest">
+                    Optimize Profile →
+                  </Link>
+                </div>
+              ) : (
+                // Real Data
+                recentJobs.map((job) => {
+                  const timeAgo = job.scrapedAt ? getTimeAgo(job.scrapedAt) : "Just now";
+                  
+                  return (
+                    <div key={job.id} className="group relative overflow-hidden rounded-3xl bg-[#0a0c24] border border-white/5 p-6 hover:border-violet-500/30 transition-all">
+                      <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-violet-600/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                        <div className="flex items-center gap-5">
+                          <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner overflow-hidden p-2">
+                            {job.companyLogo ? (
+                              <img src={job.companyLogo} alt={job.companyName} className="h-full w-full object-contain mix-blend-screen" />
+                            ) : (
+                              <Briefcase className="h-7 w-7 text-slate-500 group-hover:text-violet-400 transition-colors" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-black text-white tracking-tight leading-tight mb-2 max-w-md truncate" title={job.title}>
+                              {job.title}
+                            </h4>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest truncate max-w-[250px]">
+                              {job.companyName} <span className="mx-2 opacity-30">|</span> {job.location || "Remote"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 shrink-0">
+                          <div className="text-right hidden sm:block">
+                            <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 border border-emerald-500/20">
+                              {job.employmentType || "Full Time"}
+                            </div>
+                            <div className="flex items-center justify-end gap-2 mt-2">
+                              <Clock className="h-3 w-3 text-slate-600" />
+                              <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{timeAgo}</span>
+                            </div>
+                          </div>
+                          <Link href={`/jobs`} className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-violet-600 hover:text-white transition-all shadow-xl">
+                            <ArrowUpRight className="h-6 w-6" />
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -160,18 +294,26 @@ export default function DashboardPage() {
               </div>
               
               <div className="space-y-4">
-                {tasks.map((task) => (
-                  <button 
-                    key={task.id} 
-                    onClick={() => toggleTask(task.id)}
-                    className="flex w-full items-center gap-4 group/task text-left"
-                  >
-                    <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.done ? "bg-emerald-500 border-emerald-500 text-[#07091a]" : "bg-white/5 border-white/10 group-hover/task:border-emerald-500/50"}`}>
-                      {task.done && <CheckCircle2 className="h-4 w-4" />}
-                    </div>
-                    <span className={`text-sm font-bold transition-all ${task.done ? "text-slate-600 line-through" : "text-slate-300"}`}>{task.label}</span>
-                  </button>
-                ))}
+                {isProfileLoading || isStatsLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="animate-pulse h-6 bg-white/5 rounded-lg w-full" />
+                  ))
+                ) : (
+                  tasks.map((task) => (
+                    <Link 
+                      key={task.id} 
+                      href={task.done ? "#" : task.href}
+                      className="flex w-full items-center gap-4 group/task text-left"
+                    >
+                      <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.done ? "bg-emerald-500 border-emerald-500 text-[#07091a]" : "bg-white/5 border-white/10 group-hover/task:border-emerald-500/50"}`}>
+                        {task.done && <CheckCircle2 className="h-4 w-4" />}
+                      </div>
+                      <span className={`text-sm font-bold transition-all ${task.done ? "text-slate-600 line-through" : "text-slate-300 group-hover/task:text-white"}`}>
+                        {task.label}
+                      </span>
+                    </Link>
+                  ))
+                )}
               </div>
 
               {/* Progress Bar */}
@@ -179,7 +321,7 @@ export default function DashboardPage() {
                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${(completedTasks / tasks.length) * 100}%` }}
+                    animate={{ width: `${progressPercentage}%` }}
                     className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
                   />
                 </div>
@@ -187,7 +329,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Neural Insights Card */}
-            <section className="rounded-[2.5rem] bg-gradient-to-br from-cyan-600/10 via-indigo-600/5 to-transparent border border-white/5 p-8 relative group cursor-pointer">
+            <section className="rounded-[2.5rem] bg-gradient-to-br from-cyan-600/10 via-indigo-600/5 to-transparent border border-white/5 p-8 relative group cursor-pointer hover:border-cyan-500/30 transition-all">
               <div className="h-12 w-12 rounded-2xl bg-cyan-600/10 flex items-center justify-center mb-6">
                 <Sparkles className="h-6 w-6 text-cyan-400" />
               </div>
@@ -195,9 +337,9 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-400 leading-relaxed mb-6">
                 Engineers with a <span className="text-cyan-400 font-bold">GitHub Portfolio</span> attached receive <span className="text-white font-bold underline">25% more</span> direct recruiter inquiries.
               </p>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-cyan-400 group-hover:gap-4 transition-all">
+              <Link href="/profile" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-cyan-400 group-hover:gap-4 transition-all">
                 Optimize Profile <ChevronRight className="h-3 w-3" />
-              </div>
+              </Link>
             </section>
           </div>
 
