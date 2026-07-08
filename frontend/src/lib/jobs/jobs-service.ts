@@ -1,6 +1,4 @@
-import axios from "axios";
-import { emitGlobalApiError, getGlobalApiErrorMessage } from "@/lib/api/global-api-error";
-import { clearToken, getToken, isTokenExpired } from "@/lib/auth/token-storage";
+import { createApiClient } from "@/lib/api/create-api-client";
 import type { CursorPageResponse, Job, JobFilterParams, JobsSearchParams } from "./types";
 
 interface RequestOptions {
@@ -12,54 +10,13 @@ type QueryParamValue = string | number;
 const JOBS_API_BASE_URL = 
   process.env.NEXT_PUBLIC_JOBS_API_URL || "/api/jobs";
 
-export const jobsApiClient = axios.create({
+export const jobsApiClient = createApiClient({
   baseURL: JOBS_API_BASE_URL,
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-jobsApiClient.interceptors.request.use((config) => {
-  const token = getToken();
-
-  if (!token) {
-    return config;
-  }
-
-  if (isTokenExpired(token)) {
-    clearToken();
-    return config;
-  }
-
-  config.headers = config.headers ?? {};
-  (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-
-  return config;
-});
-
-jobsApiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error?.response?.status;
-    const isCanceledRequest = error?.code === "ERR_CANCELED";
-
-    // Clear token on auth errors
-    if (status === 401 || status === 403) {
-      clearToken();
-    }
-
-    // Only emit global error for network issues or server errors (not auth/validation errors)
-    if (!isCanceledRequest && (!status || status >= 500 || status === 0)) {
-      emitGlobalApiError({
-        status,
-        message: getGlobalApiErrorMessage(status),
-      });
-    }
-
-    return Promise.reject(error);
-  },
-);
 
 export const jobsService = {
   async getAllJobs(lastId?: number, size: number = 10, options?: RequestOptions): Promise<CursorPageResponse<Job>> {

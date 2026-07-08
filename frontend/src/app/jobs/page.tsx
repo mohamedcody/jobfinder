@@ -51,48 +51,7 @@ function JobsListFallback() {
 }
 
 export default function JobsPage() {
-  const { isAuthenticated, isSessionReady } = useAuthSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (isSessionReady && !isAuthenticated) {
-      const currentPath = window.location.pathname + window.location.search;
-      router.replace(`/login?callbackUrl=${encodeURIComponent(currentPath)}`);
-    }
-  }, [isAuthenticated, isSessionReady, router]);
-
-  if (!isSessionReady || !isAuthenticated) {
-    return (
-      <div className="jobs-page-background relative min-h-screen overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <div className="scale-in dashboard-panel w-full max-w-md rounded-3xl p-10 text-center">
-            <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center">
-              <div className="absolute inset-0 animate-ping rounded-full bg-linear-to-r from-[#A020F0] to-[#4B0082] opacity-35" />
-
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-[0_0_20px_rgba(160,32,240,0.35)]">
-                <Sparkles className="h-10 w-10 text-white" />
-              </div>
-            </div>
-
-            <h1 className="metallic-title text-2xl font-black">Verifying Session</h1>
-            <p className="mt-3 text-sm leading-6 text-[#D1D5DB]">
-              Redirecting you to the login page securely...
-            </p>
-
-            <div className="mt-6 flex justify-center gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-2 w-2 animate-bounce rounded-full bg-linear-to-r from-[#A020F0] to-[#4B0082]"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AppLayout>

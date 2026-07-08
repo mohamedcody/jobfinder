@@ -132,8 +132,8 @@ export const validators = {
 
   // Bio validation
   bio: (bio: string): ValidationResult => {
-    if (!bio) return { isValid: true };
-    if (bio.length < 10) {
+    if (!bio || bio.trim().length === 0) return { isValid: true };
+    if (bio.trim().length < 10) {
       return {
         isValid: false,
         message: "Bio too short (min 10 characters)",

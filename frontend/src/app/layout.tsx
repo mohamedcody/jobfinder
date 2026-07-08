@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { AppToaster } from "@/components/providers/app-toaster";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import "./globals.css";
 import "./tokens.css";
 
@@ -33,7 +34,9 @@ export default function RootLayout({
             </div>
           }
         >
-          {children}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
         </Suspense>
         <AppToaster />
       </body>

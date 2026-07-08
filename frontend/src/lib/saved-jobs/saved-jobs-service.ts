@@ -1,6 +1,4 @@
-import axios from "axios";
-import { emitGlobalApiError, getGlobalApiErrorMessage } from "@/lib/api/global-api-error";
-import { clearToken, getToken, isTokenExpired } from "@/lib/auth/token-storage";
+import { createApiClient } from "@/lib/api/create-api-client";
 import type { SaveJobRequest, SavedJobResponse, SavedJobsErrorResponse } from "./types";
 
 interface RequestOptions {
@@ -21,7 +19,7 @@ export class SavedJobsApiError extends Error {
     }
 }
 
-export const savedJobsApiClient = axios.create({
+export const savedJobsApiClient = createApiClient({
     baseURL: SAVED_JOBS_API_BASE_URL,
     timeout: Number(process.env.NEXT_PUBLIC_SAVED_JOBS_API_TIMEOUT_MS ?? 15000),
     headers: {
@@ -29,40 +27,11 @@ export const savedJobsApiClient = axios.create({
     },
 });
 
-savedJobsApiClient.interceptors.request.use((config) => {
-    const token = getToken();
-
-    if (!token) {
-        return config;
-    }
-
-    if (isTokenExpired(token)) {
-        clearToken();
-        return config;
-    }
-
-    config.headers = config.headers ?? {};
-    (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-    return config;
-});
-
+// Add custom error mapping specific to saved jobs
 savedJobsApiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         const status = error?.response?.status;
-        const isCanceledRequest = error?.code === "ERR_CANCELED";
-
-        if (status === 401 || status === 403) {
-            clearToken();
-        }
-
-        if (!isCanceledRequest && (!status || status >= 500 || status === 0)) {
-            emitGlobalApiError({
-                status,
-                message: getGlobalApiErrorMessage(status),
-            });
-        }
-
         const responseData = error?.response?.data as SavedJobsErrorResponse | undefined;
         return Promise.reject(
             new SavedJobsApiError(

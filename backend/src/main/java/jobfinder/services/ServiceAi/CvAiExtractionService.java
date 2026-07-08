@@ -1,53 +1,36 @@
-package jobfinder.services.implementation;
+package jobfinder.services.ServiceAi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import jobfinder.exception.AiServiceTimeoutException;
 import jobfinder.exception.MalformedAiResponseException;
 import jobfinder.model.dto.AiCvExtractionResult;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Dedicated AI service for CV/Resume data extraction using Google Gemini.
  *
- * NON-BLOCKING: Returns Mono<AiCvExtractionResult> — never calls .block().
- * The Tomcat worker thread is released immediately while waiting for the AI response.
- *
- * RESILIENCY:
- * - @Retry: Retries up to 3 times on 5xx errors / timeouts with exponential backoff.
- * - @CircuitBreaker: Opens circuit after sustained failures to prevent cascade.
- * - MalformedAiResponseException: Thrown when AI returns non-JSON content.
+ * Architecture upgraded: 
+ * Now delegates all raw HTTP requests, timeouts, retries, and URI building 
+ * to the centralized GeminiApiClient.
  */
 @Service
 @Slf4j
 public class CvAiExtractionService {
 
-    private final WebClient webClient;
+    private final GeminiApiClient geminiClient;
     private final ObjectMapper objectMapper;
-
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
 
-    public CvAiExtractionService(ObjectMapper objectMapper) {
+    public CvAiExtractionService(GeminiApiClient geminiClient, ObjectMapper objectMapper) {
+        this.geminiClient = geminiClient;
         this.objectMapper = objectMapper;
-        this.webClient = WebClient.builder()
-                .baseUrl("https://generativelanguage.googleapis.com")
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024)) // 2MB buffer
-                .build();
     }
 
     /**
@@ -57,46 +40,17 @@ public class CvAiExtractionService {
      * @param cvText the raw text extracted from the PDF
      * @return Mono<AiCvExtractionResult> with the parsed CV data
      */
-    @Retry(name = "cvAiExtraction", fallbackMethod = "retryFallback")
-    @CircuitBreaker(name = "geminiCvApi", fallbackMethod = "circuitBreakerFallback")
     public Mono<AiCvExtractionResult> extractCvData(String cvText) {
         log.info("🤖 Sending CV text ({} chars) to Gemini AI for structured extraction...", cvText.length());
 
         String prompt = buildExtractionPrompt(cvText);
 
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", prompt)
-                        ))
-                ),
-                "generationConfig", Map.of(
-                        "responseMimeType", "application/json",
-                        "temperature", 0.1 // Low temperature for deterministic structured output
-                )
-        );
-
-        return webClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/v1beta/models/gemini-1.5-flash:generateContent")
-                        .queryParam("key", geminiApiKey)
-                        .build())
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .timeout(REQUEST_TIMEOUT)
+        return geminiClient.generateContent(prompt, REQUEST_TIMEOUT)
                 .flatMap(map -> this.parseGeminiResponse((Map<String, Object>) map))
                 .doOnSuccess(result -> log.info("✅ AI CV extraction succeeded. Extracted {} skills, {} education, {} experience entries.",
                         result.skills() != null ? result.skills().size() : 0,
                         result.education() != null ? result.education().size() : 0,
-                        result.workExperience() != null ? result.workExperience().size() : 0))
-                .onErrorMap(TimeoutException.class, e ->
-                        new AiServiceTimeoutException("Gemini AI did not respond within " + REQUEST_TIMEOUT.getSeconds() + " seconds.", e))
-                .onErrorMap(WebClientResponseException.class, e -> {
-                    WebClientResponseException wcre = (WebClientResponseException) e;
-                    log.error("❌ Gemini API HTTP error: {} - {}", wcre.getStatusCode(), wcre.getResponseBodyAsString());
-                    return new AiServiceTimeoutException("Gemini API returned HTTP " + wcre.getStatusCode(), wcre);
-                });
+                        result.workExperience() != null ? result.workExperience().size() : 0));
     }
 
     /**
@@ -135,15 +89,11 @@ public class CvAiExtractionService {
             log.debug("🔍 Raw AI JSON output (first 500 chars): {}",
                     rawJsonText.substring(0, Math.min(rawJsonText.length(), 500)));
 
-            // Clean up markdown code fences if the AI wraps the JSON
             String cleanedJson = cleanJsonResponse(rawJsonText);
-
-            // Deserialize into the structured record
             AiCvExtractionResult result = objectMapper.readValue(cleanedJson, AiCvExtractionResult.class);
             return Mono.just(result);
 
         } catch (JsonProcessingException e) {
-            // Log the raw AI output for debugging before throwing a clean exception
             String rawOutput = response != null ? response.toString() : "null";
             log.error("❌ Failed to deserialize AI JSON response. JsonProcessingException: {}. Raw output (truncated): {}",
                     e.getMessage(), rawOutput.substring(0, Math.min(rawOutput.length(), 2000)));
@@ -160,9 +110,6 @@ public class CvAiExtractionService {
         }
     }
 
-    /**
-     * Strips markdown code fences (```json ... ```) that AI models sometimes add.
-     */
     private String cleanJsonResponse(String rawJson) {
         String cleaned = rawJson.trim();
         if (cleaned.startsWith("```json")) {
@@ -176,9 +123,6 @@ public class CvAiExtractionService {
         return cleaned.trim();
     }
 
-    /**
-     * Builds the extraction prompt with a strict JSON schema contract.
-     */
     private String buildExtractionPrompt(String cvText) {
         return """
                 You are an expert CV/Resume parser. Extract structured data from the following resume text \
@@ -219,27 +163,5 @@ public class CvAiExtractionService {
                 """ + cvText + """
                 \"\"\"
                 """;
-    }
-
-    // --- Resilience4j Fallback Methods ---
-
-    /**
-     * Retry fallback: called after all retry attempts are exhausted.
-     */
-    public Mono<AiCvExtractionResult> retryFallback(String cvText, Throwable t) {
-        log.error("🔄 All retry attempts exhausted for CV AI extraction. Last error: {}", t.getMessage());
-        return Mono.error(new AiServiceTimeoutException(
-                "AI service is currently unavailable after multiple retries. Please try again later.", t
-        ));
-    }
-
-    /**
-     * Circuit breaker fallback: called when the circuit is open.
-     */
-    public Mono<AiCvExtractionResult> circuitBreakerFallback(String cvText, Throwable t) {
-        log.error("🛑 Circuit breaker OPEN for CV AI extraction. Rejecting request. Cause: {}", t.getMessage());
-        return Mono.error(new AiServiceTimeoutException(
-                "AI service is temporarily unavailable due to high error rate. Please try again in a few minutes.", t
-        ));
     }
 }

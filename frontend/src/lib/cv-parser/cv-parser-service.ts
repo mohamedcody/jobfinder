@@ -7,42 +7,16 @@
  */
 
 import axios, { AxiosError } from "axios";
-import { getToken, isTokenExpired, clearToken } from "@/lib/auth/token-storage";
+import { createApiClient } from "@/lib/api/create-api-client";
+import { clearToken } from "@/lib/auth/token-storage";
 import type { CvParseResponse, CvApiError } from "./types";
 
 const CV_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-const cvApiClient = axios.create({
+const cvApiClient = createApiClient({
   baseURL: CV_API_BASE_URL,
   timeout: 60000, // 60s — AI processing can take time
 });
-
-// JWT interceptor (same pattern as profile-service)
-cvApiClient.interceptors.request.use((config) => {
-  const token = getToken();
-
-  if (!token) return config;
-
-  if (isTokenExpired(token)) {
-    clearToken();
-    return config;
-  }
-
-  config.headers = config.headers ?? {};
-  (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-
-  return config;
-});
-
-cvApiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
-      clearToken();
-    }
-    return Promise.reject(error);
-  },
-);
 
 /**
  * Upload a PDF file for AI-powered CV parsing.

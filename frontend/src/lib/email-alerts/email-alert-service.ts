@@ -1,54 +1,16 @@
-import axios from "axios";
-import { getToken, isTokenExpired, clearToken } from "@/lib/auth/token-storage";
+import { createApiClient } from "@/lib/api/create-api-client";
 import type { EmailAlertResponse, UpdateEmailAlertRequest } from "./types";
 
-/**
- * Base URL for the Email Alert API.
- * Uses the Next.js rewrite proxy: /api/users/profile/alerts → backend:8080
- */
 const ALERTS_API_BASE_URL =
   process.env.NEXT_PUBLIC_ALERTS_API_URL || "/api/users/profile/alerts";
 
-export const alertsApiClient = axios.create({
+export const alertsApiClient = createApiClient({
   baseURL: ALERTS_API_BASE_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-// Request Interceptor — Attach JWT Bearer token
-alertsApiClient.interceptors.request.use((config) => {
-  const token = getToken();
-
-  if (!token) {
-    return config;
-  }
-
-  if (isTokenExpired(token)) {
-    clearToken();
-    return config;
-  }
-
-  config.headers = config.headers ?? {};
-  (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-
-  return config;
-});
-
-// Response Interceptor — Clear token on 401/403
-alertsApiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error?.response?.status;
-
-    if (status === 401 || status === 403) {
-      clearToken();
-    }
-
-    return Promise.reject(error);
-  },
-);
 
 /**
  * Email Alert API Service

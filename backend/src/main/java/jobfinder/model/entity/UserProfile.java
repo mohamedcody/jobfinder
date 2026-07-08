@@ -62,7 +62,7 @@ public class UserProfile {
     private LocalDateTime cvParsedAt;
 
     // --- CV Parsing: Structured relational data for the matching engine ---
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy ="profile" , cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Education> educationList;
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)

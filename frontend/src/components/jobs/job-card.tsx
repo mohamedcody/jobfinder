@@ -208,24 +208,11 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
                               </p>
                             </div>
 
-                            <div className="rounded-lg bg-white/[0.02] border border-white/5 p-4">
-                              <p className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">📝 الملخص العربي</p>
-                              <p className="text-sm text-slate-200 leading-relaxed text-right dir-rtl max-h-[120px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                                وظيفة متقدمة تتطلب خبرة عميقة في المجال. المسؤوليات الرئيسية تشمل تطوير الحلول التقنية والقيادة الفنية والإشراف على الفرق. المتطلبات الأساسية: خبرة 5+ سنوات، مهارات تقنية قوية، وقدرة على القيادة والعمل الجماعي والتواصل الفعّال.
+                            <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-white/[0.02] border border-white/5 p-4 border-dashed">
+                              <div className="h-2 w-2 rounded-full bg-violet-500/50 animate-pulse" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                Deep Profile Matching Analytics Coming Soon
                               </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="rounded-lg bg-white/5 p-3 border border-white/5 text-center hover:bg-white/10 transition-colors">
-                                <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-1">💪 Skills Match</p>
-                                <p className="text-lg font-black text-white">85%</p>
-                                <p className="text-[8px] text-slate-400 mt-1">مهاراتك</p>
-                              </div>
-                              <div className="rounded-lg bg-white/5 p-3 border border-white/5 text-center hover:bg-white/10 transition-colors">
-                                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">✓ Fit Score</p>
-                                <p className="text-lg font-black text-white">92%</p>
-                                <p className="text-[8px] text-slate-400 mt-1">التوافق</p>
-                              </div>
                             </div>
                           </div>
                       )}

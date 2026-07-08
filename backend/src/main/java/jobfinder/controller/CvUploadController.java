@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jobfinder.config.CustomUserDetails;
 import jobfinder.model.dto.CvParseResponseDto;
-import jobfinder.services.implementation.CvAiExtractionService;
+import jobfinder.services.ServiceAi.CvAiExtractionService;
 import jobfinder.services.implementation.PdfParsingService;
 import jobfinder.services.implementation.ProfileDataMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.scheduler.Schedulers;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller for AI-powered CV/Resume parsing.
