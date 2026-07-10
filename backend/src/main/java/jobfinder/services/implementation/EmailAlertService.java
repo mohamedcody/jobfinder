@@ -51,10 +51,12 @@ public class EmailAlertService {
 
         UserProfile profile = user.getProfile();
         if (profile == null || profile.getCurrentJobTitle() == null || profile.getCurrentJobTitle().isBlank()) {
-            throw new BaseException(ErrorCode.INVALID_INPUT, "Please update your profile with a current job title first.");
+            throw new BaseException(ErrorCode.INVALID_INPUT,
+                    "Please update your profile with a current job title first.");
         }
 
-        // Use findByUserId to avoid creating defaults during a read-only test operation if they don't exist,
+        // Use findByUserId to avoid creating defaults during a read-only test operation
+        // if they don't exist,
         // though typically they will exist. If not, fallback to default threshold.
         int minScore = emailAlertSettingRepository.findByUserId(userId)
                 .map(EmailAlertSetting::getMinMatchScore)
@@ -67,7 +69,7 @@ public class EmailAlertService {
 
         if (matches.isEmpty()) {
             return "No matches found above your minimum score (" + minScore + "%). " +
-                   "Try updating your profile job title or skills to match recently scraped jobs.";
+                    "Try updating your profile job title or skills to match recently scraped jobs.";
         }
 
         emailNotificationService.sendDailyDigest(user.getEmail(), username, matches);

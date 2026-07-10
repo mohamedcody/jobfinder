@@ -17,4 +17,5 @@ public interface WorkExperienceRepository extends JpaRepository<WorkExperience, 
     @Modifying
     @Query("DELETE FROM WorkExperience w WHERE w.profile.id = :profileId")
     void deleteAllByProfileId(@Param("profileId") Long profileId);
+    
 }

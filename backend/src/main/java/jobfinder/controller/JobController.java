@@ -2,14 +2,13 @@ package jobfinder.controller;
 import jobfinder.model.dto.CursorPageResponseDto;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
-import jobfinder.services.implementation.JobScraperService;
+import jobfinder.services.implementation.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 
@@ -25,7 +24,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class JobController {
 
-    private final JobScraperService jobScraperService;
+    private final JobService jobScraperService;
 
 
     @GetMapping

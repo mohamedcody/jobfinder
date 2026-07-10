@@ -2,11 +2,14 @@ package jobfinder.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
+
 import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
 @Table(name = "companies")
+@BatchSize(size=50)
 @Getter
 @Setter
 @AllArgsConstructor

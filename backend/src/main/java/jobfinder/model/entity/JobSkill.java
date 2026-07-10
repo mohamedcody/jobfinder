@@ -28,4 +28,6 @@ public class JobSkill {
     // --- Added for Scalability & Precision ---
     @Column(name = "min_years_of_experience")
     private Integer minYearsOfExperience; // Required years for this specific skill
+
+    
 }

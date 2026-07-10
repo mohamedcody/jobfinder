@@ -41,7 +41,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>, JpaSpecif
     );
 
     // ✅ البحث الكامل باستخدام Full-Text Search المحسّن
-    @EntityGraph(attributePaths = "company")
+
     @Query(value =
             "SELECT j.*, " +
                     "ts_rank(j.search_vector, websearch_to_tsquery('english', :searchTerm)) AS rank " +
@@ -60,6 +60,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>, JpaSpecif
             @Param("lastId") Long lastId,
             @Param("size") int size
     );
+
 
 
 }

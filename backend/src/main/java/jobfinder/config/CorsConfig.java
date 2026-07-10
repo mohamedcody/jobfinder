@@ -13,8 +13,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig {
 
     // قراءة دومين الفرونت إند من متغيرات البيئة، ولو مش موجود هيشتغل على لوكال هوست افتراضياً
-    @Value("${FRONTEND_URL:http://localhost:3000}")
-    private String frontendUrl;
+//    @Value("${FRONTEND_URL:http://localhost:3000}")
+//    private String frontendUrl;
+
+    @Value("${FRONTEND_URL}")
+    private String getFrontendUrl;
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -25,7 +28,7 @@ public class CorsConfig {
                         .allowedOrigins(
                                 "http://localhost:3000",
                                 "http://127.0.0.1:3000",
-                                frontendUrl // الدومين الحقيقي للإنتاج
+                                getFrontendUrl // الدومين الحقيقي للإنتاج
                         )
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")

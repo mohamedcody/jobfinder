@@ -42,6 +42,7 @@ public class SecurityConfig {
                                 .requestMatchers("/graphiql/**").hasRole("ADMIN")
 
 
+
                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")
 
 
