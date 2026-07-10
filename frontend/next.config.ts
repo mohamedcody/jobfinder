@@ -1,7 +1,33 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
-const backendOrigin = process.env.BACKEND_ORIGIN || "http://localhost:8080";
+// ---------------------------------------------------------------------------
+// IMPORTANT — Vercel Deployment Note
+// ---------------------------------------------------------------------------
+// `next.config.ts` rewrites() are resolved at BUILD TIME, not runtime.
+// `BACKEND_ORIGIN` **must** be set as a Build Environment Variable in Vercel
+// (Settings → Environment Variables → check "Available during Build") in
+// addition to being a Runtime variable.
+//
+// If BACKEND_ORIGIN is missing at build time the rewrite destination will
+// fall back to http://localhost:8080, causing ECONNREFUSED in production.
+// ---------------------------------------------------------------------------
+
+const backendOrigin = (() => {
+  const origin = process.env.BACKEND_ORIGIN;
+  if (!origin) {
+    // Fail loudly during local development; Vercel will still build but you
+    // will see this warning in the build logs.
+    console.warn(
+      "[next.config] WARNING: BACKEND_ORIGIN is not set. " +
+        "API rewrites will point to http://localhost:8080. " +
+        "Set BACKEND_ORIGIN as a BUILD environment variable in Vercel.",
+    );
+    return "http://localhost:8080";
+  }
+  return origin;
+})();
+
 const ngrokDevOrigin = "tetragonally-homotypic-armando.ngrok-free.dev";
 const locaUiOrigin = "jobfinder-saad-ui.loca.lt";
 const locaApiOrigin = "jobfinder-saad-api.loca.lt";
@@ -42,6 +68,10 @@ const nextConfig: NextConfig = {
       {
         source: "/api/cv/:path*",
         destination: `${backendOrigin}/api/cv/:path*`,
+      },
+      {
+        source: "/api/email-alerts/:path*",
+        destination: `${backendOrigin}/api/email-alerts/:path*`,
       },
     ];
   },
