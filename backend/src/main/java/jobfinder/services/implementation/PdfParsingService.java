@@ -21,6 +21,7 @@ import java.io.InputStream;
 @Slf4j
 public class PdfParsingService {
 
+
     private static final long MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
     /**
@@ -33,12 +34,12 @@ public class PdfParsingService {
     public String extractText(MultipartFile file) {
         validateFile(file);
 
-        log.info("📄 Starting PDF text extraction. File: '{}', Size: {} bytes",
-                file.getOriginalFilename(), file.getSize());
+        log.info("📄 Starting PDF text extraction. File: '{}', Size: {} bytes", file.getOriginalFilename(), file.getSize());
 
         // try-with-resources ensures both InputStream and PDDocument are closed properly
         try (InputStream inputStream = file.getInputStream();
              PDDocument document = PDDocument.load(inputStream)) {
+
 
             if (document.isEncrypted()) {
                 throw new CvExtractionException("The uploaded PDF is encrypted/password-protected. Please upload an unprotected file.");
@@ -72,6 +73,7 @@ public class PdfParsingService {
     /**
      * Validates the uploaded file before processing.
      */
+    //
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new CvExtractionException("No file was uploaded. Please select a PDF file.");
@@ -90,4 +92,13 @@ public class PdfParsingService {
             );
         }
     }
+    /**
+     * user Upload
+     *
+     * Validate File
+     *
+     * Open PDF
+     *
+     * Extract Text
+     */
 }

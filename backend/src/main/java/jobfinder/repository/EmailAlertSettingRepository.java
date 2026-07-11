@@ -21,6 +21,7 @@ public interface EmailAlertSettingRepository extends JpaRepository<EmailAlertSet
      * Returns all opted-in users with their full profile eagerly loaded.
      * The scheduler calls this once per run to avoid N+1 in the loop.
      */
+
     @Query("""
         SELECT eas FROM EmailAlertSetting eas
         JOIN FETCH eas.user u
@@ -30,4 +31,5 @@ public interface EmailAlertSettingRepository extends JpaRepository<EmailAlertSet
           AND TRIM(p.currentJobTitle) <> ''
     """)
     List<EmailAlertSetting> findAllOptedInWithProfile(Pageable pageable);
+
 }

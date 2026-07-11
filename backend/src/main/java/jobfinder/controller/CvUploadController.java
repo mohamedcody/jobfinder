@@ -85,13 +85,15 @@ public class CvUploadController {
         // Step 1: Extract text from PDF
         String extractedText = pdfParsingService.extractText(file);
 
-        // Step 2: Send to AI (Block to wait for result securely on this thread)
-        var aiResult = cvAiExtractionService.extractCvData(extractedText).block();
-
-        // Step 3: Map AI result to entities and save
-        CvParseResponseDto response = profileDataMapper.mapAndSave(aiResult, userId);
-        
-        log.info("🎉 CV processing complete for user ID: {}", userId);
-        return ResponseEntity.ok(response);
+        // Step 2 & 3: Send to AI and Save to DB (Synchronously to prevent SecurityContext loss)
+        try {
+            var aiResult = cvAiExtractionService.extractCvData(extractedText).block();
+            CvParseResponseDto response = profileDataMapper.mapAndSave(aiResult, userId);
+            log.info("🎉 CV processing complete for user ID: {}", userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("❌ Error during CV processing: {}", e.getMessage());
+            throw e; // Let the GlobalExceptionHandler handle it
+        }
     }
 }

@@ -133,6 +133,7 @@ public class JobAlertScheduler {
             
             // Move to the next chunk
             pageNumber++;
+
         }
 
         log.info("✅ [JobAlertScheduler] Daily alert batch completed! Total Processed: {}, Sent: {}, Skipped: {}, Errors: {}",
