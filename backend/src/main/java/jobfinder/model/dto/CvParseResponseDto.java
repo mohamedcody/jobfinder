@@ -10,6 +10,7 @@ import java.util.List;
 public record CvParseResponseDto(
         String message,
         String fullName,
+        String phoneNumber,
         String currentJobTitle,
         String educationLevel,
         Integer yearsOfExperience,

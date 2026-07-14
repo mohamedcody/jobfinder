@@ -50,7 +50,11 @@ public class AutonomousJobScraperService {
     @Value("${apify.api.dataset-url}")
     private String apifyDatasetUrl;
 
-    // Executes every 24 hours
+    /**
+     * This method runs automatically every 24 hours.
+     * It looks at what jobs our users want, and starts scraping them one by one.
+     * If our Apify account quota is finished (blocked), it stops.
+     */
     @Scheduled(fixedDelay = 86400000)
     public void scheduledScrapeTask() {
         if (isApifyBlocked.get()) {
@@ -87,6 +91,14 @@ public class AutonomousJobScraperService {
         log.info("✅ Scheduled scraping task completed.");
     }
 
+    /**
+     * This is the main method that does everything for a single keyword.
+     * 1. It locks the system so no one else can scrape at the same time.
+     * 2. It starts the Apify scraper.
+     * 3. It waits for it to finish.
+     * 4. It gets the jobs and saves them to the database.
+     * 5. Finally, it unlocks the system so it can be used again.
+     */
     @CircuitBreaker(name = "apifyApi", fallbackMethod = "fallbackScrapeAndSaveAllInOne")
     public String scrapeAndSaveAllInOne(String keyword) {
         log.info("🚀 Starting comprehensive scraping process for keyword: {}", keyword);
@@ -138,9 +150,11 @@ public class AutonomousJobScraperService {
             isScrapingInProgress.set(false);
         }
     }
-
+    /**
+     * This sends a request to Apify to start searching for the given keyword on LinkedIn.
+     */
     private Map<?, ?> startApifyScraper(String keyword) {
-        String runUrl = apifyActorUrl + "?token=" + apifyToken.trim() + "&maxItems=10";
+        String runUrl = apifyActorUrl + "?maxItems=10";
         String encodedKeyword = URLEncoder.encode(keyword.trim(), StandardCharsets.UTF_8);
         String searchUrl = "https://www.linkedin.com/jobs/search/?keywords=" + encodedKeyword + "&position=1&pageNum=0";
 
@@ -153,6 +167,7 @@ public class AutonomousJobScraperService {
 
         return webClient.post()
                 .uri(runUrl)
+                .header("Authorization", "Bearer " + apifyToken.trim())
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(input)
                 .retrieve()
@@ -161,15 +176,19 @@ public class AutonomousJobScraperService {
                 .bodyToMono(Map.class)
                 .block();
     }
-
+    /**
+     * Since scraping takes time, this method waits and checks Apify every 5 seconds
+     * until the job search is completely finished.
+     */
     private void waitForRunToComplete(String runId) throws InterruptedException {
-        String statusUrl = apifyStatusUrl + runId + "?token=" + apifyToken.trim();
+        String statusUrl = apifyStatusUrl + runId;
         int maxAttempts = 24;
         int attempts = 0;
 
         while (attempts < maxAttempts) {
             Map<?, ?> statusResponse = webClient.get()
                     .uri(statusUrl)
+                    .header("Authorization", "Bearer " + apifyToken.trim())
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -193,20 +212,23 @@ public class AutonomousJobScraperService {
 
         log.warn("⚠️ Polling timed out for run {}", runId);
     }
-
+    /**
+     * After Apify is done, this method downloads the list of jobs it found.
+     */
     private List<JobResponseDTO> fetchScrapedData(String datasetId) {
-        // Fixed: Variable names updated to match fields
-        String datasetUrl = apifyDatasetUrl + datasetId + "/items?token=" + apifyToken.trim();
+        String datasetUrl = apifyDatasetUrl + datasetId + "/items";
         return webClient.get()
                 .uri(datasetUrl)
+                .header("Authorization", "Bearer " + apifyToken.trim())
                 .retrieve()
                 .bodyToFlux(JobResponseDTO.class)
                 .collectList()
                 .block();
-
-
     }
-
+    /**
+     * This saves the new jobs to our database safely.
+     * It checks if the job link or the company already exists so we don't save duplicates.
+     */
     @Transactional
     public void saveScrapedData(List<JobResponseDTO> jobList) {
         try {
@@ -311,7 +333,11 @@ public class AutonomousJobScraperService {
             throw new BaseException(ErrorCode.INTERNAL_ERROR, "Database persistence failed: " + e.getMessage());
         }
     }
-
+    /**
+     * This is our "Plan B" (Fallback).
+     * If the Apify server is down or broken, this method runs to return a nice message
+     * to the user instead of crashing our application.
+     */
     public String fallbackScrapeAndSaveAllInOne(String keyword, Throwable t) {
         log.error("🛑 Apify API Circuit Breaker activated for keyword [{}]! Error: {}", keyword, t.getMessage());
         // إرجاع رسالة واضحة للمستخدم أن الخدمة غير متاحة حالياً

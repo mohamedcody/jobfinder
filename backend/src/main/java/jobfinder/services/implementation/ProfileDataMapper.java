@@ -82,6 +82,7 @@ public class ProfileDataMapper {
         return new CvParseResponseDto(
                 "CV parsed and profile updated successfully!",
                 aiResult.fullName(),
+                aiResult.phone(),
                 aiResult.currentJobTitle(),
                 aiResult.educationLevel(),
                 aiResult.yearsOfExperience(),

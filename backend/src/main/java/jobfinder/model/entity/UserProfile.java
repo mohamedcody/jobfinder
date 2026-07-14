@@ -61,6 +61,13 @@ public class UserProfile {
     @Column(name = "cv_parsed_at")
     private LocalDateTime cvParsedAt;
 
+
+    @Column(name = "full_name", length = 300)
+    private String fullName;
+
+    @Column(name = "phone_number" , length = 50)
+    private String phoneNumber;
+
     // --- CV Parsing: Structured relational data for the matching engine ---
     @OneToMany(mappedBy ="profile" , cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Education> educationList;
