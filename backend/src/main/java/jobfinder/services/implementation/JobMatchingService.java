@@ -55,12 +55,8 @@ public class JobMatchingService {
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile,
                                                    List<JobEntity> recentJobs,
                                                    int topN) {
-        // 1. جهّز الـ skills مرة واحدة بره اللوب
-        List<String> skillNames = userSkillRepository
-                .findByUserId(profile.getUser().getId())
-                .stream()
-                .map(us -> us.getSkill().getName().toLowerCase(Locale.ROOT))
-                .toList();
+
+        List<String> skillNames = userSkillRepository.findSkillNamesByUserId(profile.getUser().getId());
 
         // 2. جهّز الـ Patterns مرة واحدة بره اللوب
         List<Pattern> titlePatterns = buildTitlePatterns(profile.getCurrentJobTitle());

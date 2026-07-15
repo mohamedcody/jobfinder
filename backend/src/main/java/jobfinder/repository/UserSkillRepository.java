@@ -2,6 +2,7 @@ package jobfinder.repository;
 
 import jobfinder.model.entity.UserSkill;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,9 +11,25 @@ import java.util.Optional;
 
 @Repository
 public interface UserSkillRepository extends JpaRepository<UserSkill, Long> {
+
+
     List<UserSkill> findByUserId(Long userId);
 
-    Optional<UserSkill> findByUserIdAndSkillId(Long userId, Long skillId);
+    @Modifying
+    @Query("""
+    DELETE FROM UserSkill us
+    WHERE us.user.id = :userId
+""")
+    void deleteAllByUserId(@Param("userId") Long userId);
 
-    void deleteByUserId(Long userId);
+
+
+    @Query("""
+    SELECT LOWER(s.name)
+    FROM UserSkill us
+    JOIN us.skill s
+    WHERE us.user.id = :userId
+""")
+    List<String> findSkillNamesByUserId(@Param("userId") Long userId);
+
 }

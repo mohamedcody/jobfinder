@@ -146,7 +146,7 @@ public class ProfileDataMapper {
         }
 
         // Clear existing user skills to replace with fresh CV data
-        userSkillRepository.deleteByUserId(userId);
+        userSkillRepository.deleteAllByUserId(userId);
 
         // Pre-load all existing skills into memory for O(1) lookup (avoids N+1)
         Map<String, Skill> existingSkillsMap = skillRepository.findAll().stream()

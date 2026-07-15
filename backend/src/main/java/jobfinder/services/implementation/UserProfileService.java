@@ -126,7 +126,7 @@ public class UserProfileService implements UserProfileInterface {
                 .distinct()
                 .toList();
 
-        userSkillRepository.deleteByUserId(user.getId());
+        userSkillRepository.deleteAllByUserId(user.getId());
         userSkillRepository.flush();
 
         Set<Long> skillIds = new HashSet<>();
