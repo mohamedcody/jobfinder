@@ -75,6 +75,14 @@ public class UserProfile {
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WorkExperience> workExperienceList;
 
+
+    // --- Semantic Matching: Vector embedding of the user's CV ---
+    @Column(name = "embedding", columnDefinition = "vector(768)")
+    private float[] embedding;
+
+    @Column(name = "embedding_generated_at")
+    private LocalDateTime embeddingGeneratedAt;
+
     @PreUpdate
     @PrePersist
     public void updateTime() {

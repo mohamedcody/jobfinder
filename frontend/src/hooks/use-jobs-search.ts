@@ -10,6 +10,7 @@ import { getPostedAfterFromPreset } from "@/lib/jobs/jobs-utils";
 import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import type { Job, JobFilterParams } from "@/lib/jobs/types";
+import { APP_CONSTANTS } from "@/lib/constants";
 
 const toJobFilterParams = (filters: JobSearchFormState): JobFilterParams => ({
   title: filters.title.trim() || undefined,
@@ -107,7 +108,7 @@ export const useJobsSearch = () => {
     debounceTimerRef.current = setTimeout(() => {
       lastFilterStateRef.current = currentFilterState;
       setAppliedFilters(draftFilters);
-    }, 300); // Reduced from 500ms for better responsiveness
+    }, APP_CONSTANTS.DEBOUNCE_DELAY_MS);
 
     return () => {
       if (debounceTimerRef.current) {

@@ -1,11 +1,10 @@
 import { createApiClient } from "@/lib/api/create-api-client";
+import { env } from "@/lib/config/env";
 import type { SaveJobRequest, SavedJobResponse, SavedJobsErrorResponse } from "./types";
 
 interface RequestOptions {
     signal?: AbortSignal;
 }
-
-const SAVED_JOBS_API_BASE_URL = process.env.NEXT_PUBLIC_SAVED_JOBS_API_URL || "/api/saved-jobs";
 
 export class SavedJobsApiError extends Error {
     constructor(
@@ -20,12 +19,13 @@ export class SavedJobsApiError extends Error {
 }
 
 export const savedJobsApiClient = createApiClient({
-    baseURL: SAVED_JOBS_API_BASE_URL,
-    timeout: Number(process.env.NEXT_PUBLIC_SAVED_JOBS_API_TIMEOUT_MS ?? 15000),
+    baseURL: env.SAVED_JOBS_API_URL,
+    timeout: env.SAVED_JOBS_API_TIMEOUT_MS,
     headers: {
         "Content-Type": "application/json",
     },
 });
+
 
 // Add custom error mapping specific to saved jobs
 savedJobsApiClient.interceptors.response.use(

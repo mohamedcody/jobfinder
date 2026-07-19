@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  Loader2,
   Search,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -24,26 +23,11 @@ import { useSavedJobs } from "@/hooks/use-saved-jobs";
 import { jobsService } from "@/lib/jobs/jobs-service";
 import type { Job } from "@/lib/jobs/types";
 import { getApiErrorMessage } from "@/lib/auth/api-error";
+import { formatRelativeTime } from "@/lib/jobs/time-utils";
 
-// Simple relative time formatter to avoid external dependencies
+// Delegates to shared time utility — no duplication
 function getTimeAgo(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return "1d ago";
-    return `${diffDays}d ago`;
-  } catch {
-    return "Recently";
-  }
+  return formatRelativeTime(dateString);
 }
 
 export default function DashboardPage() {

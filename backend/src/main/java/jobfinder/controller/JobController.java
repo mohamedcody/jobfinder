@@ -1,9 +1,11 @@
 package jobfinder.controller;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jobfinder.model.dto.CursorPageResponseDto;
 import jobfinder.model.dto.JobFilterRequest;
 import jobfinder.model.dto.JobResponseDTO;
 import jobfinder.services.implementation.JobService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ import org.springframework.validation.annotation.Validated;
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
+@Tag(name = "Jobs", description = "Job search, filtering, and AI summarization endpoints")
 public class JobController {
 
     private final JobService jobScraperService;
@@ -32,15 +36,22 @@ public class JobController {
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
     ) {
+        log.debug("GET /api/jobs lastId={} size={}", lastId, size);
         return ResponseEntity.ok(jobScraperService.getJobsAdvanced(lastId, size));
     }
 
+    /**
+     * @deprecated Prefer {@code /api/jobs/filter} which supports all filter parameters.
+     * This endpoint is kept for backward compatibility and may be removed in a future release.
+     */
+    @Deprecated
     @GetMapping("/search")
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> searchJobs(
             @RequestParam String title,
             @RequestParam String location,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        log.debug("GET /api/jobs/search (deprecated) title='{}' location='{}' lastId={} size={}", title, location, lastId, size);
         return ok(jobScraperService.searchJobs(title, location, lastId, size));
     }
 
@@ -64,10 +75,14 @@ public class JobController {
             @RequestParam(defaultValue = "false") boolean refresh,
             Authentication authentication
     ) {
+        log.debug("GET /api/jobs/filter title='{}' location='{}' employmentType='{}' lastId={} size={} refresh={}",
+                title, location, employmentType, lastId, size, refresh);
         if (refresh) {
             if (authentication == null || authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                log.warn("Cache eviction attempted by non-admin user.");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
+            log.info("Admin triggered cache eviction for jobs.");
             jobScraperService.evictJobsCache();
         }
         JobFilterRequest filter = new JobFilterRequest(title, location, minSalary, postedAfter, employmentType);
@@ -77,6 +92,7 @@ public class JobController {
 
     @PostMapping("/{id}/summarize")
     public ResponseEntity<Map<String, String>> summarizeJob(@PathVariable Long id) {
+        log.info("POST /api/jobs/{}/summarize", id);
         String summary = jobScraperService.generateAiSummary(id);
         return ResponseEntity.ok(Map.of("summary", summary));
     }

@@ -1,4 +1,6 @@
 import { createApiClient } from "@/lib/api/create-api-client";
+import { env } from "@/lib/config/env";
+import { APP_CONSTANTS } from "@/lib/constants";
 import type { CursorPageResponse, Job, JobFilterParams, JobsSearchParams } from "./types";
 
 interface RequestOptions {
@@ -7,12 +9,9 @@ interface RequestOptions {
 
 type QueryParamValue = string | number;
 
-const JOBS_API_BASE_URL = 
-  process.env.NEXT_PUBLIC_JOBS_API_URL || "/api/jobs";
-
 export const jobsApiClient = createApiClient({
-  baseURL: JOBS_API_BASE_URL,
-  timeout: 30000,
+  baseURL: env.JOBS_API_URL,
+  timeout: APP_CONSTANTS.API_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },

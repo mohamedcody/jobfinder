@@ -8,15 +8,14 @@
 
 import axios, { AxiosError } from "axios";
 import { createApiClient } from "@/lib/api/create-api-client";
-import { clearToken } from "@/lib/auth/token-storage";
+import { env } from "@/lib/config/env";
 import type { CvParseResponse, CvApiError } from "./types";
 
-const CV_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-
 const cvApiClient = createApiClient({
-  baseURL: CV_API_BASE_URL,
+  baseURL: env.API_BASE_URL,
   timeout: 60000, // 60s — AI processing can take time
 });
+
 
 /**
  * Upload a PDF file for AI-powered CV parsing.

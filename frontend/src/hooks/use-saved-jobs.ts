@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
 import { hasValidToken } from "@/lib/auth/token-storage";
-
+import { APP_CONSTANTS } from "@/lib/constants";
 import { savedJobsService } from "@/lib/saved-jobs/saved-jobs-service";
 import type { SaveJobRequest, SavedJobResponse as SavedJob } from "@/lib/saved-jobs/types";
 
-const SAVED_JOBS_KEY = "jobfinder.saved-jobs";
+/** Use centralized constant as the single source of truth for the localStorage key. */
+const SAVED_JOBS_KEY = APP_CONSTANTS.SAVED_JOBS_STORAGE_KEY;
 const EMPTY_JOB_IDS: number[] = [];
+
 
 interface SavedJobsStore {
   [jobId: number]: boolean;

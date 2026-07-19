@@ -108,32 +108,4 @@ public class GeminiApiClient {
         return Mono.error(new AiServiceTimeoutException("AI service is temporarily unavailable due to high error rate.", t));
     }
 
-    @jakarta.annotation.PostConstruct
-    public void verifyAvailableModels() {
-        if (geminiApiKey == null || geminiApiKey.contains("${")) return;
-        
-        try {
-            log.info("🔍 DIAGNOSTICS: Fetching list of available Gemini models for the configured API Key...");
-            String listUri = String.format("%s/v1beta/models?key=%s", GEMINI_BASE_URL, geminiApiKey);
-            Map response = webClient.get()
-                    .uri(URI.create(listUri))
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .block(Duration.ofSeconds(10));
-                    
-            if (response != null && response.containsKey("models")) {
-                List<Map<String, Object>> models = (List<Map<String, Object>>) response.get("models");
-                log.info("✅ DIAGNOSTICS: Found {} available models. Supported models:", models.size());
-                for (Map<String, Object> model : models) {
-                    String name = (String) model.get("name");
-                    List<String> methods = (List<String>) model.get("supportedGenerationMethods");
-                    if (name.contains("gemini")) {
-                        log.info("   - Model: {} (Methods: {})", name, methods);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("❌ DIAGNOSTICS: Failed to fetch model list: {}", e.getMessage());
-        }
-    }
 }

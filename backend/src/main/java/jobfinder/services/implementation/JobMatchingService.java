@@ -40,9 +40,101 @@ public class JobMatchingService {
 
     private final JobRepository jobRepository;
     private final UserSkillRepository userSkillRepository;
+    private final jobfinder.repository.UserProfileRepository userProfileRepository;
+    private final SemanticMatchingService semanticMatchingService;
 
     private static final int RECENT_JOB_LIMIT = 200;
     private static final long FRESH_HOURS = 48;
+
+    /**
+     * AI Semantic Job Matching Engine
+     * Fetches zero N+1 entity graphs, aggregates safely, caches vector to save costs,
+     * and queries pgvector.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public List<JobEntity> findSemanticMatchesForUser(Long profileId, int limit) {
+        // 1. Fetch Profile and related entities efficiently (Zero N+1)
+        UserProfile profile = userProfileRepository.findByIdWithUserAndSkills(profileId)
+                .orElseThrow(() -> new jobfinder.exception.BaseException(jobfinder.exception.ErrorCode.USER_NOT_FOUND, "User profile not found."));
+        
+        // This hydrates the workExperienceList in the same Persistence Context to avoid Cartesian product
+        userProfileRepository.findByIdWithWorkExperiences(profileId);
+
+        // 2. Cost-Saving Caching Strategy
+        boolean generateNewEmbedding = true;
+        if (profile.getEmbedding() != null && profile.getEmbeddingGeneratedAt() != null) {
+            if (profile.getEmbeddingGeneratedAt().isAfter(LocalDateTime.now().minusDays(30))) {
+                generateNewEmbedding = false;
+            }
+        }
+
+        if (generateNewEmbedding) {
+            // Aggregation: Highly optimized mechanism using StringBuilder
+            StringBuilder aggregatedText = new StringBuilder(1024); // Dynamically growing but starting with a reasonable capacity
+
+            if (profile.getBio() != null) {
+                aggregatedText.append(profile.getBio()).append(" ");
+            }
+            if (profile.getCurrentJobTitle() != null) {
+                aggregatedText.append(profile.getCurrentJobTitle()).append(" ");
+            }
+
+            if (profile.getUser() != null) {
+                jobfinder.model.entity.UserPreference pref = profile.getUser().getPreference();
+                if (pref != null && pref.getPreferredJobTitles() != null) {
+                    for (String title : pref.getPreferredJobTitles()) {
+                        if (title != null && !title.isBlank()) {
+                            aggregatedText.append(title.trim()).append(" ");
+                        }
+                    }
+                }
+
+                List<jobfinder.model.entity.UserSkill> skills = profile.getUser().getSkills();
+                if (skills != null) {
+                    for (jobfinder.model.entity.UserSkill us : skills) {
+                        if (us != null && us.getSkill() != null && us.getSkill().getName() != null && !us.getSkill().getName().isBlank()) {
+                            aggregatedText.append(us.getSkill().getName().trim()).append(" ");
+                        }
+                    }
+                }
+            }
+
+            List<jobfinder.model.entity.WorkExperience> experiences = profile.getWorkExperienceList();
+            if (experiences != null) {
+                for (jobfinder.model.entity.WorkExperience exp : experiences) {
+                    if (exp != null) {
+                        if (exp.getJobTitle() != null && !exp.getJobTitle().isBlank()) {
+                            aggregatedText.append(exp.getJobTitle().trim()).append(" ");
+                        }
+                        if (exp.getDescription() != null && !exp.getDescription().isBlank()) {
+                            aggregatedText.append(exp.getDescription().trim()).append(" ");
+                        }
+                    }
+                }
+            }
+
+            String finalAggregatedText = aggregatedText.toString().trim();
+            if (finalAggregatedText.isEmpty()) {
+                log.warn("Aggregated profile text is empty for profileId: {}", profileId);
+                return List.of();
+            }
+
+            float[] newEmbedding = semanticMatchingService.generateEmbedding(finalAggregatedText);
+            if (newEmbedding == null || newEmbedding.length == 0) {
+                log.error("Semantic service failed to generate a valid embedding for profileId: {}", profileId);
+                return List.of();
+            }
+
+            profile.setEmbedding(newEmbedding);
+            profile.setEmbeddingGeneratedAt(LocalDateTime.now());
+            userProfileRepository.save(profile); // Transaction boundary handles the commit
+        }
+
+        // Convert the float[] vector to string format expected by PostgreSQL: "[0.1,0.2,...]" without spaces
+        String vectorString = Arrays.toString(profile.getEmbedding()).replaceAll("\\s+", "");
+
+        return jobRepository.findTopMatchingJobs(vectorString, limit);
+    }
 
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile, int topN) {
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
@@ -62,10 +154,15 @@ public class JobMatchingService {
         List<Pattern> titlePatterns = buildTitlePatterns(profile.getCurrentJobTitle());
         List<Pattern> skillPatterns = buildSkillPatterns(skillNames);
 
+        String preferredJobType = null;
+        if (profile.getUser() != null && profile.getUser().getPreference() != null) {
+            preferredJobType = profile.getUser().getPreference().getJobType();
+        }
+
         List<JobMatchDto> scored = new ArrayList<>();
         for (JobEntity job : recentJobs) {
             String jobText = buildSearchText(job);
-            int score = computeScore(job, jobText, titlePatterns, skillPatterns);
+            int score = computeScore(job, jobText, titlePatterns, skillPatterns, preferredJobType);
             if (score > 0) {
                 scored.add(toDto(job, score));
             }
@@ -95,7 +192,8 @@ public class JobMatchingService {
     private int computeScore(JobEntity job,
                              String jobText,
                              List<Pattern> titlePatterns,
-                             List<Pattern> skillPatterns) {
+                             List<Pattern> skillPatterns,
+                             String preferredJobType) {
         int score = 0;
 
         // ① Title match (+50)
@@ -120,6 +218,15 @@ public class JobMatchingService {
         if (job.getScrapedAt() != null &&
                 job.getScrapedAt().isAfter(LocalDateTime.now().minusHours(FRESH_HOURS))) {
             score += 10;
+        }
+
+        // ④ Employment Type match (+10)
+        if (preferredJobType != null && !preferredJobType.isBlank() && job.getEmploymentType() != null) {
+            String prefNorm = preferredJobType.replaceAll("[-_\\s]", "").toLowerCase(Locale.ROOT);
+            String jobNorm = job.getEmploymentType().replaceAll("[-_\\s]", "").toLowerCase(Locale.ROOT);
+            if (prefNorm.equals(jobNorm) || jobNorm.contains(prefNorm) || prefNorm.contains(jobNorm)) {
+                score += 10;
+            }
         }
 
         return Math.min(score, 100);

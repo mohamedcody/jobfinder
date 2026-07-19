@@ -32,6 +32,12 @@ public class SecurityConfig {
                 http
                         .cors(Customizer.withDefaults())
                         .csrf(AbstractHttpConfigurer::disable)
+                        .headers(headers -> headers
+                            .frameOptions(frame -> frame.deny())
+                            .xssProtection(xss -> xss.disable()) // Disabled as per modern best practices (use CSP instead)
+                            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none';"))
+                            .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                        )
                         .authorizeHttpRequests(auth -> auth
 
                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()

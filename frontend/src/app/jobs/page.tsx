@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import {
   Sparkles,
   Zap
@@ -51,8 +50,6 @@ function JobsListFallback() {
 }
 
 export default function JobsPage() {
-  const router = useRouter();
-
   return (
     <AppLayout>
       <div className="space-y-8">

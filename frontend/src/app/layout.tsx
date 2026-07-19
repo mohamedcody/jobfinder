@@ -11,8 +11,31 @@ export const metadata: Metadata = {
     template: "%s | JobFinder PRO",
   },
   description: "A premium, lightning-fast job search workspace where refined filters, intelligent matching, and crystal-clear workflows help you land the role you deserve.",
-  keywords: ["jobs", "tech roles", "hiring", "ATS", "career", "developer jobs"],
+  keywords: ["jobs", "tech roles", "hiring", "ATS", "career", "developer jobs", "AI job search"],
   authors: [{ name: "Mohamed Saad" }],
+  openGraph: {
+    title: "JobFinder PRO | Discover Your Dream Tech Role",
+    description: "A premium, lightning-fast job search workspace to help you land the role you deserve.",
+    url: "https://jobfinder.com",
+    siteName: "JobFinder PRO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JobFinder PRO | Discover Your Dream Tech Role",
+    description: "A premium, lightning-fast job search workspace to help you land the role you deserve.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {

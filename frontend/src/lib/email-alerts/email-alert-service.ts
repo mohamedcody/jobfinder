@@ -1,11 +1,9 @@
 import { createApiClient } from "@/lib/api/create-api-client";
+import { env } from "@/lib/config/env";
 import type { EmailAlertResponse, UpdateEmailAlertRequest } from "./types";
 
-const ALERTS_API_BASE_URL =
-  process.env.NEXT_PUBLIC_ALERTS_API_URL || "/api/users/profile/alerts";
-
 export const alertsApiClient = createApiClient({
-  baseURL: ALERTS_API_BASE_URL,
+  baseURL: env.ALERTS_API_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

@@ -7,8 +7,8 @@ export const APP_CONSTANTS = {
   // Timeouts
   API_TIMEOUT_MS: 30000,
   AUTH_API_TIMEOUT_MS: 15000,
+  /** Standard debounce delay for user input (search, filters, etc.) */
   DEBOUNCE_DELAY_MS: 300,
-  SEARCH_DEBOUNCE_MS: 300,
 
   // Pagination
   DEFAULT_PAGE_SIZE: 10,

@@ -34,6 +34,7 @@ public class AutonomousJobScraperService {
     private final CompanyRepository companyRepository;
     private final UserProfileRepository userProfileRepository;
     private final WebClient webClient;
+    private final SemanticMatchingService semanticMatchingService;
 
     private final AtomicBoolean isApifyBlocked = new AtomicBoolean(false);
     private final AtomicBoolean isScrapingInProgress = new AtomicBoolean(false);
@@ -310,6 +311,15 @@ public class AutonomousJobScraperService {
                             company = companyMap.get(dto.getCompanyName().trim());
                         }
 
+                        String combinedText = (dto.getTitle() != null ? dto.getTitle() : "") + " " + 
+                                              (dto.getDescriptionText() != null ? dto.getDescriptionText() : "");
+                        float[] vector = semanticMatchingService.generateEmbedding(combinedText.trim());
+                        
+                        LocalDateTime generatedAt = null;
+                        if (vector != null && vector.length > 0) {
+                            generatedAt = LocalDateTime.now();
+                        }
+
                         return JobEntity.builder()
                                 .title(dto.getTitle())
                                 .location(dto.getLocation())
@@ -321,6 +331,8 @@ public class AutonomousJobScraperService {
                                 .isActive(true)
                                 .source("LinkedIn")
                                 .scrapedAt(LocalDateTime.now())
+                                .embedding(vector)
+                                .embeddingGeneratedAt(generatedAt)
                                 .build();
                     }).toList();
 

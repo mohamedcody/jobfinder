@@ -1,17 +1,17 @@
 import { createApiClient } from "@/lib/api/create-api-client";
+import { env } from "@/lib/config/env";
+import { APP_CONSTANTS } from "@/lib/constants";
 import type { UserProfileResponse, UpdateProfileRequest } from "./types";
 export type { UserProfileResponse, UpdateProfileRequest } from "./types";
 
-const PROFILE_API_BASE_URL = 
-  process.env.NEXT_PUBLIC_PROFILE_API_URL || "/api/users/profile";
-
 export const profileApiClient = createApiClient({
-  baseURL: PROFILE_API_BASE_URL,
-  timeout: 30000,
+  baseURL: env.PROFILE_API_URL,
+  timeout: APP_CONSTANTS.API_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
 
 /**
  * Remove duplicate skills while preserving order

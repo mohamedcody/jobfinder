@@ -235,8 +235,11 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover/apply:translate-x-1 group-hover/apply:-translate-y-1" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/apply:translate-x-full transition-transform duration-1000" />
           </a>
-          <button className="h-14 w-14 rounded-2xl bg-white/5 text-slate-500 hover:text-white transition-all border border-white/5 flex items-center justify-center">
-            <ExternalLink className="h-5 w-5" />
+          <button 
+            className="h-14 w-14 rounded-2xl bg-white/5 text-slate-500 hover:text-white transition-all border border-white/5 flex items-center justify-center"
+            aria-label={`View ${job.companyName} company profile or external resources`}
+          >
+            <ExternalLink className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </motion.article>

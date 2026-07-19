@@ -48,6 +48,7 @@ public class JobEntity {
 
 
 
+
     @Builder.Default
     @Column(name="is_active")
     private Boolean isActive = true;
@@ -66,6 +67,12 @@ public class JobEntity {
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserInteraction> interactions;
+
+    @Column(name="embedding" , columnDefinition = "vector(768)")
+    private float[] embedding;
+
+    @Column(name = "embedding_generated_at")
+    private LocalDateTime embeddingGeneratedAt;
 
 }
 

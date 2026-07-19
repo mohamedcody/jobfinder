@@ -71,10 +71,11 @@ export function createApiClient(
   });
 
   // ── Response Interceptor ────────────────────────────────────────────
-  // Handles auth errors (401/403) and server/network errors.
+  // Handles auth errors (401/403), server/network errors, and retry logic.
   client.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+      const config = error.config;
       const status = error?.response?.status;
       const isCanceled = error?.code === "ERR_CANCELED";
 
@@ -82,9 +83,27 @@ export function createApiClient(
       if (status === 401 || status === 403) {
         clearToken();
         emitAuthExpired();
+        return Promise.reject(error);
+      }
+
+      // ── Retry Logic for Idempotent Requests (Network Errors or 5xx) ──
+      if (config && (!status || status >= 500) && !isCanceled) {
+        const method = config.method?.toLowerCase();
+        // Only retry idempotent methods
+        if (method === "get" || method === "head" || method === "options") {
+          config.__retryCount = config.__retryCount || 0;
+          if (config.__retryCount < 3) {
+            config.__retryCount += 1;
+            // Exponential backoff: 500ms, 1000ms, 2000ms
+            const delay = Math.pow(2, config.__retryCount - 1) * 500;
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            return client(config);
+          }
+        }
       }
 
       // ── Server/Network Error: emit global toast ──
+      // Only emit if not canceled and all retries failed (or not idempotent)
       if (emitGlobalErrors && !isCanceled && (!status || status >= 500 || status === 0)) {
         emitGlobalApiError({
           status,

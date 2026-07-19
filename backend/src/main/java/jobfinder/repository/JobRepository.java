@@ -48,12 +48,12 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>, JpaSpecif
                     "FROM jobs j " +
                     "WHERE j.search_vector @@ websearch_to_tsquery('english', :searchTerm) " +
                     "AND j.is_active = true " +
-                    "AND (:location IS NULL OR j.location ILIKE %:location%) " +
-                    "AND (:lastId IS NULL OR j.id < :lastId) " +
+                    "AND (CAST(:location AS text) IS NULL OR j.location ILIKE CONCAT('%', CAST(:location AS text), '%')) " +
+                    "AND (CAST(:lastId AS bigint) IS NULL OR j.id < CAST(:lastId AS bigint)) " +
                     "ORDER BY rank DESC, j.id DESC " +
                     "LIMIT :size",
             nativeQuery = true,
-            countQuery = "SELECT COUNT(*) FROM jobs j WHERE j.search_vector @@ websearch_to_tsquery('english', :searchTerm) AND j.is_active = true")
+            countQuery = "SELECT COUNT(*) FROM jobs j WHERE j.search_vector @@ websearch_to_tsquery('english', :searchTerm) AND j.is_active = true AND (CAST(:location AS text) IS NULL OR j.location ILIKE CONCAT('%', CAST(:location AS text), '%'))")
     List<JobEntity> searchJobsFullText(
             @Param("searchTerm") String searchTerm,
             @Param("location") String location,
@@ -62,5 +62,14 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>, JpaSpecif
     );
 
 
+    // ✅ جلب الوظائف المتطابقة مع الـ CV بتاع اليوزر باستخدام الذكاء الاصطناعي
+    @Query(value = """
+            SELECT * FROM jobs 
+            WHERE is_active = true 
+            AND embedding IS NOT NULL 
+            ORDER BY embedding <=> cast(:userVector as vector) 
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<JobEntity> findTopMatchingJobs(@Param("userVector") String userVector, @Param("limit") int limit);
 
 }

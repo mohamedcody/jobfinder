@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthSession } from "@/lib/auth/use-auth-session";
+import { APP_CONSTANTS } from "@/lib/constants";
 import {
   LayoutDashboard,
   Briefcase,
@@ -61,7 +62,7 @@ const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: fal
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem("sidebar-collapsed") === "true";
+    return localStorage.getItem(APP_CONSTANTS.SIDEBAR_COLLAPSED_KEY) === "true";
   });
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,7 +77,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem("sidebar-collapsed", String(isCollapsed));
+    localStorage.setItem(APP_CONSTANTS.SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
   }, [isCollapsed]);
 
   useEffect(() => {
@@ -144,13 +145,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-slate-500 hover:bg-white/5 hover:text-white transition-all"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCollapsed}
           >
             <ChevronLeft className={`h-5 w-5 transition-transform duration-500 ${isCollapsed ? "rotate-180" : ""}`} />
             {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Collapse</span>}
           </button>
 
-          <button onClick={handleLogout} className="w-full flex items-center gap-4 rounded-2xl px-4 py-3 text-slate-600 hover:bg-rose-500/10 hover:text-rose-400 transition-all">
-            <LogOut className="h-5 w-5" />
+          <button 
+            onClick={handleLogout} 
+            className="w-full flex items-center gap-4 rounded-2xl px-4 py-3 text-slate-600 hover:bg-rose-500/10 hover:text-rose-400 transition-all"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-5 w-5" aria-hidden="true" />
             {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Sign Out</span>}
           </button>
         </div>
@@ -178,6 +185,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   onFocus={() => setIsSearching(true)}
                   onBlur={() => setTimeout(() => setIsSearching(false), 200)}
                   placeholder="Type a command or search... (⌘K)"
+                  aria-label="Global command and search input"
                   className="w-full bg-[#0a0c24] border border-white/5 rounded-2xl py-3.5 pl-12 pr-12 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
@@ -235,13 +243,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">AI Ready</span>
             </div>
 
-            <button className="relative h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-white/5">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 border-2 border-[#07091a]" />
+            <button 
+              className="relative h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-white/5"
+              aria-label="View notifications"
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 border-2 border-[#07091a]" aria-hidden="true" />
             </button>
             
-            <Link href="/profile" className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600/20 to-indigo-600/10 border border-violet-500/20 flex items-center justify-center shadow-lg hover:border-violet-400/40 transition-all" title="My Profile">
-              <User className="h-5 w-5 text-violet-400" />
+            <Link 
+              href="/profile" 
+              className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-600/20 to-indigo-600/10 border border-violet-500/20 flex items-center justify-center shadow-lg hover:border-violet-400/40 transition-all" 
+              title="My Profile"
+              aria-label="Navigate to your profile"
+            >
+              <User className="h-5 w-5 text-violet-400" aria-hidden="true" />
             </Link>
           </div>
         </header>

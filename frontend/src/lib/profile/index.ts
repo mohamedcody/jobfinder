@@ -1,11 +1,10 @@
 /**
- * Profile Module Exports
- * استورد من هنا لكل حاجاتك بتاعة البروفايل
+ * Profile Module Public API
+ * Import all profile-related types and services from here.
  */
 
 // Types
 export * from "./types";
 
-// Service
-export * from "./service";
-
+// Service (single source of truth — uses centralized interceptors)
+export * from "./profile-service";

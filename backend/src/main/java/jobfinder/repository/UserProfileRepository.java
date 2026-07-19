@@ -54,5 +54,18 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
         ORDER BY 1
         """)
     List<String> findDistinctCurrentJobTitles();
+
+    @Query("SELECT p FROM UserProfile p " +
+           "JOIN FETCH p.user u " +
+           "LEFT JOIN FETCH u.preference " +
+           "LEFT JOIN FETCH u.skills s " +
+           "LEFT JOIN FETCH s.skill " +
+           "WHERE p.id = :profileId")
+    Optional<UserProfile> findByIdWithUserAndSkills(@Param("profileId") Long profileId);
+
+    @Query("SELECT p FROM UserProfile p " +
+           "LEFT JOIN FETCH p.workExperienceList " +
+           "WHERE p.id = :profileId")
+    Optional<UserProfile> findByIdWithWorkExperiences(@Param("profileId") Long profileId);
 }
 
