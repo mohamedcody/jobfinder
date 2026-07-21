@@ -1,10 +1,11 @@
-package jobfinder.services.implementation;
+package jobfinder.services.assets;
 
 import jobfinder.model.dto.JobMatchDto;
 import jobfinder.model.entity.JobEntity;
 import jobfinder.model.entity.UserProfile;
 import jobfinder.repository.JobRepository;
 import jobfinder.repository.UserSkillRepository;
+import jobfinder.services.implementation.SemanticMatchingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;

@@ -1,15 +1,13 @@
 package jobfinder.servics.implemention;
 
-import jobfinder.exception.BaseException;
 import jobfinder.model.dto.JobMatchDto;
-import jobfinder.model.entity.EmailAlertSetting;
 import jobfinder.model.entity.User;
 import jobfinder.model.entity.UserProfile;
 import jobfinder.repository.EmailAlertSettingRepository;
 import jobfinder.repository.UserRepository;
 import jobfinder.services.implementation.EmailAlertService;
-import jobfinder.services.implementation.EmailNotificationService;
-import jobfinder.services.implementation.JobMatchingService;
+import jobfinder.services.assets.EmailNotificationService;
+import jobfinder.services.assets.JobMatchingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

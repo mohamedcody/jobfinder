@@ -7,6 +7,8 @@ import jobfinder.model.entity.User;
 import jobfinder.model.entity.UserProfile;
 import jobfinder.repository.EmailAlertSettingRepository;
 import jobfinder.repository.JobRepository;
+import jobfinder.services.assets.EmailNotificationService;
+import jobfinder.services.assets.JobMatchingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -38,9 +40,9 @@ public class JobAlertScheduler {
     // Repository responsible for loading users' email alert settings.
     private final EmailAlertSettingRepository emailAlertSettingRepository;
     // Service responsible for calculating job matches.
-    private final JobMatchingService          jobMatchingService;
+    private final JobMatchingService jobMatchingService;
     // Service مسؤولة عن إرسال رسائل البريد الإلكتروني.
-    private final EmailNotificationService    emailNotificationService;
+    private final EmailNotificationService emailNotificationService;
     // Repository responsible for retrieving jobs from the database.
     private final JobRepository jobRepository;
 
@@ -54,7 +56,7 @@ public class JobAlertScheduler {
         // Load recent active jobs from the last 7 days.
         // Fetch jobs exactly ONCE for the entire batch to avoid redundant DB calls
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
-                LocalDateTime.now().minusDays(100),
+                LocalDateTime.now().minusDays(8),
                 PageRequest.of(0, 200)
         );
 

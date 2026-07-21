@@ -9,6 +9,7 @@ import jobfinder.model.entity.JobEntity;
 import jobfinder.repository.CompanyRepository;
 import jobfinder.repository.JobRepository;
 import jobfinder.services.ServiceAi.AiService;
+import jobfinder.services.assets.JobSpecification;
 import jobfinder.services.interfaces.JobInterface;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package jobfinder.services.implementation;
+package jobfinder.services.assets;
 
 import jakarta.mail.internet.MimeMessage;
 import jobfinder.model.dto.JobMatchDto;

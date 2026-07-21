@@ -10,6 +10,8 @@ import jobfinder.model.entity.User;
 import jobfinder.model.entity.UserProfile;
 import jobfinder.repository.EmailAlertSettingRepository;
 import jobfinder.repository.UserRepository;
+import jobfinder.services.assets.EmailNotificationService;
+import jobfinder.services.assets.JobMatchingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

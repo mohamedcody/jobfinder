@@ -1,4 +1,4 @@
-package jobfinder.services.implementation;
+package jobfinder.services.assets;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;

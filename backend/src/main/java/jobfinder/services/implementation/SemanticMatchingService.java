@@ -3,6 +3,7 @@ package jobfinder.services.implementation;
 
 import jobfinder.model.entity.JobEntity;
 import jobfinder.model.entity.UserProfile;
+import jobfinder.model.entity.UserSkill;
 import jobfinder.repository.JobRepository;
 import jobfinder.services.ServiceAi.GeminiEmbeddingService;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class SemanticMatchingService {
         }
 
         if (profile.getUser() != null && profile.getUser().getSkills() != null) {
-            for (jobfinder.model.entity.UserSkill us : profile.getUser().getSkills()) {
+            for (UserSkill us : profile.getUser().getSkills()) {
                 if (us != null && us.getSkill() != null && us.getSkill().getName() != null && !us.getSkill().getName().isBlank()) {
                     aggregatedText.append(us.getSkill().getName().trim()).append(" ");
                 }
@@ -44,6 +45,7 @@ public class SemanticMatchingService {
         }
 
         String userData = aggregatedText.toString().trim();
+
         if (userData.isEmpty()) {
             return Collections.emptyList();
         }
@@ -61,4 +63,35 @@ public class SemanticMatchingService {
         // 4. نكلم الـ Repository يجيب أفضل 10 وظايف مناسبة للرقم ده
         return jobRepository.findTopMatchingJobs(userVectorString, 10);
     }
+    /*
+
+    UserProfile
+      │
+      ▼
+جمع بيانات المستخدم
+      │
+      ▼
+تحويلها إلى نص واحد
+      │
+      ▼
+إرسال النص إلى Gemini
+      │
+      ▼
+Gemini يرجع Vector
+      │
+      ▼
+تحويل الـ Vector إلى String
+      │
+      ▼
+JobRepository
+      │
+      ▼
+PostgreSQL (pgvector)
+      │
+      ▼
+أفضل 10 وظائف
+      │
+      ▼
+Return List<JobEntity>
+     */
 }

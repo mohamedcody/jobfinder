@@ -96,4 +96,5 @@ public class CvUploadController {
             throw e; // Let the GlobalExceptionHandler handle it
         }
     }
+
 }

@@ -1,6 +1,5 @@
 package jobfinder.services.implementation;
 
-import jobfinder.exception.BaseException;
 import jobfinder.model.dto.EmailAlertResponseDto;
 import jobfinder.model.dto.JobMatchDto;
 import jobfinder.model.dto.UpdateEmailAlertRequest;
@@ -9,6 +8,8 @@ import jobfinder.repository.EmailAlertSettingRepository;
 import jobfinder.repository.JobRepository;
 import jobfinder.repository.UserRepository;
 
+import jobfinder.services.assets.EmailNotificationService;
+import jobfinder.services.assets.JobMatchingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

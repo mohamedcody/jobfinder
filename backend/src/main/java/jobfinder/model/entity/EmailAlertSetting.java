@@ -41,5 +41,7 @@ public class EmailAlertSetting {
     @jakarta.validation.constraints.Max(value = 100, message = "Match score cannot exceed 100")
     @Column(name = "min_match_score", nullable = false)
     private Integer minMatchScore = 60;
+
+
 }
 

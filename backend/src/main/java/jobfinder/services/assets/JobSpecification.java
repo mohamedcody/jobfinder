@@ -1,4 +1,4 @@
-package jobfinder.services.implementation;
+package jobfinder.services.assets;
 
 import jobfinder.model.entity.JobEntity;
 import jobfinder.model.dto.JobFilterRequest;
