@@ -32,6 +32,11 @@ import java.util.regex.Pattern;
  *
  * The engine intentionally avoids calling AI for scoring to keep the
  * scheduled task fast and cheap (no API calls per user per job).
+ *
+ * ملحوظة مهمة: RECENT_DAYS_WINDOW هي الـ Source of Truth الوحيد لعدد
+ * الأيام اللي بنعتبر فيها الوظيفة "حديثة". أي كلاس تاني (زي JobAlertScheduler)
+ * لازم يستخدم نفس الـ constant دي بدل ما يكتب رقم تاني بنفسه، عشان منوقعش
+ * تاني في تضارب زي اللي كان موجود (7 يوم هنا و8 يوم في الـ Scheduler).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 @Slf4j
@@ -47,6 +52,12 @@ public class JobMatchingService {
     private static final int RECENT_JOB_LIMIT = 200;
     private static final long FRESH_HOURS = 48;
 
+    /** عدد الأيام اللي بنعتبر خلالها الوظيفة "حديثة" — استخدمها في أي مكان تاني بدل ما تكتب رقم صريح. */
+    public static final long RECENT_DAYS_WINDOW = 7;
+
+    /** مدة صلاحية الـ embedding المخزّن قبل ما نولّد واحد جديد (لتوفير تكلفة استدعاء Gemini). */
+    private static final long EMBEDDING_CACHE_DAYS = 30;
+
     /**
      * AI Semantic Job Matching Engine
      * Fetches zero N+1 entity graphs, aggregates safely, caches vector to save costs,
@@ -57,14 +68,18 @@ public class JobMatchingService {
         // 1. Fetch Profile and related entities efficiently (Zero N+1)
         UserProfile profile = userProfileRepository.findByIdWithUserAndSkills(profileId)
                 .orElseThrow(() -> new jobfinder.exception.BaseException(jobfinder.exception.ErrorCode.USER_NOT_FOUND, "User profile not found."));
-        
-        // This hydrates the workExperienceList in the same Persistence Context to avoid Cartesian product
+
+        // ملحوظة: بنعمل discard للـ return هنا لأن الكيان اللي بيرجع من الكويري ده
+        // هو نفس الـ instance الموجود بالفعل في الـ Persistence Context (نفس الـ ID)،
+        // فالـ workExperienceList بتتحمّل (hydrate) على نفس الـ "profile" object أوتوماتيك.
+        // (تقنية معروفة في Hibernate، بس لو حبيت توضيح أكتر ممكن تعمل query واحدة
+        // بكذا JOIN FETCH بدل الاستدعاء المنفصل ده.)
         userProfileRepository.findByIdWithWorkExperiences(profileId);
 
         // 2. Cost-Saving Caching Strategy
         boolean generateNewEmbedding = true;
         if (profile.getEmbedding() != null && profile.getEmbeddingGeneratedAt() != null) {
-            if (profile.getEmbeddingGeneratedAt().isAfter(LocalDateTime.now().minusDays(30))) {
+            if (profile.getEmbeddingGeneratedAt().isAfter(LocalDateTime.now().minusDays(EMBEDDING_CACHE_DAYS))) {
                 generateNewEmbedding = false;
             }
         }
@@ -139,7 +154,7 @@ public class JobMatchingService {
 
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile, int topN) {
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
-                LocalDateTime.now().minusDays(7),
+                LocalDateTime.now().minusDays(RECENT_DAYS_WINDOW),
                 PageRequest.of(0, RECENT_JOB_LIMIT)
         );
         return findTopMatchesForUser(profile, recentJobs, topN);
@@ -149,6 +164,14 @@ public class JobMatchingService {
                                                    List<JobEntity> recentJobs,
                                                    int topN) {
 
+        // ✅ Null-safety: لو الـ Profile مش موجود (يوزر لسه ما كملش بياناته) رجّع لستة فاضية
+        // بدل ما نعمل NullPointerException جوه اللوجيك. المتصل (Scheduler / Controller)
+        // هو المسؤول عن التعامل مع الحالة دي كـ "skip" مش "error".
+        if (profile == null || profile.getUser() == null) {
+            log.debug("Skipping matching: profile or profile.user is null.");
+            return List.of();
+        }
+
         List<String> skillNames = userSkillRepository.findSkillNamesByUserId(profile.getUser().getId());
 
         // 2. جهّز الـ Patterns مرة واحدة بره اللوب
@@ -156,7 +179,7 @@ public class JobMatchingService {
         List<Pattern> skillPatterns = buildSkillPatterns(skillNames);
 
         String preferredJobType = null;
-        if (profile.getUser() != null && profile.getUser().getPreference() != null) {
+        if (profile.getUser().getPreference() != null) {
             preferredJobType = profile.getUser().getPreference().getJobType();
         }
 
@@ -184,6 +207,7 @@ public class JobMatchingService {
     }
 
     private List<Pattern> buildSkillPatterns(List<String> skillNames) {
+        if (skillNames == null) return List.of();
         return skillNames.stream()
                 .map(skill -> Pattern.compile("\\b" + Pattern.quote(skill) + "\\b",
                         Pattern.CASE_INSENSITIVE | Pattern.DOTALL))
@@ -256,6 +280,5 @@ public class JobMatchingService {
                 .matchScore(score)
                 .build();
     }
-
 
 }

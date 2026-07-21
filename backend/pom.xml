@@ -78,6 +78,12 @@
             <artifactId>pgvector</artifactId>
             <version>0.1.6</version>
         </dependency>
+        <!-- دي المكتبة اللي ناقصة عشان Hibernate يفهم الـ Vectors -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-vector</artifactId>
+            <version>6.6.41.Final</version>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>

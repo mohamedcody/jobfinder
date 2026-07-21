@@ -14,6 +14,7 @@ import jobfinder.services.assets.EmailNotificationService;
 import jobfinder.services.assets.JobMatchingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,9 @@ public class EmailAlertService {
     private final UserRepository userRepository;
     private final JobMatchingService jobMatchingService;
     private final EmailNotificationService emailNotificationService;
+
+    /** القيمة الافتراضية للحد الأدنى لنسبة الماتش لأي يوزر جديد (كانت مكررة كرقم 60 في مكانين). */
+    private static final int DEFAULT_MIN_MATCH_SCORE = 60;
 
     @Transactional
     public EmailAlertResponseDto getAlertSettings(Long userId) {
@@ -62,7 +66,7 @@ public class EmailAlertService {
         // though typically they will exist. If not, fallback to default threshold.
         int minScore = emailAlertSettingRepository.findByUserId(userId)
                 .map(EmailAlertSetting::getMinMatchScore)
-                .orElse(60);
+                .orElse(DEFAULT_MIN_MATCH_SCORE);
 
         List<JobMatchDto> matches = jobMatchingService.findTopMatchesForUser(profile, 5)
                 .stream()
@@ -78,20 +82,45 @@ public class EmailAlertService {
         return "Test matching email triggered for " + matches.size() + " jobs. Sent to: " + user.getEmail();
     }
 
+    /**
+     * ✅ تصليح الـ Race Condition اللي كانت بتسبب Duplicate Key violation:
+     *
+     * السيناريو القديم: لو ريكوستين جم في نفس اللحظة بالظبط لنفس اليوزر (مثلاً
+     * فتح صفحة الإعدادات مرتين، أو Retry من الـ Frontend)، الاتنين بيعملوا
+     * findByUserId ويلاقوها فاضية (لسه محدش عمل insert)، فالاتنين بيحاولوا
+     * يعملوا save() لنفس الـ user_id → الداتابيز بترفض التاني بـ
+     * DataIntegrityViolationException لأن فيه unique constraint على user_id.
+     *
+     * الحل: نلف الـ insert في try/catch، ولو حصل تعارض (يعني حد تاني كسبنا
+     * بالسبق) نرجع نقرا القيمة اللي اتعملها بالفعل بدل ما نرمي error للمستخدم.
+     * ده معروف باسم "optimistic insert with fallback read".
+     */
     private EmailAlertSetting getOrCreateDefaultSettings(Long userId) {
         return emailAlertSettingRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseGet(() -> createDefaultSettingsSafely(userId));
+    }
 
-                    EmailAlertSetting newSetting = EmailAlertSetting.builder()
-                            .user(user)
-                            .dailyDigestEnabled(true)
-                            .minMatchScore(60)
-                            .build();
+    private EmailAlertSetting createDefaultSettingsSafely(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND, "User not found"));
 
-                    return emailAlertSettingRepository.save(newSetting);
-                });
+            EmailAlertSetting newSetting = EmailAlertSetting.builder()
+                    .user(user)
+                    .dailyDigestEnabled(true)
+                    .minMatchScore(DEFAULT_MIN_MATCH_SCORE)
+                    .build();
+
+            return emailAlertSettingRepository.save(newSetting);
+
+        } catch (DataIntegrityViolationException e) {
+            // حد تاني (Request موازي) كسبنا بالسبق وعمل الـ insert قبلنا بجزء من الثانية.
+            // مفيش داعي نرمي error؛ ببساطة نرجع نقرا الصف اللي هو عمله.
+            log.warn("Concurrent insert detected for user ID {}. Falling back to existing row.", userId);
+            return emailAlertSettingRepository.findByUserId(userId)
+                    .orElseThrow(() -> new BaseException(ErrorCode.INTERNAL_ERROR,
+                            "Failed to create or retrieve email alert settings for user " + userId));
+        }
     }
 
     private EmailAlertResponseDto toDto(EmailAlertSetting setting) {

@@ -3,6 +3,9 @@ package jobfinder.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -68,6 +71,7 @@ public class JobEntity {
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserInteraction> interactions;
 
+    @JdbcTypeCode(SqlTypes.VECTOR) // <-- Added this annotation
     @Column(name="embedding" , columnDefinition = "vector(768)")
     private float[] embedding;
 

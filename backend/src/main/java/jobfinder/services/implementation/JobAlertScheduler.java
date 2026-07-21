@@ -49,19 +49,22 @@ public class JobAlertScheduler {
     // Maximum number of jobs to include in one email.
     private static final int MAX_JOBS_PER_EMAIL = 8;
 
-    @Scheduled(cron = "0 */5 * * * ?")   // 09:00 every day
+    @Scheduled(cron = "0 0 9 * * ?")  // 09:00 every day
     public void sendDailyJobAlerts() {
         log.info("📬 [JobAlertScheduler] Starting daily job-alert batch process...");
 
-        // Load recent active jobs from the last 7 days.
-        // Fetch jobs exactly ONCE for the entire batch to avoid redundant DB calls
+        // ✅ تصليح: كنا بنكتب هنا "minusDays(8)" يدوي وهو مختلف عن الـ 7 أيام
+        // المستخدمة في JobMatchingService.findTopMatchesForUser(profile, topN).
+        // دلوقتي بنستخدم نفس الـ constant (JobMatchingService.RECENT_DAYS_WINDOW)
+        // عشان الـ "وظيفة حديثة" يكون ليها تعريف واحد بس في المشروع كله.
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
-                LocalDateTime.now().minusDays(8),
+                LocalDateTime.now().minusDays(JobMatchingService.RECENT_DAYS_WINDOW),
                 PageRequest.of(0, 200)
         );
 
         if (recentJobs.isEmpty()) {
-            log.warn("⚠️ [JobAlertScheduler] No recent active jobs found in the last 7 days. Aborting batch.");
+            log.warn("⚠️ [JobAlertScheduler] No recent active jobs found in the last {} days. Aborting batch.",
+                    JobMatchingService.RECENT_DAYS_WINDOW);
             // Exit the method immediately.
             return;
         }
@@ -70,22 +73,14 @@ public class JobAlertScheduler {
         // Current page number for pagination.
         int pageNumber = 0;
 
-// Number of users processed in one database query.
+        // Number of users processed in one database query.
         final int CHUNK_SIZE = 500;
 
-// Statistics used for the final execution report.
-
+        // Statistics used for the final execution report.
         int totalSent = 0;       // Successfully sent emails.
-
-
-        int totalSkipped = 0;    // Users with no matching jobs.
-
-
-        int totalErrors = 0;     // Failed users.
-
-
+        int totalSkipped = 0;    // Users with no matching jobs (or incomplete profile).
+        int totalErrors = 0;     // Failed users (unexpected exceptions).
         int totalProcessed = 0;  // Total processed users.
-
 
         // Keep processing user batches until no more users are available.
         while (true) {
@@ -108,6 +103,20 @@ public class JobAlertScheduler {
                     // Extract the current user from the email alert configuration.
                     User user = setting.getUser();
                     UserProfile profile = user.getProfile();
+
+                    // ✅ تصليح: قبل كده لو الـ profile كانت null (يوزر عمل حساب
+                    // بس ما كملش بياناته) كان بيحصل NullPointerException جوه
+                    // jobMatchingService، وكان بيتسجل غلط كـ "Error" بدل "Skipped".
+                    // ده تمام حاليًا لأن JobMatchingService.findTopMatchesForUser
+                    // بقت null-safe، لكن بنعمل الـ check هنا كمان عشان نديله رسالة
+                    // لوج واضحة ونحسبه صح في التقرير النهائي (Skipped مش Error).
+                    if (profile == null || profile.getCurrentJobTitle() == null
+                            || profile.getCurrentJobTitle().isBlank()) {
+                        log.debug("Skipping user ID [{}]: profile incomplete (no current job title).",
+                                user.getId());
+                        totalSkipped++;
+                        continue;
+                    }
 
                     // Passes the pre-fetched recentJobs list directly to the service
                     List<JobMatchDto> topMatches = jobMatchingService
@@ -132,7 +141,7 @@ public class JobAlertScheduler {
                             setting.getUser().getId(), e.getMessage(), e);
                 }
             }
-            
+
             // Move to the next chunk
             pageNumber++;
 
@@ -152,12 +161,14 @@ public class JobAlertScheduler {
 }
 //الساعة 9 صباحاً
 //      ↓
-//جيب كل الوظائف الحديثة (7 أيام)
+//جيب كل الوظائف الحديثة (JobMatchingService.RECENT_DAYS_WINDOW أيام)
 //      ↓
 //جيب 500 مستخدم
 //      ↓
 //لكل مستخدم:
 //        ↓
+//البروفايل مكتمل؟ لا → تخطي (Skipped) ⏭️
+//        ↓ نعم
 //جيب الوظائف المناسبة له
 //  ↓
 //فلتر (أفضل 8 فقط، وأعلى من نسبته المطلوبة)

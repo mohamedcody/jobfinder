@@ -32,7 +32,7 @@ public class JobResponseDTO {
     @JsonProperty("link")
     private String link;
 
-    @JsonProperty("description")
+    @JsonProperty("descriptionText")
     private String descriptionText;
 
     @JsonProperty("companyLogo")
