@@ -77,8 +77,12 @@ public class UserProfile {
 
 
     // --- Semantic Matching: Vector embedding of the user's CV ---
+    // FIXED: @JdbcTypeCode(SqlTypes.VECTOR) was imported but missing from the field.
+    // Without it, Hibernate serializes float[] as bytea -> cannot cast bytea to vector.
+    @JdbcTypeCode(SqlTypes.VECTOR)
     @Column(name = "embedding", columnDefinition = "vector(768)")
     private float[] embedding;
+
 
     @Column(name = "embedding_generated_at")
     private LocalDateTime embeddingGeneratedAt;

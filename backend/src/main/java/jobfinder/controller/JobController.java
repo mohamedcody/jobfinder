@@ -30,7 +30,6 @@ public class JobController {
 
     private final JobService jobScraperService;
 
-
     @GetMapping
     public ResponseEntity<CursorPageResponseDto<JobResponseDTO>> getAllJobs(
             @RequestParam(required = false) Long lastId,
