@@ -7,6 +7,7 @@ import { EditProfileFormTabs } from "@/components/profile/edit-profile-form-tabs
 import { CareerIntelligenceHub } from "@/components/profile/career-intelligence-hub";
 import type { UpdateProfileRequest } from "@/lib/profile/types";
 import { escapeHtml } from "@/lib/security/sanitization";
+import { calculateProfileCompletion } from "@/lib/profile/validation";
 import {
   User, 
   Code2,
@@ -55,26 +56,14 @@ const AvailabilityBadge = ({ available }: { available: boolean }) => {
 
 const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResponse, onEdit: () => void }) => {
   const completeness = useMemo(() => {
-    const checks = {
-      hasHeadline: !!profile.currentJobTitle,
-      hasAbout: (profile.bio?.length || 0) > 20,
-      hasExperience: (profile.yearsOfExperience || 0) > 0,
-      hasSalary: !!profile.expectedSalary,
-      hasSkills: (profile.skills?.length || 0) > 0,
+    const result = calculateProfileCompletion(profile as unknown as Partial<Record<string, unknown>>);
+    return {
+      score: result.score,
+      incompleteTasks: result.incompleteTasks.map((task) => ({
+        ...task,
+        action: () => onEdit(),
+      })),
     };
-    const totalChecks = Object.keys(checks).length;
-    const completedChecks = Object.values(checks).filter(Boolean).length;
-    const score = Math.round((completedChecks / totalChecks) * 100);
-    
-    const incompleteTasks = [
-      !checks.hasHeadline && { label: "Add your professional headline", action: () => onEdit() },
-      !checks.hasAbout && { label: "Write a brief summary about yourself", action: () => onEdit() },
-      !checks.hasExperience && { label: "Set your years of experience", action: () => onEdit() },
-      !checks.hasSalary && { label: "Define your expected salary", action: () => onEdit() },
-      !checks.hasSkills && { label: "List your top skills", action: () => onEdit() },
-    ].filter(Boolean) as { label: string, action: () => void }[];
-
-    return { score, incompleteTasks };
   }, [profile, onEdit]);
 
   return (
@@ -129,12 +118,12 @@ const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResp
 
 
 export default function ProfilePage() {
-  const { profile, isLoading, isSaving, updateProfile } = useUserProfile();
+  const { profile, isLoading, isSaving, updateProfile, fetchProfile } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [, startTransition] = useTransition();
 
   const handleRetry = () => {
-    window.location.reload();
+    fetchProfile();
   };
 
   const handleSaveProfile = async (data: UpdateProfileRequest) => {
@@ -158,14 +147,7 @@ export default function ProfilePage() {
 
   const profileCompleteness = useMemo(() => {
     if (!profile) return 0;
-    const checks = [
-      !!profile.currentJobTitle,
-      (profile.bio?.length || 0) > 20,
-      (profile.yearsOfExperience || 0) > 0,
-      !!profile.expectedSalary,
-      (profile.skills?.length || 0) > 0,
-    ];
-    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    return calculateProfileCompletion(profile as unknown as Partial<Record<string, unknown>>).score;
   }, [profile]);
 
   if (isLoading) {

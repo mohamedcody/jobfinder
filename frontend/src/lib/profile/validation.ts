@@ -152,27 +152,59 @@ export const validators = {
 };
 
 /**
- * Calculate profile completion percentage
- * Used for the "Market Readiness" gauge
+ * Calculate profile completion percentage.
+ * Single source of truth used by ProfilePage and CareerIntelligenceHub.
+ *
+ * Checks 5 key profile dimensions:
+ * 1. Professional headline (currentJobTitle)
+ * 2. Professional summary (bio with >20 chars)
+ * 3. Experience (yearsOfExperience > 0)
+ * 4. Salary expectations (expectedSalary set)
+ * 5. Skills (at least 1 skill)
  */
-export function calculateProfileCompletion(profile: Partial<Record<string, unknown>>): number {
-  const fields = [
-    "currentJobTitle",
-    "yearsOfExperience",
-    "educationLevel",
-    "country",
-    "city",
-    "expectedSalary",
-    "currency",
-    "bio",
+export interface ProfileCompletionResult {
+  score: number;
+  incompleteTasks: { key: string; label: string }[];
+}
+
+export function calculateProfileCompletion(
+  profile: Partial<Record<string, unknown>>,
+): ProfileCompletionResult {
+  const checks: { key: string; label: string; passed: boolean }[] = [
+    {
+      key: "headline",
+      label: "Add your professional headline",
+      passed: !!profile.currentJobTitle,
+    },
+    {
+      key: "bio",
+      label: "Write a brief summary about yourself",
+      passed: ((profile.bio as string)?.length || 0) > 20,
+    },
+    {
+      key: "experience",
+      label: "Set your years of experience",
+      passed: ((profile.yearsOfExperience as number) || 0) > 0,
+    },
+    {
+      key: "salary",
+      label: "Define your expected salary",
+      passed: !!profile.expectedSalary,
+    },
+    {
+      key: "skills",
+      label: "List your top skills",
+      passed: ((profile.skills as unknown[])?.length || 0) > 0,
+    },
   ];
 
-  const filledFields = fields.filter((field) => {
-    const value = profile?.[field];
-    return value !== null && value !== undefined && value !== "";
-  }).length;
+  const completedCount = checks.filter((c) => c.passed).length;
+  const score = Math.round((completedCount / checks.length) * 100);
+  const incompleteTasks = checks
+    .filter((c) => !c.passed)
+    .map(({ key, label }) => ({ key, label }));
 
-  return Math.round((filledFields / fields.length) * 100);
+  return { score, incompleteTasks };
 }
 
 /**

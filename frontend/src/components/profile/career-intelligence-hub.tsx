@@ -97,7 +97,7 @@ const InsightItem = ({
           <h4 className="text-sm font-bold text-white flex items-center gap-2">
             {title}
             {isPremium && (
-              <div title="Connect to backend to unlock" className="inline-block">
+              <div title="Premium feature — coming soon" className="inline-block">
                 <Lock className="h-3 w-3 text-amber-400" />
               </div>
             )}
@@ -142,58 +142,59 @@ export const CareerIntelligenceHub = ({
     const hasExp = (profile.yearsOfExperience || 0) > 0;
     const hasSalary = !!profile.expectedSalary;
     const hasBio = (profile.bio?.length || 0) > 20;
+    const hasTitle = !!profile.currentJobTitle;
 
     let score = 0;
-    if (hasBio) score += 25;
-    if (hasExp) score += 25;
-    if (skillCount > 3) score += 25;
-    if (hasSalary) score += 25;
+    if (hasBio) score += 20;
+    if (hasExp) score += 20;
+    if (skillCount > 0) score += Math.min(skillCount * 5, 20);
+    if (hasSalary) score += 20;
+    if (hasTitle) score += 20;
     score = Math.min(score, 100);
 
-    // Market Position (mock based on experience)
+    // Market Position: derived from years of experience (real profile data)
     const years = profile.yearsOfExperience || 0;
     let position = "Entry-Level";
     if (years >= 3 && years < 6) position = "Mid-Level";
     else if (years >= 6 && years < 10) position = "Senior";
     else if (years >= 10) position = "Lead / Architect";
 
-    // Top Skills (first 3)
-    const topSkills = profile.skills?.slice(0, 3).map((s) => s.name) || [];
+    // Top Skills (first 5 from real user data)
+    const topSkills = profile.skills?.slice(0, 5).map((s) => s.name) || [];
 
-    // Recommended next role
+    // Recommended next step: derived from current market position
     const roleMap: Record<string, string> = {
-      "Entry-Level": "Junior Developer → Mid-Level Engineer",
-      "Mid-Level": "Mid-Level → Senior Specialist",
-      Senior: "Senior → Tech Lead",
-      "Lead / Architect": "Staff Engineer → VP Engineering",
+      "Entry-Level": "Build project experience → Target Mid-Level roles",
+      "Mid-Level": "Deepen specialization → Target Senior roles",
+      Senior: "Develop leadership skills → Target Tech Lead roles",
+      "Lead / Architect": "Build strategic impact → Target Staff+ roles",
     };
     const recommendedRole = roleMap[position] || "Explore new opportunities";
 
-    // Salary Potential (mock calculation)
-    const baseSalary = profile.expectedSalary || 0;
-    let potential = baseSalary;
-    if (skillCount >= 5) potential *= 1.2;
-    if (years >= 5) potential *= 1.15;
-    if (hasBio) potential *= 1.05;
+    // Salary display: show actual user-set expected salary honestly
+    const salaryDisplay = hasSalary
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: profile.currency || "EGP",
+          minimumFractionDigits: 0,
+        }).format(profile.expectedSalary!)
+      : "—";
 
-    // Skill Gaps
-    const gaps = [];
-    if (skillCount < 5) gaps.push("Add 2-3 more skills");
-    if (years < 3 && position === "Entry-Level") gaps.push("Gain hands-on project experience");
+    // Actionable suggestions based on actual profile gaps
+    const gaps: string[] = [];
+    if (!hasTitle) gaps.push("Add your professional headline");
+    if (skillCount < 3) gaps.push("Add more skills to improve visibility");
+    if (!hasExp) gaps.push("Set your years of experience");
     if (!hasBio) gaps.push("Write a compelling professional summary");
+    if (!hasSalary) gaps.push("Define your salary expectations");
 
     return {
       profileScore: score,
       marketPosition: position,
       topSkills,
       recommendedRole,
-      salaryPotential: potential
-        ? `${new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: profile.currency || "EGP",
-            minimumFractionDigits: 0,
-          }).format(potential)} +`
-        : "—",
+      salaryDisplay,
+      hasSalary,
       skillGaps: gaps,
     };
   }, [profile]);
@@ -229,7 +230,7 @@ export const CareerIntelligenceHub = ({
         <div>
           <h2 className="text-xl font-black text-white tracking-tight">Career Intelligence</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            AI-powered insights about your profile and market potential
+            Insights calculated from your profile data
           </p>
         </div>
       </div>
@@ -240,7 +241,7 @@ export const CareerIntelligenceHub = ({
           icon={Target}
           label="Profile Score"
           value={`${analysis.profileScore}%`}
-          sublabel="Overall attractiveness"
+          sublabel="Profile completeness"
           color="violet"
           delay={0}
         />
@@ -248,23 +249,23 @@ export const CareerIntelligenceHub = ({
           icon={TrendingUp}
           label="Market Position"
           value={analysis.marketPosition}
-          sublabel="Your career level"
+          sublabel={`Based on ${profile.yearsOfExperience || 0} years experience`}
           color="emerald"
           delay={0.1}
         />
         <MetricCard
           icon={Award}
           label="Top Skills"
-          value={analysis.topSkills.length}
-          sublabel={analysis.topSkills.slice(0, 2).join(", ") || "Add more skills"}
+          value={analysis.topSkills.length > 0 ? analysis.topSkills.slice(0, 2).join(", ") : "—"}
+          sublabel={analysis.topSkills.length > 2 ? `+${analysis.topSkills.length - 2} more` : (analysis.topSkills.length === 0 ? "Add skills to your profile" : undefined)}
           color="cyan"
           delay={0.2}
         />
         <MetricCard
           icon={Zap}
-          label="Salary Potential"
-          value={analysis.salaryPotential}
-          sublabel="With optimization"
+          label="Expected Salary"
+          value={analysis.salaryDisplay}
+          sublabel={analysis.hasSalary ? `${profile.currency || "EGP"} • Your target` : "Set your salary expectations"}
           color="amber"
           delay={0.3}
         />
@@ -326,45 +327,43 @@ export const CareerIntelligenceHub = ({
           <InsightItem
             icon={Brain}
             title="Profile Strengths"
-            description="You have a strong foundation. Focus on gaining more hands-on experience in your key skills."
-            badges={analysis.topSkills.slice(0, 2)}
+            description={analysis.topSkills.length > 0
+              ? `Your top skills include ${analysis.topSkills.slice(0, 3).join(", ")}. Continue building depth in these areas.`
+              : "Add skills to your profile to see personalized strength analysis."
+            }
+            badges={analysis.topSkills.slice(0, 3)}
             delay={0.4}
           />
           <InsightItem
             icon={Target}
             title="Target Roles"
-            description="Based on your profile, you're a great match for positions requiring your skill set."
+            description={`Based on your experience level (${analysis.marketPosition}), you can target roles matching your skill set.`}
             badges={[analysis.marketPosition]}
             delay={0.5}
           />
           <InsightItem
             icon={TrendingUp}
             title="Salary Benchmarking"
-            description="Your expected salary aligns well with market rates for your experience level."
+            description="Real-time salary benchmarking against market data will be available in a future update."
             isPremium
             delay={0.6}
           />
           <InsightItem
             icon={Award}
             title="Certification Suggestions"
-            description="Consider obtaining certifications relevant to your field to boost your credibility."
+            description="Personalized certification recommendations based on your skills will be available soon."
             isPremium
             delay={0.7}
           />
         </div>
       </div>
 
-      {/* API Status */}
-      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 flex items-start gap-4">
-        <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <p className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-2">
-            Backend Integration
-          </p>
-          <p className="text-sm text-amber-200 leading-relaxed">
-            These insights will update in real-time once the backend API is connected with your actual job market data and industry benchmarks.
-          </p>
-        </div>
+      {/* Data Source Notice */}
+      <div className="rounded-2xl border border-slate-700/50 bg-slate-800/30 p-4 flex items-start gap-3">
+        <AlertCircle className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+        <p className="text-xs text-slate-500 leading-relaxed">
+          These insights are calculated from your profile data. Features marked with 🔒 will be available in a future update with real market data integration.
+        </p>
       </div>
     </motion.div>
   );

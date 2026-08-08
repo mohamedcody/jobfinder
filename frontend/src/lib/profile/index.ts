@@ -6,5 +6,8 @@
 // Types
 export * from "./types";
 
-// Service (single source of truth — uses centralized interceptors)
+// Service (uses centralized interceptors / API client)
 export * from "./profile-service";
+
+// Validation
+export * from "./validation";
