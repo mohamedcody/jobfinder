@@ -69,7 +69,7 @@ export default function JobsPage() {
         <section className="fade-up group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-indigo-950/40 border border-white/10 p-6 sm:p-8 shadow-2xl shadow-violet-500/10">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
           <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
-          
+
           <div className="relative z-10">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
               <div className="flex items-start gap-6 flex-1">
@@ -82,7 +82,7 @@ export default function JobsPage() {
                     AI
                   </div>
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3 flex-wrap">
                     <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] font-black uppercase tracking-widest text-violet-400">🎯 Perfect Match</span>
@@ -94,7 +94,7 @@ export default function JobsPage() {
                     Senior Software Engineer <span className="text-slate-500 font-medium text-xl">@ Remote</span>
                   </h2>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                    Based on your expertise in <span className="text-cyan-300 font-bold">React</span>, <span className="text-violet-300 font-bold">Node.js</span>, and <span className="text-emerald-300 font-bold">AWS</span>, this is our top recommendation for your career growth. 
+                    Based on your expertise in <span className="text-cyan-300 font-bold">React</span>, <span className="text-violet-300 font-bold">Node.js</span>, and <span className="text-emerald-300 font-bold">AWS</span>, this is our top recommendation for your career growth.
                     <span className="block text-xs text-slate-400 mt-2">💡 Tip: Click &quot;AI Insights&quot; on any job card to get detailed analysis and alignment score.</span>
                   </p>
                 </div>
