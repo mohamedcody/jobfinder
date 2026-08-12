@@ -216,17 +216,21 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
         }
 
-
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
 
-
-        OtpCode otp = otpCodeRepository.findByUserAndCodeAndUsedFalse(user, request.otpCode())
+        OtpCode otp = otpCodeRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
 
-
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            otp.setUsed(true);
+            otpCodeRepository.saveAndFlush(otp);
             throw new BaseException(ErrorCode.OTP_EXPIRED);
+        }
+
+        if (!otp.getCode().equals(request.otpCode())) {
+            otpService.handleFailedAttempt(otp.getId());
+            throw new BaseException(ErrorCode.INVALID_OTP);
         }
 
         // encode the newPassword
@@ -234,6 +238,10 @@ public class AuthService implements AuthInterface {
 
         // set as otp true , because the otp is used for reset password
         otp.setUsed(true);
+        
+        // Save entities
+        otpCodeRepository.save(otp);
+        userRepository.save(user);
     }
 
 

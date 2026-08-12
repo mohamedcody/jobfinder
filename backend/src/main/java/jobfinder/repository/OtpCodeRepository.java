@@ -64,4 +64,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
     // This matches line 189 in AuthService, which calls .orElseThrow().
     Optional<OtpCode> findByUserAndCodeAndUsedFalse(User user, String code);
 
+    @Modifying
+    @Query("UPDATE OtpCode o SET o.attempts = COALESCE(o.attempts, 0) + 1 WHERE o.id = :id")
+    void incrementAttempts(@Param("id") Long id);
 }

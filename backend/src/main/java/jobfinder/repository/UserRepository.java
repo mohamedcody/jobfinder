@@ -27,4 +27,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE User u SET u.failedAttempts = COALESCE(u.failedAttempts, 0) + 1 WHERE u.id = :id")
+    void incrementFailedAttempts(@Param("id") Long id);
 }

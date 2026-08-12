@@ -25,13 +25,14 @@ public class OtpService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = BaseException.class)
     public void handleFailedAttempt(Long otpId) {
+        // Atomically increment to prevent Lost Update race conditions
+        otpCodeRepository.incrementAttempts(otpId);
+
         // Fetch OTP or throw an exception if not found
         OtpCode otp = otpCodeRepository.findById(otpId)
                 .orElseThrow(() -> new BaseException(ErrorCode.INVALID_OTP));
 
-        // Increment the attempt counter
-        int currentAttempts = (otp.getAttempts() == null ? 0 : otp.getAttempts()) + 1;
-        otp.setAttempts(currentAttempts);
+        int currentAttempts = otp.getAttempts() == null ? 0 : otp.getAttempts();
 
         // Check if user exceeded the maximum allowed attempts (3)
         if (currentAttempts >= 3) {
@@ -43,7 +44,6 @@ public class OtpService {
             );
         }
 
-        otpCodeRepository.saveAndFlush(otp);
         throw new BaseException(ErrorCode.INVALID_OTP, "Invalid OTP. Attempt: " + currentAttempts);
     }
 

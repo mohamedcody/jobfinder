@@ -33,16 +33,16 @@ public class LoginAttemptService {
             return;
         }
 
-
+        userRepository.incrementFailedAttempts(user.getId());
+        
+        // Refetch or assume incremented to check if we hit limit
         int newAttempts = (user.getFailedAttempts() == null ? 0 : user.getFailedAttempts()) + 1;
-        user.setFailedAttempts(newAttempts);
-
 
         // Lock account if failed attempts reach 5
         if (newAttempts >= 5) {
             user.setLockoutTime(LocalDateTime.now().plusMinutes(3));
+            userRepository.saveAndFlush(user);
         }
-        userRepository.saveAndFlush(user);
     }
 
 

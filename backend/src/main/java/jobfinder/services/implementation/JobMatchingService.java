@@ -43,17 +43,53 @@ public class JobMatchingService {
 
     private static final int RECENT_JOB_LIMIT = 200;
     private static final long FRESH_HOURS = 48;
+/**
+     * الدالة الرئيسية اللي بننادي عليها من بره.
+     * بتجيب أحدث الوظايف اللي نزلت في آخر 7 أيام (بحد أقصى 200 وظيفة).
+     * وبعدين بتبعتها للدالة التانية عشان تحسب نسبة التطابق وترجع أفضل وظايف لليوزر ده.
+     * 
+     * @param profile البروفايل بتاع الباحث عن عمل.
+     * @param topN عدد الوظايف اللي عايزين نرجعها (مثلاً أفضل 5 وظايف).
+     * @return لستة بأفضل الوظايف مترتبة من الأعلى للأقل في نسبة التطابق.
+     */
 
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile, int topN) {
+        if (profile == null || profile.getUser() == null || profile.getUser().getId() == null) {
+            log.warn("JobMatchingService: Profile or User is null, aborting match process.");
+            return List.of();
+        }
+        if (topN <= 0) {
+            return List.of();
+        }
+
         List<JobEntity> recentJobs = jobRepository.findRecentActiveJobs(
                 LocalDateTime.now().minusDays(7),
                 PageRequest.of(0, RECENT_JOB_LIMIT));
+
+        if (recentJobs == null || recentJobs.isEmpty()) {
+            return List.of();
+        }
+
         return findTopMatchesForUser(profile, recentJobs, topN);
     }
-
+   /**
+     * عقل المحرك الفعلي: الدالة دي بتاخد بروفايل ولستة وظايف، وبتعمل الآتي:
+     * 1. بتسحب مهارات اليوزر من الداتا بيز.
+     * 2. بتحول المسمى الوظيفي والمهارات لـ Regex Patterns (عشان تدور بيهم بسرعة).
+     * 3. بتلف على كل وظيفة وتديها Score بناءً على التطابق.
+     * 4. بترتب الوظايف وتطبعهم.
+     */
     public List<JobMatchDto> findTopMatchesForUser(UserProfile profile,
             List<JobEntity> recentJobs,
             int topN) {
+
+        if (profile == null || profile.getUser() == null || profile.getUser().getId() == null) {
+            return List.of();
+        }
+        if (recentJobs == null || recentJobs.isEmpty() || topN <= 0) {
+            return List.of();
+        }
+
         // 1. جهّز الـ skills مرة واحدة بره اللوب
         List<String> skillNames = userSkillRepository
                 .findByUserId(profile.getUser().getId())
@@ -77,25 +113,35 @@ public class JobMatchingService {
         scored.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
         return scored.stream().limit(topN).toList();
     }
-
+ /**
+     * دالة مساعدة بتكسر المسمى الوظيفي بتاع اليوزر لكلمات منفصلة.
+     * وبتحول كل كلمة لـ Pattern عشان نقدر ندور عليها جوه تفاصيل الوظيفة بدقة.
+     */
     private List<Pattern> buildTitlePatterns(String currentJobTitle) {
         if (currentJobTitle == null || currentJobTitle.isBlank())
             return List.of();
-
         return Arrays.stream(currentJobTitle.toLowerCase(Locale.ROOT).split("\\s+"))
                 .filter(word -> word.length() > 2)
                 .map(word -> Pattern.compile("\\b" + Pattern.quote(word) + "\\b",
                         Pattern.CASE_INSENSITIVE | Pattern.DOTALL))
                 .toList();
     }
-
+    /**
+     * دالة مساعدة بتاخد لستة مهارات اليوزر وبتحولها لـ Patterns.
+     * بنستخدم الـ \b عشان نتأكد إن المهارة كلمة مستقلة (يعني لو المهارة Java، ماتعملش ماتش مع كلمة JavaScript).
+     */
     private List<Pattern> buildSkillPatterns(List<String> skillNames) {
         return skillNames.stream()
                 .map(skill -> Pattern.compile("\\b" + Pattern.quote(skill) + "\\b",
                         Pattern.CASE_INSENSITIVE | Pattern.DOTALL))
                 .toList();
     }
-
+   /**
+     * دالة حساب النقاط (الـ Scoring Algorithm):
+     * - لو لقيت المسمى الوظيفي: +50 نقطة.
+     * - لكل مهارة تلاقيها: +5 نقطة (بحد أقصى 30 نقطة).
+     * - لو الوظيفة لسة نازلة طازة في آخر 48 ساعة: +10 نقطة.
+     */
     private int computeScore(JobEntity job,
             String jobText,
             List<Pattern> titlePatterns,
@@ -129,7 +175,10 @@ public class JobMatchingService {
 
         return Math.min(score, 100);
     }
-
+        /**
+     * دالة بتدمج عنوان الوظيفة مع وصف الوظيفة في "نص واحد" وتخليه حروف سمول.
+     * عشان نسهل عملية البحث ونخليها أسرع بدل ما ندور في العنوان لوحده والوصف لوحده.
+     */
     private String buildSearchText(JobEntity job) {
         StringBuilder sb = new StringBuilder();
         if (job.getTitle() != null)
@@ -138,6 +187,8 @@ public class JobMatchingService {
             sb.append(job.getDescription().toLowerCase(Locale.ROOT));
         return sb.toString();
     }
+
+
 
     private JobMatchDto toDto(JobEntity job, int score) {
         return JobMatchDto.builder()
