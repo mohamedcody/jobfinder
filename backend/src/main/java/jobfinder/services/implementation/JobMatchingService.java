@@ -113,7 +113,7 @@ public class JobMatchingService {
         scored.sort((a, b) -> Integer.compare(b.getMatchScore(), a.getMatchScore()));
         return scored.stream().limit(topN).toList();
     }
- /**
+     /**
      * دالة مساعدة بتكسر المسمى الوظيفي بتاع اليوزر لكلمات منفصلة.
      * وبتحول كل كلمة لـ Pattern عشان نقدر ندور عليها جوه تفاصيل الوظيفة بدقة.
      */

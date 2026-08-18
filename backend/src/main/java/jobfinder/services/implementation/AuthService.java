@@ -46,6 +46,7 @@ public class AuthService implements AuthInterface {
 
 
     @Override
+    @Transactional
     public AuthResponseDto register(RegisterRequest request) {
 
         if (!emailValidatorService.isEmailDomainValid(request.email())) {

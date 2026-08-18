@@ -2,6 +2,7 @@ package jobfinder.services.interfaces;
 
 import jobfinder.model.dto.*;
 
+
 public interface AuthInterface {
 
     AuthResponseDto login(LoginRequest request);
@@ -10,5 +11,6 @@ public interface AuthInterface {
     void resendVerificationOtp(ResendVerificationOtpRequest request);
     void forgetPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);
+    
 
 }

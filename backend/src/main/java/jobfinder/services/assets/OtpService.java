@@ -1,5 +1,4 @@
 package jobfinder.services.assets;
-
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.entity.OtpCode;
@@ -9,7 +8,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 
 
