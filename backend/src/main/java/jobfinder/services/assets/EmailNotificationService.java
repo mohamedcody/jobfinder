@@ -46,7 +46,9 @@ public class EmailNotificationService {
             helper.setText(buildHtml(firstName, matches), true);  // true = isHtml
 
             mailSender.send(message);
+
             log.info("✅ Daily digest sent to {}", toEmail);
+            log.info("📬 Subject: {}", message.getSubject());
 
         } catch (Exception e) {
             // Log but never rethrow — one user's email failure should not stop the batch

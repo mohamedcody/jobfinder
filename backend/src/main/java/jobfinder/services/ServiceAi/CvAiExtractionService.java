@@ -43,6 +43,7 @@ public class CvAiExtractionService {
     public Mono<AiCvExtractionResult> extractCvData(String cvText) {
         log.info("🤖 Sending CV text ({} chars) to Gemini AI for structured extraction...", cvText.length());
 
+        log.info("📤 Sending request to Gemini AI...");
         String prompt = buildExtractionPrompt(cvText);
 
         return geminiClient.generateContent(prompt, REQUEST_TIMEOUT)
