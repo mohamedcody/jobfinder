@@ -28,5 +28,8 @@ public interface UserProfileInterface {
      * @return the profile data
      */
     UserProfileResponseDto getUserProfile(Long userId);
+
+
+    
 }
 

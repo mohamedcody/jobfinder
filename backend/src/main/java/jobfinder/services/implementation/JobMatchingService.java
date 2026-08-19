@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * ─────────────────────────────────────────────────────────────────────────────
  */
 @Slf4j
-@Service
+// @Service // Removed to fix ConflictingBeanDefinitionException
 @RequiredArgsConstructor
 public class JobMatchingService {
 

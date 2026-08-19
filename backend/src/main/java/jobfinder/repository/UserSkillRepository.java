@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UserSkillRepository extends JpaRepository<UserSkill, Long> {
 
-
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"skill"})
     List<UserSkill> findByUserId(Long userId);
 
     @Modifying
