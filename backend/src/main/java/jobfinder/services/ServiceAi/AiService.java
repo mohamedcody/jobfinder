@@ -24,7 +24,8 @@ public class AiService {
             return "No description available to summarize.";
         }
 
-        String prompt = "Summarize this job description in 2-3 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
+
+        // git hub
 
         try {
             Map response = geminiClient.generateContent(prompt, REQUEST_TIMEOUT).block();
