@@ -23,10 +23,6 @@ public class AiService {
         if (description == null || description.trim().isEmpty()) {
             return "No description available to summarize.";
         }
-
-
-        // git hub
-
         try {
             Map response = geminiClient.generateContent(prompt, REQUEST_TIMEOUT).block();
 
