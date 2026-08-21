@@ -12,6 +12,8 @@ import java.util.Map;
 @Slf4j
 public class AiService {
 
+    
+    // class responsepelety the ai Service
     private final GeminiApiClient geminiClient;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
