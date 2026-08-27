@@ -74,7 +74,7 @@ public class CvUploadController {
     })
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CvParseResponseDto> uploadCv(
+    public reactor.core.publisher.Mono<ResponseEntity<CvParseResponseDto>> uploadCv(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -83,18 +83,22 @@ public class CvUploadController {
                 userId, file.getOriginalFilename(), file.getSize());
 
         // Step 1: Extract text from PDF
-        String extractedText = pdfParsingService.extractText(file);
-
-        // Step 2 & 3: Send to AI and Save to DB (Synchronously to prevent SecurityContext loss)
+        String extractedText;
         try {
-            var aiResult = cvAiExtractionService.extractCvData(extractedText).block();
-            CvParseResponseDto response = profileDataMapper.mapAndSave(aiResult, userId);
-            log.info("🎉 CV processing complete for user ID: {}", userId);
-            return ResponseEntity.ok(response);
+            extractedText = pdfParsingService.extractText(file);
         } catch (Exception e) {
-            log.error("❌ Error during CV processing: {}", e.getMessage());
-            throw e; // Let the GlobalExceptionHandler handle it
+            log.error("❌ Error during PDF parsing: {}", e.getMessage());
+            throw e;
         }
+
+        // Step 2 & 3: Send to AI (async) and Save to DB (offloaded to blocking-safe pool)
+        return cvAiExtractionService.extractCvData(extractedText)
+                .publishOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .map(aiResult -> {
+                    CvParseResponseDto response = profileDataMapper.mapAndSave(aiResult, userId);
+                    log.info("🎉 CV processing complete for user ID: {}", userId);
+                    return ResponseEntity.ok(response);
+                });
     }
 
 }

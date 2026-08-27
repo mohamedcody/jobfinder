@@ -148,8 +148,13 @@ public class ProfileDataMapper {
         // Clear existing user skills to replace with fresh CV data
         userSkillRepository.deleteAllByUserId(userId);
 
-        // Pre-load all existing skills into memory for O(1) lookup (avoids N+1)
-        Map<String, Skill> existingSkillsMap = skillRepository.findAll().stream()
+        List<String> extractedNames = aiResult.skills().stream()
+                .map(s -> s.name() != null ? s.name().trim() : "")
+                .filter(name -> !name.isEmpty())
+                .collect(Collectors.toList());
+
+        // Pre-load only the relevant skills into memory (avoids N+1 and OOM)
+        Map<String, Skill> existingSkillsMap = skillRepository.findByNameIgnoreCaseIn(extractedNames).stream()
                 .collect(Collectors.toMap(
                         s -> s.getName().toLowerCase().trim(),
                         Function.identity(),

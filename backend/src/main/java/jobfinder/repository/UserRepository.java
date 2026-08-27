@@ -28,6 +28,10 @@ public interface UserRepository extends JpaRepository<User,Long> {
     boolean existsByUsername(String username);
 
     @org.springframework.data.jpa.repository.Modifying
-    @Query("UPDATE User u SET u.failedAttempts = COALESCE(u.failedAttempts, 0) + 1 WHERE u.id = :id")
-    void incrementFailedAttempts(@Param("id") Long id);
+    @Query("UPDATE User u SET u.failedAttempts = 0, u.lockoutTime = null WHERE u.id = :id")
+    void resetFailedAttempts(@Param("id") Long id);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE User u SET u.failedAttempts = COALESCE(u.failedAttempts, 0) + 1, u.lockoutTime = CASE WHEN (COALESCE(u.failedAttempts, 0) + 1) >= 5 THEN :lockTime ELSE u.lockoutTime END WHERE u.id = :id")
+    void incrementFailedAttemptsAndLock(@Param("id") Long id, @Param("lockTime") java.time.LocalDateTime lockTime);
 }

@@ -79,7 +79,7 @@ public class AuthService implements AuthInterface {
         saveAndSendOtpInterna(user);
 
 
-        return new AuthResponseDto(null, user.getEmail(), user.getRole(), "Please verify your email");
+        return new AuthResponseDto(null, null, user.getEmail(), user.getRole(), "Please verify your email");
     }
 
     @Override
@@ -124,8 +124,31 @@ public class AuthService implements AuthInterface {
 
 
         String token = jwtService.generateToken(createDetails(user));
-        return new AuthResponseDto(token, user.getEmail(), user.getRole(), "Welcome back!");
+        String refreshToken = jwtService.generateRefreshToken(createDetails(user));
+        return new AuthResponseDto(token, refreshToken, user.getEmail(), user.getRole(), "Welcome back!");
 
+    }
+
+    @Override
+    public AuthResponseDto refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new BaseException(ErrorCode.INVALID_INPUT, "Refresh token is missing");
+        }
+        String username = jwtService.extractUsername(refreshToken);
+        User user = userRepository.findByEmailOrUsername(username)
+                .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.isEnabled()) {
+            throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
+        }
+
+        UserDetails details = createDetails(user);
+        if (jwtService.isTokenValid(refreshToken, details)) {
+            String newAccessToken = jwtService.generateToken(details);
+            String newRefreshToken = jwtService.generateRefreshToken(details);
+            return new AuthResponseDto(newAccessToken, newRefreshToken, user.getEmail(), user.getRole(), "Token refreshed");
+        }
+        throw new BaseException(ErrorCode.INVALID_CREDENTIALS, "Invalid or expired refresh token");
     }
 
 
@@ -155,7 +178,7 @@ public class AuthService implements AuthInterface {
         }
 
         // Critical fix: if the OTP is wrong, handle the failure and throw an exception.
-        if (!otp.getCode().equals(otpCode)) {
+        if (!passwordEncoder.matches(otpCode, otp.getCode())) {
             otpService.handleFailedAttempt(otp.getId());
             throw new BaseException(ErrorCode.INVALID_OTP, "The verification code you entered is incorrect.");
         }
@@ -229,7 +252,7 @@ public class AuthService implements AuthInterface {
             throw new BaseException(ErrorCode.OTP_EXPIRED);
         }
 
-        if (!otp.getCode().equals(request.otpCode())) {
+        if (!passwordEncoder.matches(request.otpCode(), otp.getCode())) {
             otpService.handleFailedAttempt(otp.getId());
             throw new BaseException(ErrorCode.INVALID_OTP);
         }
@@ -272,9 +295,10 @@ public class AuthService implements AuthInterface {
         otpCodeRepository.saveAllAndFlush(oldOtps);
 
         String otpCode = String.format("%06d", secureRandom.nextInt(1000000));
+        String hashedOtp = passwordEncoder.encode(otpCode);
         OtpCode otp = OtpCode.builder()
                 .user(user)
-                .code(otpCode)
+                .code(hashedOtp)
                 .expiryTime(LocalDateTime.now().plusMinutes(10))
                 .used(false)
                 .build();
