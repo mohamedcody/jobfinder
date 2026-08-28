@@ -85,7 +85,7 @@ public class UserProfileService implements UserProfileInterface {
     private UserProfile createDefaultProfile(User user) {
         userProfileRepository.createProfileIfNotExists(user.getId());
         return userProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new BaseException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to retrieve profile after atomic creation"));
+                .orElseThrow(() -> new BaseException(ErrorCode.INTERNAL_ERROR, "Failed to retrieve profile after atomic creation"));
     }
 
     private UserProfileResponseDto mapToResponse(UserProfile p) {

@@ -1,0 +1,50 @@
+# JobFinder Baseline Verification Report
+
+This report documents the attempt to establish a verifiable baseline for the JobFinder repository *before* any code modifications are applied. 
+
+---
+
+## 1. Backend Build & Tests
+- **Command:** `mvn clean test` (in `backend/`)
+- **Result:** **FAILED**
+- **Error Summary:**
+  ```
+  [F][2026-08-27T18:37:23+0300][1] runChild():514 Launching child process failed
+  rm: cannot remove '/tmp/antigravity-nsjail-sandbox-.../deny4': Permission denied
+  rm: cannot remove '/tmp/antigravity-nsjail-sandbox-.../deny0': Permission denied
+  ```
+- **Failure Cause:** The AI agent execution environment uses a restricted `nsjail` sandbox that blocks child process execution for the Java runtime.
+
+## 2. Frontend Build & Static Analysis
+- **Command:** `npm ci && npm run lint && npm run build` (in `frontend/`)
+- **Result:** **FAILED**
+- **Error Summary:**
+  ```
+  [F][2026-08-27T18:37:42+0300][1] runChild():514 Launching child process failed
+  rm: cannot remove '/tmp/antigravity-nsjail-sandbox-.../deny4': Permission denied
+  ```
+- **Failure Cause:** The restricted `nsjail` sandbox blocks the execution of the Node.js runtime and NPM package manager.
+
+## 3. Docker Image Build
+- **Command:** `docker-compose build`
+- **Result:** **FAILED** (Inferred due to absolute sandbox lock down)
+- **Error Summary:** Shell execution is globally failing (`echo test` yields the same `runChild():514` sandbox permission denial).
+- **Failure Cause:** Docker daemon access and shell execution are entirely blocked by the sandbox.
+
+## 4. Container & Application Startup (Smoke Tests)
+- **Command:** `docker-compose up -d` / `./mvnw spring-boot:run`
+- **Result:** **BLOCKED**
+- **Failure Cause:** Cannot verify database connectivity, health checks, or API smoke tests because the underlying execution environment cannot compile or run the application.
+
+---
+
+## Summary of Baseline Status
+
+- **Build status:** **BLOCKED** (Sandbox restrictions prevent compilation).
+- **Test status:** **BLOCKED** (Cannot execute JUnit/Mockito test runners).
+- **Docker status:** **BLOCKED** (No daemon access).
+- **Startup status:** **BLOCKED** (Cannot run local servers).
+- **Database status:** **UNKNOWN** (Requires manual user verification).
+- **Known baseline failures:** None originating from the code; all failures are strictly environment-level Sandbox (`nsjail`) restrictions blocking the execution of `mvn`, `npm`, `docker`, and standard `bash` commands.
+
+> **Environment Assumptions:** The AI agent is operating in a highly restricted, sandboxed runtime environment that lacks permissions to spawn child processes, install dependencies, or execute background daemons. As a result, automated verification commands cannot be run by the agent directly.

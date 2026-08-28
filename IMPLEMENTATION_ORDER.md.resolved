@@ -1,0 +1,79 @@
+# JobFinder Implementation Order
+
+This document outlines the **safest chronological sequence** for applying the fixes outlined in `PLAN.md`. The order is explicitly designed to minimize regression risks, resolve blocking dependencies early, and group related changes to avoid merge conflicts.
+
+---
+
+## 1. Quick Wins & Infrastructure Security (No-Code Changes)
+These fixes require no changes to the Java source code and immediately resolve severe infrastructural vulnerabilities.
+
+1. **CRIT-04: Secure Exposed Monitoring Ports** (`docker-compose.yml`)
+2. **HIGH-06: Non-Root Execution in Containers** (`backend/Dockerfile`, `Dockerfile`)
+3. **MED-06: Remove Hardcoded Localhost CORS** (`application.properties`, `CorsConfig.java`)
+4. **LOW-01: Remove Duplicate CSP** (`nginx.conf`)
+5. **PROD-01: Enable Graceful Shutdown** (`application.properties`)
+
+---
+
+## 2. Security Foundation (Low-Risk Code Changes)
+These security patches are isolated, low-risk, and do not disrupt complex business logic flows.
+
+1. **CRIT-03: Hash OTP Codes** (`AuthService.java`)
+   - *Dependency*: Must be done independently to ensure `passwordEncoder` logic is clean.
+2. **HIGH-03: GraphQL Validation Bypass** (`AuthGraphQLController.java`)
+   - *Action*: Add `@Valid` to prevent malformed data from reaching services.
+3. **HIGH-08: Password Reset Validation** (`ResetPasswordRequest.java`)
+4. **MED-07: Fix GraphQL Reset Schema** (`schema.graphqls`)
+5. **HIGH-07: Gemini API Key in Headers** (`GeminiApiClient.java`)
+
+---
+
+## 3. Concurrency & Integrity Fixes (Medium-Risk Code Changes)
+These fixes tackle race conditions and database integrity. They must be done before refactoring large asynchronous flows.
+
+1. **HIGH-01: Lost Update Race Condition** (`LoginAttemptService.java`)
+   - *Action*: Convert the Java-side dirty-checking to a strict `@Modifying` SQL execution or reload via `findById`.
+2. **HIGH-04: Profile Creation Race Condition** (`UserProfileService.java`)
+   - *Action*: Wrap `createDefaultProfile` in a try-catch for `DataIntegrityViolationException`.
+3. **MED-08 & MED-09: Rate Limiter Fixes** (`RateLimitFilter.java`)
+   - *Action*: Evict old map entries and validate `X-Forwarded-For`.
+
+---
+
+## 4. Architectural Blockers (High-Risk Refactoring)
+This is the core of the remediation. These fixes change how the application handles threading and transactions. **Do these one at a time and test thoroughly.**
+
+1. **CRIT-02: DB Connection Pool Starvation** (`AutonomousJobScraperService.java`)
+   - *Action*: Extract the Gemini API call (`semanticMatchingService.generateEmbedding()`) OUTSIDE of the `@Transactional` boundary. Generate embeddings first, then batch insert.
+2. **CRIT-01: Tomcat Thread Exhaustion** (`CvUploadController.java`)
+   - *Action*: Remove `.block()` and switch to a Spring WebFlux `Mono` or `CompletableFuture` response.
+3. **MED-05: Multi-Node Scraper Collision** (`AutonomousJobScraperService.java`)
+   - *Action*: Replace `AtomicBoolean` with a database lock (ShedLock).
+
+---
+
+## 5. Performance & N+1 Optimizations (Data Layer)
+These fixes improve API response times and protect against OutOfMemory exceptions.
+
+1. **HIGH-02: OOM Risk via Full Table Cache** (`ProfileDataMapper.java`)
+   - *Action*: Replace `findAll()` with `findByNameIn()`.
+2. **MED-02: N+1 Query in SavedJobService** (`SavedJobService.java`)
+   - *Action*: Convert loop to `IN` clause.
+3. **MED-03: N+1 Query in Job Search** (`JobService.java`)
+   - *Action*: Refactor `searchJobsFullText` projection to fetch company names directly.
+4. **MED-04: N+1 Query in Semantic Matching** (`UserProfileRepository.java`)
+   - *Action*: Explicitly `JOIN FETCH` the lazy `preferredJobTitles`.
+5. **VER-01: The N+3 Query on User Authentication** (`User.java`)
+   - *Action*: Test bytecode enhancement to enforce `FetchType.LAZY` on `@OneToOne(mappedBy)`.
+
+---
+
+## 6. Major Feature Overhauls
+These are large additions that require touching multiple layers of the application.
+
+1. **HIGH-05: Missing Refresh Token Mechanism** (`JwtService.java`, `AuthService.java`)
+   - *Action*: Implement HttpOnly cookie issuance for refresh tokens and shorten access token lifespan.
+2. **MED-01: Silent Failure on Verification Emails** (`EmailService.java`)
+   - *Action*: Ensure OTP rollback if async email fails, or introduce a reliable retry mechanism.
+3. **LOW-05: Implement Core Testing Infrastructure** (`src/test/java`)
+   - *Action*: Add Testcontainers and write integration tests for the newly refactored endpoints.

@@ -264,7 +264,7 @@ export const CareerIntelligenceHub = ({
         <MetricCard
           icon={Zap}
           label="Expected Salary"
-          value={analysis.salaryDisplay}
+          value={analysis.salaryDisplay || "—"}
           sublabel={analysis.hasSalary ? `${profile.currency || "EGP"} • Your target` : "Set your salary expectations"}
           color="amber"
           delay={0.3}

@@ -26,6 +26,7 @@ public class AiService {
             return "No description available to summarize.";
         }
         try {
+            String prompt = "Summarize the following job description in one brief paragraph:\n" + description;
             Map response = geminiClient.generateContent(prompt, REQUEST_TIMEOUT).block();
 
             if (response != null && response.containsKey("candidates")) {

@@ -98,6 +98,10 @@ public class CvUploadController {
                     CvParseResponseDto response = profileDataMapper.mapAndSave(aiResult, userId);
                     log.info("🎉 CV processing complete for user ID: {}", userId);
                     return ResponseEntity.ok(response);
+                })
+                .onErrorResume(e -> {
+                    log.error("❌ CV Async pipeline error: {}", e.getMessage());
+                    return reactor.core.publisher.Mono.just(ResponseEntity.status(503).build());
                 });
     }
 

@@ -1,0 +1,62 @@
+# 🚀 JobFinder Production & Deployment Readiness Audit
+
+This document is the outcome of the Phase 8 Production Readiness Audit. It inspects the Docker configuration, environment handling, application settings, and deployment topology to identify risks prior to a live production launch.
+
+---
+
+## 1. Docker Configuration
+
+### Backend Dockerfile (`backend/Dockerfile`)
+- **Good:** Uses `eclipse-temurin:17-jre-alpine` which minimizes the attack surface. Multi-stage build correctly drops Maven dependencies.
+- **Risk (Root Execution):** The container runs as the `root` user by default. If a vulnerability is found in the JVM or a library, the attacker gains root privileges inside the container.
+- **Fix:** Add a dedicated non-root user: `RUN addgroup -S spring && adduser -S spring -G spring` and `USER spring:spring`.
+
+### Frontend Dockerfile (`Dockerfile`)
+- **Good:** Leverages Next.js `standalone` output for a drastically smaller image size. Multi-stage build properly isolates dependencies.
+- **Risk (Root Execution):** Like the backend, the Node.js process runs as root. 
+- **Fix:** Next.js provides a built-in `node` user in the alpine image. Switch to it using `USER nextjs`.
+
+### Docker Compose (`docker-compose.yml`)
+- **Good:** Services use `restart: unless-stopped` and proper `depends_on` health checks for ordered startup.
+- **CRITICAL Security Risk (Exposed Ports):** Prometheus (`9090:9090`) and Grafana (`3001:3000`) are mapped directly to the host. If deployed to a bare-metal server or VM without a strict external firewall, these monitoring interfaces are accessible to the public internet. Grafana relies on a fallback password (`admin`), making this a high-risk vector.
+- **Fix:** Bind to localhost (`127.0.0.1:9090:9090`) or remove the port mapping entirely, forcing access through the Nginx reverse proxy using proper authentication.
+
+---
+
+## 2. Environment & Configuration
+
+### CORS Vulnerability
+- **Location:** `CorsConfig.java`
+- **Problem:** The configuration statically allows `http://localhost:3000` and `http://127.0.0.1:3000` as valid origins, alongside the `FRONTEND_URL` environment variable.
+- **Impact:** In a production environment, allowing localhost origins enables a local attacker (or malicious local script) to execute Cross-Origin requests using a victim's active session/JWT.
+- **Fix:** Define Spring profiles (e.g., `@Profile("dev")`) to include localhost, and strictly allow only the production `FRONTEND_URL` in the `prod` profile.
+
+### Application Properties
+- **Good:** Uses `spring.jpa.hibernate.ddl-auto=validate`, preventing accidental database wipes in production.
+- **Good:** Stack traces and default error messages are hidden (`server.error.include-stacktrace=never`).
+- **Missing (Graceful Shutdown):** The application lacks `server.shutdown=graceful`. If the container is restarted during deployment, active Tomcat threads (e.g., CV parsing) will be brutally killed.
+- **Fix:** Add `server.shutdown=graceful` and configure a lifecycle timeout (`spring.lifecycle.timeout-per-shutdown-phase=30s`).
+
+---
+
+## 3. Database & Reliability
+
+- **Connection Pool Starvation:** As identified in previous phases, the HikariCP pool is set to 10 (`spring.datasource.hikari.maximum-pool-size=10`). Because the scraper service holds transactions open during 30-second AI API calls, 10 concurrent scraped jobs will lock the entire application.
+- **External Database:** The `docker-compose.yml` does not spin up a local PostgreSQL instance. It expects `DB_URL` to point to a managed service (like Supabase). This is an acceptable production topology but requires verifying that the managed DB supports `pgvector`.
+- **Circuit Breakers:** Resilience4j is excellently configured with sliding windows, exponential backoffs, and isolated instances for Apify and Gemini APIs. This is a highly robust implementation for external dependencies.
+
+---
+
+## 4. Pre-Deployment Checklist
+
+Before deploying to production, the following must be resolved:
+
+1. [ ] **Address CRITICAL Bugs:** Fix the Thread Exhaustion in `CvUploadController` and DB Connection lockups in `AutonomousJobScraperService` identified in Phase 6.
+2. [ ] **Secure Docker Ports:** Remove public port mappings (`9090`, `3001`) from `docker-compose.yml` unless protected by a VPC/Firewall.
+3. [ ] **Non-Root Containers:** Update both Dockerfiles to use `USER` directives.
+4. [ ] **Dynamic CORS:** Remove hardcoded localhost CORS from production configurations.
+5. [ ] **Enable Graceful Shutdown:** Add graceful shutdown properties to Tomcat.
+6. [ ] **Validate Email SMTP:** Ensure the configured `MAIL_USERNAME` is an App Password and not a primary credential, to prevent account lockouts by Google.
+
+---
+*End of Phase 8 Production & Deployment Readiness Audit.*

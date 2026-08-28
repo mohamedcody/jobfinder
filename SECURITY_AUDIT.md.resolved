@@ -1,0 +1,307 @@
+# JobFinder — Phase 4: Deep Security Audit
+
+**Date:** 2026-08-27  
+**Auditor:** Senior Software Architect / DevSecOps Engineer  
+**Scope:** Full-stack (Backend, Frontend, Infrastructure, Dependencies)  
+**Method:** Static code analysis — read-only, no modifications made.
+
+---
+
+## Executive Summary
+
+The audit inspected **every** security-relevant file across the backend (Spring Boot), frontend (Next.js), and infrastructure (Nginx, Docker). **16 findings** were identified, ranging from 1 CRITICAL to several HIGH and MEDIUM severity issues. The most urgent finding is that OTP codes are stored in **plaintext** in the database. There is **no JWT invalidation or refresh token mechanism**, and the GraphQL interface **completely bypasses** Bean Validation.
+
+---
+
+## Findings
+
+---
+
+### SEC-01 — OTP Codes Stored in Plaintext
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-01 |
+| **Severity** | **CRITICAL** |
+| **Location** | `AuthService.java:274`, `OtpCode.java:29` |
+| **Evidence** | OTP generated as `String.format("%06d", secureRandom.nextInt(1000000))` and saved directly to DB. Verification uses `otp.getCode().equals(otpCode)` (plaintext comparison at lines 158 and 232). |
+| **Attack Scenario** | DB read access (SQL injection, backup leak, compromised admin) → read all active OTPs → account takeover via password reset. |
+| **Impact** | Full account takeover for any user. |
+| **Recommended Remediation** | Hash OTP codes with BCrypt or SHA-256+salt before storing. Compare using `passwordEncoder.matches()`. |
+| **Verification** | Inspect `otp_codes.code` column — values should be hashes, not 6-digit plaintext. |
+
+---
+
+### SEC-02 — No JWT Invalidation / Revocation Mechanism
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-02 |
+| **Severity** | **HIGH** |
+| **Location** | `JwtService.java:69`, `AuthService.java:238` |
+| **Evidence** | `isTokenValid()` only checks username + expiration. Password reset changes password but does NOT invalidate existing JWTs. No blacklist exists. |
+| **Attack Scenario** | Token stolen → user changes password → stolen token remains valid for up to 7 days. |
+| **Impact** | Stolen tokens cannot be revoked. Password changes don't force re-auth. |
+| **Recommended Remediation** | Store `passwordChangedAt` on User entity. In JWT filter, reject tokens where `iat < passwordChangedAt`. |
+| **Verification** | Change password, then use old JWT. Should be rejected. |
+
+---
+
+### SEC-03 — No Refresh Token Mechanism
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-03 |
+| **Severity** | **HIGH** |
+| **Location** | `JwtService.java:63`, `application.properties:56` |
+| **Evidence** | Single access token with 7-day expiration (`604800000ms`). No refresh token endpoint exists. |
+| **Attack Scenario** | 7-day window of exploitation if token is stolen. |
+| **Impact** | Extended attack window. No silent credential rotation. |
+| **Recommended Remediation** | Short-lived access token (15-30 min) + long-lived refresh token in HttpOnly cookie + `/api/auth/refresh` endpoint. |
+| **Verification** | JWT expiration should be minutes, not days. |
+
+---
+
+### SEC-04 — CSRF Disabled with `allowCredentials(true)`
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-04 |
+| **Severity** | **MEDIUM** |
+| **Location** | `SecurityConfig.java:34`, `CorsConfig.java:35` |
+| **Evidence** | CSRF disabled. `allowCredentials(true)` in CORS allows cookies cross-origin. |
+| **Attack Scenario** | Currently LOW risk (stateless JWT via header). Becomes HIGH if cookies are introduced (e.g., refresh tokens). |
+| **Impact** | Acceptable for current design. Must revisit if cookies are added. |
+| **Recommended Remediation** | Document this decision. Re-enable CSRF if cookie-based auth is added. |
+| **Verification** | Confirm no `Set-Cookie` headers from any API endpoint. |
+
+---
+
+### SEC-05 — Gemini API Key Exposed in URL
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-05 |
+| **Severity** | **HIGH** |
+| **Location** | `GeminiApiClient.java:66-67`, `GeminiEmbeddingService.java:47-48` |
+| **Evidence** | API key passed as URL query parameter: `?key=%s`. WebClient/RestTemplate may log full URIs on error. |
+| **Attack Scenario** | Log aggregation captures URL → API key extracted → billing abuse. |
+| **Impact** | API key leakage via application logs. |
+| **Recommended Remediation** | Use `x-goog-api-key` HTTP header instead of query parameter. |
+| **Verification** | Trigger Gemini error, inspect logs. API key should NOT appear. |
+
+---
+
+### SEC-06 — Hardcoded Production URL in `application.properties`
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-06 |
+| **Severity** | **MEDIUM** |
+| **Location** | `application.properties:131` |
+| **Evidence** | `FRONTEND_URL=https://jobfinder-ruddy-alpha.vercel.app` hardcoded as fallback. |
+| **Attack Scenario** | Reveals production deployment URL. CORS misconfiguration if env var missing. |
+| **Impact** | Information disclosure. |
+| **Recommended Remediation** | Remove hardcoded value. Require from env vars. Fail fast if missing. |
+| **Verification** | Remove line, app should fail without env var. |
+
+---
+
+### SEC-07 — Password Reset Missing Strength Validation
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-07 |
+| **Severity** | **HIGH** |
+| **Location** | `ResetPasswordRequest.java:13-14` |
+| **Evidence** | `RegisterRequest` enforces `@Pattern` (uppercase, lowercase, digit, special char, min 8). `ResetPasswordRequest.newPassword` only has `@NotBlank` — no `@Size`, no `@Pattern`. |
+| **Attack Scenario** | Attacker with valid OTP can reset password to "a". |
+| **Impact** | Password strength policy bypass through reset flow. |
+| **Recommended Remediation** | Apply same `@Size(min=8)` and `@Pattern` validators from `RegisterRequest`. |
+| **Verification** | Send reset-password with password "a". Should be rejected with 400. |
+
+---
+
+### SEC-08 — GraphQL `ResetPasswordRequest` Missing `confirmPassword`
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-08 |
+| **Severity** | **MEDIUM** |
+| **Location** | `schema.graphqls:32-36` |
+| **Evidence** | GraphQL input has `email`, `otpCode`, `newPassword` but NOT `confirmPassword`. Java record requires it. |
+| **Attack Scenario** | GraphQL reset either always fails or silently skips confirmation check. |
+| **Impact** | Inconsistent security between REST and GraphQL. |
+| **Recommended Remediation** | Add `confirmPassword: String!` to GraphQL schema. |
+| **Verification** | Call `resetPassword` mutation. Verify it enforces confirmation. |
+
+---
+
+### SEC-09 — GraphQL Bypasses Bean Validation Entirely
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-09 |
+| **Severity** | **HIGH** |
+| **Location** | `AuthGraphQLController.java:17-37` |
+| **Evidence** | REST controller uses `@Valid @RequestBody`. GraphQL controller uses `@Argument` without `@Valid`. Spring GraphQL does NOT auto-trigger Jakarta Bean Validation on `@Argument`. All `@NotBlank`, `@Email`, `@Size`, `@Pattern` constraints are bypassed. |
+| **Attack Scenario** | Register via GraphQL with empty username, invalid email, 1-char password → bypasses ALL validation. |
+| **Impact** | Complete input validation bypass. Weak passwords, invalid data enter system. |
+| **Recommended Remediation** | Add `@Valid` to each `@Argument` or add `@Validated` at class level. |
+| **Verification** | GraphQL `register` with `password: "a"`. Should be rejected. |
+
+---
+
+### SEC-10 — Duplicate CSP Headers in Nginx
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-10 |
+| **Severity** | **MEDIUM** |
+| **Location** | `infra/nginx/nginx.conf:18-20` |
+| **Evidence** | Two `Content-Security-Policy` headers. Second overwrites first. Effective CSP allows `'unsafe-inline' 'unsafe-eval'` for scripts. |
+| **Attack Scenario** | `'unsafe-eval'` renders CSP ineffective against XSS. |
+| **Impact** | Script-based XSS protection via CSP disabled. |
+| **Recommended Remediation** | Remove duplicate (line 18). Remove `'unsafe-eval'` if possible. |
+| **Verification** | `curl -I` the site. Only one CSP header should appear. |
+
+---
+
+### SEC-11 — Actuator Prometheus Endpoint Exposed
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-11 |
+| **Severity** | **MEDIUM** |
+| **Location** | `application.properties:83`, `SecurityConfig.java:46` |
+| **Evidence** | Only `/actuator/health` is permitted in SecurityConfig. But `prometheus` endpoint is exposed and accessible on port 8080 within Docker network without auth. |
+| **Attack Scenario** | Any Docker container on same network can scrape all system metrics. |
+| **Impact** | Information disclosure of JVM, DB pool, HTTP stats. |
+| **Recommended Remediation** | Use `management.server.port` for separate actuator port, or restrict in SecurityConfig. |
+| **Verification** | `curl http://backend:8080/actuator/prometheus` from Docker. Should return 401. |
+
+---
+
+### SEC-12 — Rate Limiter Memory Leak
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-12 |
+| **Severity** | **MEDIUM** |
+| **Location** | `RateLimitFilter.java:48` |
+| **Evidence** | `ConcurrentHashMap` entries are never evicted. Expired windows remain in memory forever. |
+| **Attack Scenario** | Sustained traffic from diverse IPs → unbounded map growth → OOM. |
+| **Impact** | Potential memory exhaustion under attack. |
+| **Recommended Remediation** | Add periodic cleanup or use bounded map with eviction. |
+| **Verification** | Monitor heap under sustained diverse-IP traffic. |
+
+---
+
+### SEC-13 — Rate Limiter IP Spoofing via `X-Forwarded-For`
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-13 |
+| **Severity** | **MEDIUM** |
+| **Location** | `RateLimitFilter.java:106-114` |
+| **Evidence** | Trusts `X-Forwarded-For` blindly. Nginx uses `$proxy_add_x_forwarded_for` (appends, doesn't replace). |
+| **Attack Scenario** | Direct access to backend or spoofed header → fresh counter per request → rate limit bypass. |
+| **Impact** | Rate limiting bypass. |
+| **Recommended Remediation** | Nginx: `proxy_set_header X-Forwarded-For $remote_addr;`. Backend: configure trusted proxy IPs. |
+| **Verification** | Send requests with spoofed `X-Forwarded-For` directly to port 8080. |
+
+---
+
+### SEC-14 — Grafana Default Admin Credentials
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-14 |
+| **Severity** | **MEDIUM** |
+| **Location** | `docker-compose.yml:58` |
+| **Evidence** | `GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}`. Default is `admin/admin`. |
+| **Attack Scenario** | Access `http://host:3001`, login `admin/admin` → full Grafana access. |
+| **Impact** | Full Grafana access. Potential data source credential exposure. |
+| **Recommended Remediation** | Remove `:-admin` default. Require explicit password. Don't expose port externally. |
+| **Verification** | Try `admin/admin` login. Should fail. |
+
+---
+
+### SEC-15 — Prometheus Port Exposed Without Auth
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-15 |
+| **Severity** | **MEDIUM** |
+| **Location** | `docker-compose.yml:52` |
+| **Evidence** | `ports: - "9090:9090"`. Prometheus has no built-in auth. |
+| **Attack Scenario** | Network access to 9090 → query all metrics, view targets. |
+| **Impact** | Information disclosure. |
+| **Recommended Remediation** | Remove port mapping. Access only via Grafana or VPN. |
+| **Verification** | `curl http://host:9090/api/v1/targets` should be unreachable externally. |
+
+---
+
+### SEC-16 — Vercel OIDC Token in `.env.local`
+
+| Field | Detail |
+|---|---|
+| **ID** | SEC-16 |
+| **Severity** | **MEDIUM** |
+| **Location** | `.env.local:2` |
+| **Evidence** | Full Vercel OIDC JWT on disk. Gitignored but exists locally. |
+| **Attack Scenario** | If accidentally committed → Vercel project access. |
+| **Impact** | Potential Vercel deployment infrastructure access. |
+| **Recommended Remediation** | Delete file. Verify never committed. Rotate token. |
+| **Verification** | `git log --all -- .env.local` |
+
+---
+
+## Areas Confirmed Secure
+
+| Area | Evidence |
+|---|---|
+| **Password Hashing** | BCrypt via `ApplicationConfig.java:47`. |
+| **SQL Injection** | JPA parameterized queries. Full-text input sanitized in `JobService.java:46`. |
+| **XSS (Backend)** | No user input echoed in errors. `escapeHtml()` in email templates. |
+| **XSS (Frontend)** | Comprehensive `sanitization.ts`. React JSX escaping. |
+| **File Upload** | Content-type, size, encryption, empty checks in `PdfParsingService.java`. In-memory only. |
+| **IDOR / BOLA** | `@PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")`. All services use `getCurrentUserId()`. |
+| **Account Lockout** | 5 attempts → 3-min lock. `REQUIRES_NEW` transaction. |
+| **Error Responses** | `include-stacktrace=never`, `include-message=never`. Generic catch-all. |
+| **Security Headers** | HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy. `server_tokens off`. |
+| **Token Storage** | `sessionStorage` (not `localStorage`). Cleared on tab close. |
+| **Admin Endpoints** | Scraper, Swagger, GraphiQL all admin-protected or disabled. |
+| **OTP Brute-Force** | Max 3 attempts, 1-min cooldown, atomic increment. |
+
+---
+
+## Unverified Concerns
+
+| Concern | Why |
+|---|---|
+| `.env` / `.env.local` git history | Sandbox command execution failed. Run `git log --all -- .env .env.local`. |
+| CVEs in `jjwt 0.11.5`, `pdfbox 2.0.29` | No online CVE access. Run `mvn dependency-check:check`. |
+| Frontend `npm audit` | Not executed. Run `npm audit` in `frontend/`. |
+
+---
+
+## Priority Remediation Order
+
+| # | Finding | Effort |
+|---|---|---|
+| 1 | **SEC-01** Hash OTP codes | Medium |
+| 2 | **SEC-09** Fix GraphQL validation bypass | Low |
+| 3 | **SEC-07** Password validation on reset | Low |
+| 4 | **SEC-02** JWT invalidation on password change | Medium |
+| 5 | **SEC-05** API keys from URL to headers | Low |
+| 6 | **SEC-10** Fix duplicate CSP | Low |
+| 7 | **SEC-03** Refresh token mechanism | High |
+| 8 | **SEC-08** GraphQL schema fix | Low |
+| 9 | **SEC-13** Fix X-Forwarded-For trust | Low |
+| 10 | **SEC-14/15** Secure Grafana + Prometheus | Low |
+| 11 | **SEC-06/11/12/16** Remaining MEDIUM items | Low-Medium |
+
+---
+
+> **⚠️ Do NOT proceed to code changes until you confirm priority order and review this audit.**
