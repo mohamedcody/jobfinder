@@ -12,6 +12,8 @@ import java.util.Map;
 @Slf4j
 public class AiService {
 
+    
+    // class responsepelety the ai Service
     private final GeminiApiClient geminiClient;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
@@ -23,10 +25,8 @@ public class AiService {
         if (description == null || description.trim().isEmpty()) {
             return "No description available to summarize.";
         }
-
-        String prompt = "Summarize this job description in 2-3 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
-
         try {
+            String prompt = "Summarize the following job description in one brief paragraph:\n" + description;
             Map response = geminiClient.generateContent(prompt, REQUEST_TIMEOUT).block();
 
             if (response != null && response.containsKey("candidates")) {

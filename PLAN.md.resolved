@@ -1,0 +1,279 @@
+# JobFinder Engineering Implementation Plan
+
+This is the authoritative engineering roadmap consolidating findings from the Architecture, Security, Bug, Database, Test, and Production Readiness audits. 
+
+---
+
+## PHASE 0 — Verification
+
+These findings require verification before modifying code to prevent breaking changes or adopting unsupported configurations.
+
+### VER-01: Hibernate Bytecode Enhancement for Lazy `@OneToOne`
+- **Severity**: INFO
+- **Category**: Database
+- **Problem**: `User.java` has eager `@OneToOne` mappings causing N+3 queries globally. Changing to `fetch = FetchType.LAZY` on `mappedBy` relations does not work in Hibernate by default without bytecode enhancement.
+- **Verification Method**: Enable `hibernate.bytecode.use_reflection_optimizer` or verify if the shared primary key approach should be adopted instead before refactoring entities.
+
+### VER-02: CVE Dependency Audit
+- **Severity**: INFO
+- **Category**: Security
+- **Problem**: Potential vulnerabilities in `jjwt 0.11.5`, `pdfbox 2.0.29`, and frontend NPM packages were unverified due to lack of environment access.
+- **Verification Method**: Run `mvn dependency-check:check` and `npm audit` to determine if version bumps are mandatory.
+
+---
+
+## PHASE 1 — CRITICAL
+
+### CRIT-01: Tomcat Thread Exhaustion
+- **Severity**: CRITICAL
+- **Category**: Performance / Architecture
+- **Source**: BUG_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/controller/CvUploadController.java`
+- **Class / method**: `CvUploadController.uploadCv()`
+- **Root cause**: Calling `.block()` on a reactive WebFlux Mono (Gemini AI API) inside a Spring MVC synchronous Tomcat thread.
+- **Current behavior**: Concurrent uploads block Tomcat threads for 10-30s each, leading to thread pool exhaustion (default 200) and a total system outage.
+- **Expected behavior**: The thread should be released immediately while the AI processing continues.
+- **Recommended solution**: Refactor the controller endpoint to return `CompletableFuture<ResponseEntity<?>>` or `Mono` using Spring WebFlux, delegating the blocking operation to a dedicated async executor.
+- **Files expected to change**: `CvUploadController.java`
+- **Dependencies**: None
+- **Risk of change**: Low (isolated to one endpoint)
+- **Required tests**: Integration test simulating concurrent uploads to verify non-blocking behavior.
+- **Status**: TO DO
+
+### CRIT-02: DB Connection Pool Starvation
+- **Severity**: CRITICAL
+- **Category**: Database / Stability
+- **Source**: BUG_AUDIT.md, DATABASE_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/implementation/AutonomousJobScraperService.java`
+- **Class / method**: `AutonomousJobScraperService.saveScrapedData()`
+- **Root cause**: Synchronous HTTP calls to the Gemini API (`semanticMatchingService.generateEmbedding()`) are executed inside a `@Transactional` block.
+- **Current behavior**: A HikariCP connection is checked out and held idle while waiting for network I/O from Gemini (up to 30s per job). 10 scraped jobs exhaust the pool, causing DB lockup.
+- **Expected behavior**: Transactions should only wrap database operations.
+- **Recommended solution**: Move the embedding generation outside the `@Transactional` boundary. Generate all embeddings in-memory first, then open a single transaction to batch insert them.
+- **Files expected to change**: `AutonomousJobScraperService.java`
+- **Dependencies**: None
+- **Risk of change**: Medium (requires careful restructuring of the save logic)
+- **Required tests**: Unit test verifying transactional boundaries using Spring AOP proxy checks.
+- **Status**: TO DO
+
+### CRIT-03: OTP Codes Stored in Plaintext
+- **Severity**: CRITICAL
+- **Category**: Security
+- **Source**: SECURITY_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/implementation/AuthService.java`
+- **Class / method**: `AuthService.generateOtp()`, `AuthService.verifyOtp()`
+- **Root cause**: OTP codes are generated and stored as raw `String` values.
+- **Current behavior**: Anyone with database read access can view active OTPs and takeover user accounts.
+- **Expected behavior**: OTPs must be hashed like passwords.
+- **Recommended solution**: Hash OTPs using `passwordEncoder.encode()` before saving. Verify using `passwordEncoder.matches()`.
+- **Files expected to change**: `AuthService.java`, `OtpCode.java`
+- **Dependencies**: None
+- **Risk of change**: Low (OTP lifespan is 5 mins, no migration needed for existing codes)
+- **Required tests**: Auth integration tests for OTP verification.
+- **Status**: TO DO
+
+### CRIT-04: Exposed Monitoring Ports
+- **Severity**: CRITICAL
+- **Category**: Security / Infrastructure
+- **Source**: PRODUCTION_AUDIT.md, SECURITY_AUDIT.md
+- **Exact file path**: `docker-compose.yml`
+- **Class / method**: N/A
+- **Root cause**: Direct host port bindings (`9090:9090`, `3001:3000`) for Prometheus and Grafana.
+- **Current behavior**: Grafana and Prometheus are exposed to the public internet bypassing Nginx authentication.
+- **Expected behavior**: Monitoring tools should be inaccessible externally or hidden behind authenticated proxies.
+- **Recommended solution**: Change bindings to `127.0.0.1:9090:9090` or remove host ports entirely, exposing them only via the Docker internal network to Nginx.
+- **Files expected to change**: `docker-compose.yml`
+- **Dependencies**: None
+- **Risk of change**: Low
+- **Required tests**: Port scan verification.
+- **Status**: TO DO
+
+---
+
+## PHASE 2 — HIGH
+
+### HIGH-01: Lost Update Race Condition
+- **Severity**: HIGH
+- **Category**: Concurrency / Security
+- **Source**: BUG_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/assets/LoginAttemptService.java`
+- **Class / method**: `LoginAttemptService.updateFailedAttempts()`
+- **Root cause**: Mixing native `@Modifying` queries with JPA dirty checking (`saveAndFlush(staleEntity)`).
+- **Current behavior**: Hibernate overwrites the atomic database increment with a stale in-memory value, bypassing the brute-force lockout.
+- **Expected behavior**: Failed attempts are atomically incremented and lockout is enforced.
+- **Recommended solution**: Move the lockout calculation into the `@Modifying` SQL query or rely strictly on pessimistic locking/refreshing.
+- **Files expected to change**: `LoginAttemptService.java`, `UserRepository.java`
+- **Status**: TO DO
+
+### HIGH-02: OOM Risk via Full Table Cache
+- **Severity**: HIGH
+- **Category**: Memory
+- **Source**: BUG_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/implementation/ProfileDataMapper.java`
+- **Class / method**: `ProfileDataMapper.processSkills()`
+- **Root cause**: Calls `skillRepository.findAll()` and maps it to memory during CV parsing.
+- **Recommended solution**: Replace with `skillRepository.findByNameIn(List<String>)`.
+- **Files expected to change**: `ProfileDataMapper.java`, `SkillRepository.java`
+- **Status**: TO DO
+
+### HIGH-03: GraphQL Validation Bypass
+- **Severity**: HIGH
+- **Category**: Security
+- **Source**: SECURITY_AUDIT.md, BUG_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/controller/AuthGraphQLController.java`
+- **Class / method**: `register()`, `login()`
+- **Root cause**: Missing `@Valid` annotation on `@Argument`.
+- **Recommended solution**: Add `@Valid` to controller parameters.
+- **Files expected to change**: `AuthGraphQLController.java`
+- **Status**: TO DO
+
+### HIGH-04: Profile Creation Race Condition
+- **Severity**: HIGH
+- **Category**: Concurrency
+- **Source**: BUG_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/implementation/UserProfileService.java`
+- **Class / method**: `getMyProfile()`
+- **Root cause**: Find-then-insert pattern without handling `DataIntegrityViolationException`.
+- **Recommended solution**: Wrap insertion in try-catch and perform a fallback read.
+- **Files expected to change**: `UserProfileService.java`
+- **Status**: TO DO
+
+### HIGH-05: Missing Refresh Token Mechanism
+- **Severity**: HIGH
+- **Category**: Security
+- **Source**: SECURITY_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/assets/JwtService.java`
+- **Root cause**: Stateless JWT with a 7-day expiration and no refresh logic.
+- **Recommended solution**: Add short-lived access tokens (15m) and long-lived HTTP-only refresh tokens.
+- **Files expected to change**: `JwtService.java`, `AuthService.java`, `AuthController.java`
+- **Status**: TO DO
+
+### HIGH-06: Root Execution in Containers
+- **Severity**: HIGH
+- **Category**: Infrastructure
+- **Source**: PRODUCTION_AUDIT.md
+- **Exact file path**: `backend/Dockerfile`, `Dockerfile` (frontend)
+- **Root cause**: Missing `USER` directive.
+- **Recommended solution**: Add non-root user creation and execution.
+- **Files expected to change**: Both Dockerfiles.
+- **Status**: TO DO
+
+### HIGH-07: Gemini API Key Exposed in URL
+- **Severity**: HIGH
+- **Category**: Security
+- **Source**: SECURITY_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/services/ServiceAi/GeminiApiClient.java`
+- **Root cause**: Key passed as `?key=%s`.
+- **Recommended solution**: Use the `x-goog-api-key` HTTP header.
+- **Files expected to change**: `GeminiApiClient.java`, `GeminiEmbeddingService.java`
+- **Status**: TO DO
+
+### HIGH-08: Missing Password Validation on Reset
+- **Severity**: HIGH
+- **Category**: Security
+- **Source**: SECURITY_AUDIT.md
+- **Exact file path**: `backend/src/main/java/jobfinder/model/dto/ResetPasswordRequest.java`
+- **Root cause**: Missing `@Size` and `@Pattern` constraints compared to `RegisterRequest`.
+- **Recommended solution**: Add constraints.
+- **Files expected to change**: `ResetPasswordRequest.java`
+- **Status**: TO DO
+
+---
+
+## PHASE 3 — MEDIUM
+
+### MED-01: Silent Failure on Verification Emails
+- **Severity**: MEDIUM
+- **Exact file path**: `EmailService.java`, `AuthService.java`
+- **Problem**: `@Async` email exception is swallowed, but OTP is committed.
+- **Solution**: Save OTP only if email dispatch succeeds, or use a retry queue.
+
+### MED-02: N+1 Query in SavedJobService
+- **Severity**: MEDIUM
+- **Exact file path**: `SavedJobService.java`
+- **Problem**: Looping over `isJobSaved()`.
+- **Solution**: Replace with a single `IN` query.
+
+### MED-03: N+1 Query in Job Search Company Mapping
+- **Severity**: MEDIUM
+- **Exact file path**: `JobService.java`
+- **Problem**: Lazy loading company for every matched job entity.
+- **Solution**: Modify `searchJobsFullText` to `JOIN FETCH` companies or use projections.
+
+### MED-04: N+1 Query in Semantic Matching
+- **Severity**: MEDIUM
+- **Exact file path**: `UserProfileRepository.java`
+- **Problem**: Missing `JOIN FETCH` for `@ElementCollection` `preferredJobTitles`.
+- **Solution**: Add `LEFT JOIN FETCH u.preference.preferredJobTitles`.
+
+### MED-05: Multi-Node Scraper Collision
+- **Severity**: MEDIUM
+- **Exact file path**: `AutonomousJobScraperService.java`
+- **Problem**: JVM-local `AtomicBoolean` lock.
+- **Solution**: Introduce ShedLock or Redis distributed lock.
+
+### MED-06: Hardcoded Localhost CORS
+- **Severity**: MEDIUM
+- **Exact file path**: `CorsConfig.java`
+- **Problem**: Always allows `localhost:3000`.
+- **Solution**: Limit localhost to development profiles.
+
+### MED-07: Incomplete GraphQL Reset Schema
+- **Severity**: MEDIUM
+- **Exact file path**: `schema.graphqls`
+- **Problem**: Missing `confirmPassword` in schema.
+- **Solution**: Align schema with Java Record.
+
+### MED-08: Rate Limiter Memory Leak
+- **Severity**: MEDIUM
+- **Exact file path**: `RateLimitFilter.java`
+- **Problem**: `ConcurrentHashMap` entries are never evicted.
+- **Solution**: Use Caffeine cache or clean up old entries.
+
+### MED-09: IP Spoofing via X-Forwarded-For
+- **Severity**: MEDIUM
+- **Exact file path**: `RateLimitFilter.java`
+- **Problem**: Blindly trusts `X-Forwarded-For`.
+- **Solution**: Validate header against trusted proxy ranges.
+
+---
+
+## PHASE 4 — LOW
+
+### LOW-01: Duplicate CSP Headers
+- **Severity**: LOW
+- **Location**: `infra/nginx/nginx.conf`
+- **Solution**: Remove duplicate `Content-Security-Policy`.
+
+### LOW-02: Hardcoded Fallback URL
+- **Severity**: LOW
+- **Location**: `application.properties`
+- **Solution**: Remove static Vercel URL fallback.
+
+### LOW-03: Exposed Actuator Endpoint
+- **Severity**: LOW
+- **Location**: `SecurityConfig.java`
+- **Solution**: Restrict `/actuator/prometheus` to internal networking only.
+
+### LOW-04: Vercel Token Leak
+- **Severity**: LOW
+- **Location**: `.env.local`
+- **Solution**: Delete local file with OIDC token.
+
+### LOW-05: Minimal Test Coverage
+- **Severity**: LOW (Tech Debt)
+- **Location**: `src/test/java`
+- **Solution**: Implement MockMvc and Testcontainers.
+
+---
+
+## PHASE 5 — PRODUCTION HARDENING
+
+### PROD-01: Graceful Shutdown
+- **Severity**: INFO
+- **Location**: `application.properties`
+- **Solution**: Add `server.shutdown=graceful` and timeouts.
+
+### PROD-02: CI/CD Pipeline
+- **Severity**: INFO
+- **Solution**: Enhance `.github/workflows/ci.yml` with security scanning.

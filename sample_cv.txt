@@ -1,0 +1,53 @@
+Mohamed Saad
+Software Engineer
+
+Email: mohamed.saad@example.com
+Phone: +20 123 456 7890
+Location: Cairo, Egypt
+LinkedIn: linkedin.com/in/mohamedsaad
+GitHub: github.com/mohamedcody
+
+---
+
+PROFESSIONAL SUMMARY
+Highly motivated Software Engineer with experience in designing and developing scalable web applications using Java, Spring Boot, React, and Next.js. Passionate about building robust backend architectures, securing APIs, and integrating AI models to solve real-world problems.
+
+---
+
+SKILLS
+- Languages: Java, TypeScript, JavaScript, SQL
+- Backend: Spring Boot, RESTful APIs, Spring Security, Hibernate (JPA)
+- Frontend: React.js, Next.js, Tailwind CSS
+- Databases: PostgreSQL, MySQL, Redis, Supabase
+- Tools & DevOps: Docker, Nginx, Git, Maven, npm
+- AI Integration: Google Gemini AI API, Apify web scraping
+
+---
+
+WORK EXPERIENCE
+
+Full Stack Software Engineer
+JobFinder Platform | Cairo, Egypt | Jan 2024 - Present
+- Architected and developed a comprehensive job portal using Spring Boot and Next.js.
+- Implemented robust JWT authentication with HttpOnly refresh tokens to maximize session security.
+- Resolved critical Tomcat thread exhaustion and database connection starvation by refactoring long-running AI tasks using Spring WebFlux and reactive programming techniques.
+- Integrated Google Gemini AI to parse uploaded CVs automatically and generate smart summaries and salary expectations.
+
+Backend Developer
+Tech Solutions Ltd. | Cairo, Egypt | Jun 2022 - Dec 2023
+- Designed REST APIs for e-commerce platforms, optimizing database queries to resolve N+1 performance bottlenecks.
+- Containerized applications using Docker and Docker Compose, achieving 100% environment consistency across development and production.
+- Mentored junior developers and conducted rigorous code reviews focusing on clean architecture.
+
+---
+
+EDUCATION
+Bachelor of Science in Computer Science
+Cairo University | 2018 - 2022
+- Graduation Project: AI-Powered Recruitment System (Excellent Grade)
+
+---
+
+CERTIFICATIONS
+- AWS Certified Developer Associate
+- Spring Boot Professional Certification

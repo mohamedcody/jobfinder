@@ -1,0 +1,78 @@
+# 🧪 JobFinder Testing & Quality Audit
+
+This document is the outcome of the Phase 7 Testing & Quality Audit. The goal of this phase was to inspect the project's testing strategy, identify coverage gaps, and evaluate test quality.
+
+---
+
+## 1. Current Test Structure & Coverage
+
+The project currently has a **critically inadequate** testing structure. 
+
+### Backend
+- The `src/test/java/jobfinder` directory exists but is largely empty.
+- Directory `servics` (misspelled) contains `EmailAlertFeatureTest.java`, `EmailAlertServiceTest.java`, and an incomplete `JobMatchingServiceTest.java`.
+- Files like `JobRepositoryTest.java`, `JobControllerTest.java`, and `JobScraperServiceTest.java` are 0-byte empty stubs.
+- **Overall Backend Coverage:** Estimated at < 2%. Core domains are entirely untested.
+
+### Frontend
+- The `frontend/` Next.js application has **zero testing infrastructure**. 
+- There are no configuration files for Jest, Vitest, Playwright, or Cypress.
+
+---
+
+## 2. Test Quality Analysis (Existing Tests)
+
+The few tests that do exist suffer from severe anti-patterns:
+
+- **Tests that don't verify behavior:** In `EmailAlertFeatureTest.java`, the test suite contains a private method `simulateComputeScore()` which attempts to mimic the production logic. The tests assert against this fake simulation method instead of the actual `JobMatchingService`, rendering the tests meaningless.
+- **Incomplete Tests:** `JobMatchingServiceTest.java` contains a test `shouldReturn50WhenTitleMatches()` that arranges data but abruptly stops. It never invokes the service method and contains zero assertions.
+- **Excessive Mocking:** `EmailAlertServiceTest.java` mocks the repository, the matching service, and the notification service. It only verifies that if the mock returns X, it passes X to the notification mock. It tests Mockito's behavior more than the application's logic.
+
+---
+
+## 3. Critical Missing Tests
+
+### 🔐 Security Test Gaps
+- **Authentication (`AuthService`)**: Zero tests for user registration, JWT generation, OTP validation, and password resets.
+- **Brute-Force Lockout (`LoginAttemptService`)**: Zero tests to verify that the account locks after 5 failed attempts (which currently suffers from a Lost Update bug that tests would have caught).
+- **Authorization**: Zero tests ensuring endpoints require proper JWT tokens and roles.
+
+### 💼 Business Logic Test Gaps
+- **CV Parsing (`PdfParsingService`, `CvAiExtractionService`)**: Zero tests for PDF text stripping, Gemini API payload generation, and JSON mapping.
+- **Autonomous Scraper (`AutonomousJobScraperService`)**: Zero tests for the Apify API integration, circuit breaker fallbacks, or the duplicate company batch-insert logic.
+- **Semantic Matching (`SemanticMatchingService`)**: Zero tests for text-to-vector embedding generation.
+
+### 🗄️ Database & Repository Test Gaps
+- Zero `@DataJpaTest` tests. 
+- Complex native queries (e.g., `searchJobsFullText`, `findTopMatchingJobs` using `pgvector`) are completely untested, allowing N+1 queries and SQL syntax errors to reach production.
+
+### 🌐 Controller & API Test Gaps
+- Zero integration tests (`@SpringBootTest` with `MockMvc`).
+- The GraphQL API (`AuthGraphQLController`) has no tests verifying schemas or argument validation (which led to the unhandled validation bypass bug discovered in Phase 6).
+
+---
+
+## 4. Recommended Test Strategy & Priority Order
+
+To prepare this project for production, a rigorous testing culture must be adopted. 
+
+### Step 1: Infrastructure & Cleanup
+1. Rename `src/test/java/jobfinder/servics` to `services`.
+2. Delete the 0-byte empty test files.
+3. Introduce **Testcontainers (PostgreSQL + pgvector)** to allow real database testing without mocking repositories.
+
+### Step 2: Critical Path Integration Testing (High Priority)
+1. **API Integration Tests**: Implement `MockMvc` tests for `CvUploadController` and `JobService` to verify end-to-end request handling.
+2. **GraphQL Testing**: Implement `WebGraphQlTester` to verify authentication mutations and handle `@Valid` constraints properly.
+3. **Repository Tests**: Write `@DataJpaTest` tests for custom `pgvector` native queries to ensure database compatibility.
+
+### Step 3: Business Logic Unit Testing (Medium Priority)
+1. Delete the "fake" logic in `EmailAlertFeatureTest` and rewrite the suite to test the real `JobMatchingService`.
+2. Write unit tests for `AuthService` and `LoginAttemptService` to guarantee OTP logic and brute-force lockouts work precisely as expected.
+
+### Step 4: Frontend Testing (Medium Priority)
+1. Install and configure **Jest** and **React Testing Library**.
+2. Write unit tests for critical UI components (e.g., the CV upload form, the job search filters, and the login/OTP modals).
+
+---
+*End of Phase 7 Testing & Quality Audit.*

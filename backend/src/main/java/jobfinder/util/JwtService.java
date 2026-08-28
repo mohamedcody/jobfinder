@@ -21,8 +21,11 @@ public class JwtService {
     @Value("${jwt.secret}")
     private  String secret;
 
-    @Value("${jwt.expiration}")
-    private  long  jwtExpiration;
+    @Value("${jwt.expiration:900000}")
+    private long jwtExpiration;
+
+    @Value("${jwt.refresh-expiration:604800000}")
+    private long refreshExpiration;
 
     private Key signingKey;
 
@@ -61,6 +64,15 @@ public class JwtService {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

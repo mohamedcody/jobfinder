@@ -1,0 +1,90 @@
+# 🐞 JobFinder Deep Bug Hunt & Architectural Audit
+
+This document is the outcome of a comprehensive, read-only "Deep Bug Hunt" across the JobFinder platform. The audit focused on functional bugs, concurrency issues, database transaction integrity, memory management, and edge cases. 
+
+Code was traced end-to-end to separate assumed issues from **confirmed, real-world vulnerabilities** that would cause downtime, data loss, or severe performance degradation in a production environment.
+
+---
+
+## 🚨 CRITICAL SEVERITY (Production Blockers)
+
+### BUG-01: Tomcat Thread Pool Exhaustion via Synchronous AI Parsing
+- **Location**: `CvUploadController.java` (`uploadCv`)
+- **Description**: The application uses Spring MVC (`spring-boot-starter-web`), meaning request threads are managed by Tomcat (default 200 max threads). The controller calls `cvAiExtractionService.extractCvData(extractedText).block()`. Because Gemini API calls can take 10-40 seconds, concurrent CV uploads will quickly consume all 200 Tomcat threads.
+- **Impact**: **Total System Outage**. Once 200 threads are blocked waiting for Gemini, the entire backend (login, job search, health checks) will become completely unresponsive to all users.
+- **Remediation**: Remove `.block()`. Refactor the controller to return a `CompletableFuture` or `DeferredResult`, or use an event-driven architecture (e.g., return immediately and notify the user via WebSocket/Email when parsing is done).
+
+### BUG-02: DB Connection Pool Starvation inside `@Transactional` Loop
+- **Location**: `AutonomousJobScraperService.java` (`saveScrapedData`)
+- **Description**: The method is annotated with `@Transactional`. Inside, it loops over scraped jobs and calls `semanticMatchingService.generateEmbedding()`, which makes a synchronous HTTP network call to the Gemini API.
+- **Impact**: **Database Lockup**. The database connection (from HikariCP, default max 10) is held open for the entire duration of the network calls. If 10 jobs are scraped, the connection is locked for the sum of 10 API calls. Concurrent scraping or slow APIs will exhaust the DB connection pool, taking down the application.
+- **Remediation**: Separate the network calls from the database transaction. Generate embeddings first, collect them in memory, and then open a `@Transactional` block purely for the batch insert.
+
+---
+
+## 🛑 HIGH SEVERITY (Data Integrity & Stability)
+
+### BUG-03: Lost Update Race Condition in Login Lockout
+- **Location**: `LoginAttemptService.java` (`updateFailedAttempts`)
+- **Description**: The service calls a `@Modifying` query (`userRepository.incrementFailedAttempts()`) which updates the DB directly. However, it then checks `user.getFailedAttempts() + 1 >= 5`. If true, it modifies the *stale* Java entity and calls `userRepository.saveAndFlush(user)`.
+- **Impact**: Hibernate writes the stale `failedAttempts` value back to the database, overwriting the atomic increment. This breaks the account lockout security control, allowing brute-force attacks to bypass the 5-attempt limit under concurrent load.
+- **Remediation**: Rely entirely on the DB state. Either refresh the entity from the DB after the `@Modifying` query, or handle the lockout logic entirely within a single atomic SQL query/transaction.
+
+### BUG-04: OOM (Out Of Memory) Risk via Full Table Cache
+- **Location**: `ProfileDataMapper.java` (`processSkills`)
+- **Description**: During CV parsing, the code executes `skillRepository.findAll().stream().collect(...)` to load *all existing skills* into a HashMap for O(1) deduplication.
+- **Impact**: As the skills database grows (e.g., 50,000+ records), loading the entire table into RAM for *every single concurrent CV upload* will cause severe memory pressure, garbage collection pauses, and eventually crash the JVM with `OutOfMemoryError`.
+- **Remediation**: Replace `findAll()` with a targeted query: `skillRepository.findByNameIn(extractedSkillNames)` to load only the subset of skills relevant to the current CV.
+
+### BUG-05: GraphQL Validation Bypass
+- **Location**: `AuthGraphQLController.java` (`register`, `login`)
+- **Description**: The `@Argument RegisterRequest input` lacks the `@Valid` annotation. Unlike Spring WebMVC, Spring GraphQL does not automatically validate inputs unless explicitly annotated.
+- **Impact**: Malformed requests (e.g., `password: null`) bypass Jakarta validation and crash deep within the service layer (e.g., `passwordEncoder.encode(null)` throws `IllegalArgumentException`), resulting in HTTP 500 errors instead of clean HTTP 400 validation responses.
+- **Remediation**: Add `@Valid` to the `@Argument` parameters in the GraphQL controller.
+
+### BUG-06: Unhandled Race Condition in Profile Creation
+- **Location**: `UserProfileService.java` (`getMyProfile`, `updateMyProfile`)
+- **Description**: Checks if a profile exists; if not, calls `createDefaultProfile`. There is no try-catch for `DataIntegrityViolationException`.
+- **Impact**: If a user's React frontend fires two requests simultaneously (e.g., StrictMode double-fire or fast clicks), both threads will attempt to insert a `UserProfile` for the same `user_id`. The unique constraint will block one, throwing a raw 500 Internal Server Error to the user.
+- **Remediation**: Implement the same "optimistic insert with fallback read" pattern used correctly in `EmailAlertService.java`.
+
+---
+
+## ⚠️ MEDIUM SEVERITY (Performance & Logic Flaws)
+
+### BUG-07: Silent Failure on Verification Emails
+- **Location**: `EmailService.java` (`sendVerificationEmail`) & `AuthService.java`
+- **Description**: The email sending method is `@Async`. If SMTP fails, the exception is swallowed. However, `AuthService` has already committed the OTP to the DB.
+- **Impact**: The user does not receive the OTP but is rate-limited by the 1-minute cooldown, causing confusion and friction during onboarding.
+- **Remediation**: Use a Transactional Outbox pattern or ensure the OTP is only generated/committed if the email is successfully dispatched.
+
+### BUG-08: N+1 Query in SavedJobService
+- **Location**: `SavedJobService.java` (`getSavedJobIds`)
+- **Description**: Iterates over a list of `jobIds` and calls `savedJobRepository.isJobSaved(userId, jobId)` for each one.
+- **Impact**: Executes $N$ separate `EXISTS` SQL queries for $N$ jobs, slowing down the UI significantly when loading lists of jobs.
+- **Remediation**: Use a single query: `WHERE user.id = :userId AND job.id IN (:jobIds)`.
+
+### BUG-09: N+1 Query in Job Search Company Mapping
+- **Location**: `JobService.java` (`searchJobs`)
+- **Description**: `searchJobsFullText` is a native query that fetches only `JobEntity`. When mapped to DTOs, calling `entity.getCompany().getName()` triggers a lazy load for every job.
+- **Impact**: Degrades search API performance heavily.
+- **Remediation**: Use a `JOIN FETCH` or map the company details directly in the repository projection.
+
+### BUG-10: N+1 Query in Semantic Matching
+- **Location**: `UserProfileRepository.java` (`findByIdWithUserAndSkills`)
+- **Description**: Fetches `u.preference` but misses the lazy `@ElementCollection` `preferredJobTitles`. When accessed in `JobMatchingService`, it triggers an N+1 query.
+- **Impact**: Unnecessary database round-trips during background scheduled tasks.
+- **Remediation**: Explicitly `JOIN FETCH` the `preferredJobTitles` collection.
+
+### BUG-11: Multi-Node Scheduling Collision in Autonomous Scraper
+- **Location**: `AutonomousJobScraperService.java`
+- **Description**: Uses a JVM-local `AtomicBoolean isScrapingInProgress` to prevent concurrent scraping.
+- **Impact**: If the backend scales horizontally to multiple instances, they will all trigger the `@Scheduled` task simultaneously, wasting Apify quota and causing duplicate company/job insertion errors.
+- **Remediation**: Use ShedLock or a database-backed distributed lock instead of `AtomicBoolean`.
+
+---
+
+## 📝 Next Steps
+The audit phase is complete. The system is structurally sound but suffers from critical architectural misalignments regarding transaction boundaries and reactive/blocking thread models. 
+
+**Recommendation**: Transition to the **Remediation Phase**. Start by fixing the CRITICAL Thread Exhaustion and DB Connection Starvation issues, followed by the HIGH severity data integrity bugs.

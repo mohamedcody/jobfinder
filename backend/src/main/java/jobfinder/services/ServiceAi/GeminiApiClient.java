@@ -63,8 +63,8 @@ public class GeminiApiClient {
 
         // 1. Construct exact URI using java.net.URI to bypass Spring WebFlux's UriBuilder 
         // which incorrectly encodes the ':' character in 'gemini-1.5-flash:generateContent' to '%3A'.
-        String uriString = String.format("%s/v1beta/models/%s:generateContent?key=%s", 
-                GEMINI_BASE_URL, DEFAULT_MODEL, geminiApiKey);
+        String uriString = String.format("%s/v1beta/models/%s:generateContent", 
+                GEMINI_BASE_URL, DEFAULT_MODEL);
         URI exactUri = URI.create(uriString);
 
         // 2. Build the exact Request Payload Google expects
@@ -82,6 +82,7 @@ public class GeminiApiClient {
         return webClient.post()
                 .uri(exactUri)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("x-goog-api-key", geminiApiKey)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)

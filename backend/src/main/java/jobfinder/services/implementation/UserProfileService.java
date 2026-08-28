@@ -83,11 +83,9 @@ public class UserProfileService implements UserProfileInterface {
     }
 
     private UserProfile createDefaultProfile(User user) {
-        UserProfile profile = UserProfile.builder()
-                .user(user)
-                .isOpenToWork(true)
-                .build();
-        return userProfileRepository.save(profile);
+        userProfileRepository.createProfileIfNotExists(user.getId());
+        return userProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new BaseException(ErrorCode.INTERNAL_ERROR, "Failed to retrieve profile after atomic creation"));
     }
 
     private UserProfileResponseDto mapToResponse(UserProfile p) {

@@ -8,6 +8,8 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import jakarta.validation.Valid;
+
 @Controller
 @RequiredArgsConstructor
 public class AuthGraphQLController {
@@ -15,12 +17,12 @@ public class AuthGraphQLController {
     private final AuthInterface authService;
 
     @MutationMapping
-    public AuthResponseDto register(@Argument RegisterRequest input) {
+    public AuthResponseDto register(@Argument @Valid RegisterRequest input) {
         return authService.register(input);
     }
 
     @MutationMapping
-    public AuthResponseDto login(@Argument LoginRequest input) {
+    public AuthResponseDto login(@Argument @Valid LoginRequest input) {
         return authService.login(input);
     }
 
@@ -31,7 +33,7 @@ public class AuthGraphQLController {
     }
 
     @MutationMapping
-    public String resetPassword(@Argument ResetPasswordRequest input) {
+    public String resetPassword(@Argument @Valid ResetPasswordRequest input) {
         authService.resetPassword(input);
         return "Password reset successfully";
     }

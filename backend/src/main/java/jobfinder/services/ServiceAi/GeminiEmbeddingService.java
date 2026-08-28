@@ -45,7 +45,7 @@ public class GeminiEmbeddingService {
 
         // 1. Google Gemini Text Embedding API Endpoint (الموديل الجديد)
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + MODEL_NAME + ":embedContent?key=" + geminiApiKey;
+                + MODEL_NAME + ":embedContent";
 
         // 2. Prepare the JSON request body per Google's specifications
         Map<String, Object> requestBody = Map.of(
@@ -61,6 +61,7 @@ public class GeminiEmbeddingService {
         // 3. Set headers for JSON payload
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-goog-api-key", geminiApiKey);
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {

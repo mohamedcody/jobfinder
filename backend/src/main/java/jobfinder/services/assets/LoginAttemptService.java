@@ -33,16 +33,7 @@ public class LoginAttemptService {
             return;
         }
 
-        userRepository.incrementFailedAttempts(user.getId());
-        
-        // Refetch or assume incremented to check if we hit limit
-        int newAttempts = (user.getFailedAttempts() == null ? 0 : user.getFailedAttempts()) + 1;
-
-        // Lock account if failed attempts reach 5
-        if (newAttempts >= 5) {
-            user.setLockoutTime(LocalDateTime.now().plusMinutes(3));
-            userRepository.saveAndFlush(user);
-        }
+        userRepository.incrementFailedAttemptsAndLock(user.getId(), LocalDateTime.now().plusMinutes(3));
     }
 
 
@@ -55,9 +46,7 @@ public class LoginAttemptService {
     public void resetAttempts(String identifier) {
         User user = userRepository.findByEmailOrUsername(identifier)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setFailedAttempts(0);
-        user.setLockoutTime(null);
-        userRepository.saveAndFlush(user);
+        userRepository.resetFailedAttempts(user.getId());
     }
 
 }
