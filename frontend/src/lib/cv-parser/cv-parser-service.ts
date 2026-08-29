@@ -13,7 +13,7 @@ import type { CvParseResponse, CvApiError } from "./types";
 
 const cvApiClient = createApiClient({
   baseURL: env.API_BASE_URL,
-  timeout: 60000, // 60s — AI processing can take time
+  timeout: 120000, // 120s — AI processing can take time
 });
 
 

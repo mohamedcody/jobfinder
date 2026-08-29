@@ -17,13 +17,20 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = () => {
-      const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-      const isPublicOnly = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
-      const valid = hasValidToken();
+      const currentPath = pathname || "/";
+      const isProtected = PROTECTED_ROUTES.some((route) => currentPath.startsWith(route));
+      const isPublicOnly = PUBLIC_ROUTES.some((route) => currentPath.startsWith(route));
+      
+      let valid = false;
+      try {
+        valid = hasValidToken();
+      } catch (e) {
+        console.warn("Storage access denied or error:", e);
+      }
 
       if (isProtected && !valid) {
         // Redirect to login if trying to access protected route without auth
-        const callbackUrl = encodeURIComponent(pathname);
+        const callbackUrl = encodeURIComponent(currentPath);
         router.replace(`/login?callbackUrl=${callbackUrl}`);
       } else if (isPublicOnly && valid) {
         // Redirect to dashboard if trying to access login/register while authenticated
@@ -41,8 +48,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Global listener for 401/403 errors triggered by API requests
   useEffect(() => {
     const handleAuthExpired = () => {
-      clearToken();
-      const currentPath = window.location.pathname;
+      try {
+        clearToken();
+      } catch(e) {}
+      const currentPath = window.location.pathname || "/";
       if (PROTECTED_ROUTES.some((route) => currentPath.startsWith(route))) {
         router.replace(`/login?callbackUrl=${encodeURIComponent(currentPath)}&expired=true`);
       }
@@ -52,7 +61,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
   }, [router]);
 
-  if (isChecking || (!isAuthorized && PROTECTED_ROUTES.some(r => pathname.startsWith(r)))) {
+  const currentPath = pathname || "/";
+  if (isChecking || (!isAuthorized && PROTECTED_ROUTES.some(r => currentPath.startsWith(r)))) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#07091a]">
         <div className="flex flex-col items-center gap-4">
