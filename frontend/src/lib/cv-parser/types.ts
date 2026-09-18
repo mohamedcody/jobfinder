@@ -30,20 +30,36 @@ export interface CvWorkExperienceEntry {
   isCurrent: boolean;
 }
 
-/** Success response from POST /api/cv/upload */
+/** Success response from POST /api/cv/upload and POST /api/cv/confirm */
 export interface CvParseResponse {
   message: string;
   fullName: string | null;
+  phoneNumber: string | null;
   currentJobTitle: string | null;
   educationLevel: string | null;
   yearsOfExperience: number | null;
   bio: string | null;
   city: string | null;
   country: string | null;
-  extractedSkills: string[];
+  skills: CvSkillEntry[];
+  education: CvEducationEntry[];
+  workExperience: CvWorkExperienceEntry[];
   educationCount: number;
   workExperienceCount: number;
   parsedAt: string;
+}
+
+/** Request body for POST /api/cv/confirm — matches backend CvConfirmRequest */
+export interface CvConfirmRequest {
+  currentJobTitle?: string | null;
+  bio?: string | null;
+  educationLevel?: string | null;
+  yearsOfExperience?: number | null;
+  city?: string | null;
+  country?: string | null;
+  skills?: CvSkillEntry[];
+  education?: CvEducationEntry[];
+  workExperience?: CvWorkExperienceEntry[];
 }
 
 /** Backend error shape */

@@ -1,13 +1,32 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * Card — Canonical card/container component for JobFinder PRO
+ *
+ * This is the SINGLE source of truth for card styling.
+ *
+ * Variants:
+ *   - default      → subtle surface with border
+ *   - elevated     → more opaque with stronger shadow
+ *   - interactive  → hover states for clickable cards
+ *   - glass        → glassmorphism (blur + transparency)
+ *
+ * For legacy code using CSS class `.glass-panel`, prefer this component
+ * with variant="glass" instead.
+ *
+ * Sub-components: CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "elevated" | "interactive" | "glass" }>(
   ({ className, variant = "default", ...props }, ref) => {
     const variants = {
       default: "bg-surface/50 border border-border/50",
       elevated: "bg-surface-elevated border border-border shadow-elevated",
       interactive: "bg-surface/50 border border-border/50 hover:bg-surface-hover hover:border-border-hover transition-all cursor-pointer",
-      glass: "bg-white/5 backdrop-blur-xl border border-white/10 shadow-glass",
+      glass: "bg-glass-bg backdrop-blur-xl border border-glass-border shadow-glass",
     }
     
     return (

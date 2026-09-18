@@ -1,5 +1,6 @@
 export type {
   CvParseResponse,
+  CvConfirmRequest,
   CvApiError,
   CvUploadStatus,
   CvSkillEntry,
@@ -7,4 +8,4 @@ export type {
   CvWorkExperienceEntry,
 } from "./types";
 
-export { uploadCvForParsing, parseCvApiError } from "./cv-parser-service";
+export { uploadCvForParsing, confirmCvSave, parseCvApiError } from "./cv-parser-service";

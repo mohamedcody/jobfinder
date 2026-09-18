@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
  * Drop zone accepts only PDF files (validated client-side + server-side).
  */
 export function CvUploaderWidget() {
-  const { status, result, errorMessage, fileName, uploadCv, reset } =
+  const { status, result, errorMessage, fileName, uploadCv, confirmCv, isConfirming, reset } =
     useCvParser();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -201,7 +201,7 @@ export function CvUploaderWidget() {
             transition={{ duration: 0.35 }}
             className="rounded-3xl bg-white/5 border border-white/10 p-8 backdrop-blur-xl"
           >
-            <ReviewAndSaveForm result={result} onReset={reset} />
+            <ReviewAndSaveForm result={result} onReset={reset} onConfirm={confirmCv} isConfirming={isConfirming} />
           </motion.div>
         )}
 

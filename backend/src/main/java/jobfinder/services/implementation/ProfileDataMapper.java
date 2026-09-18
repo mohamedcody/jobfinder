@@ -78,9 +78,31 @@ public class ProfileDataMapper {
         log.info("✅ CV data mapped and saved. Skills: {}, Education: {}, Experience: {} for user ID: {}",
                 savedSkillNames.size(), educationCount, experienceCount, userId);
 
-        // 6. Build response DTO
+        // 6. Build the full response DTO (mirrors AiCvExtractionResult structure for audit)
+        List<CvParseResponseDto.CvSkillEntry> skillEntries = savedSkillNames.stream()
+                .map(name -> new CvParseResponseDto.CvSkillEntry(name, null, null))
+                .collect(Collectors.toList());
+
+        List<CvParseResponseDto.CvEducationEntry> educationEntries =
+                aiResult.education() != null
+                        ? aiResult.education().stream()
+                                .map(e -> new CvParseResponseDto.CvEducationEntry(
+                                        e.institution(), e.degree(), e.fieldOfStudy(),
+                                        e.startYear(), e.endYear(), e.grade()))
+                                .collect(Collectors.toList())
+                        : List.of();
+
+        List<CvParseResponseDto.CvWorkExperienceEntry> workExperienceEntries =
+                aiResult.workExperience() != null
+                        ? aiResult.workExperience().stream()
+                                .map(e -> new CvParseResponseDto.CvWorkExperienceEntry(
+                                        e.companyName(), e.jobTitle(), e.description(),
+                                        e.startDate(), e.endDate(), e.isCurrent()))
+                                .collect(Collectors.toList())
+                        : List.of();
+
         return new CvParseResponseDto(
-                "CV parsed and profile updated successfully!",
+                "CV parsed and profile saved successfully!",
                 aiResult.fullName(),
                 aiResult.phone(),
                 aiResult.currentJobTitle(),
@@ -89,12 +111,15 @@ public class ProfileDataMapper {
                 aiResult.bio(),
                 aiResult.city(),
                 aiResult.country(),
-                savedSkillNames,
-                educationCount,
-                experienceCount,
+                skillEntries,
+                educationEntries,
+                workExperienceEntries,
+                educationEntries.size(),
+                workExperienceEntries.size(),
                 profile.getCvParsedAt()
         );
     }
+
 
     /**
      * Updates the flat profile fields (job title, bio, experience, etc.)

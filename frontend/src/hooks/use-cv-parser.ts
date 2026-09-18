@@ -4,15 +4,17 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import {
   uploadCvForParsing,
+  confirmCvSave,
   parseCvApiError,
 } from "@/lib/cv-parser/cv-parser-service";
-import type { CvParseResponse, CvUploadStatus } from "@/lib/cv-parser/types";
+import type { CvParseResponse, CvConfirmRequest, CvUploadStatus } from "@/lib/cv-parser/types";
 
 export const useCvParser = () => {
   const [status, setStatus] = useState<CvUploadStatus>("idle");
   const [result, setResult] = useState<CvParseResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const uploadCv = useCallback(async (file: File) => {
     // Client-side validation
@@ -38,12 +40,27 @@ export const useCvParser = () => {
       const data = await uploadCvForParsing(file);
       setResult(data);
       setStatus("success");
-      toast.success("🎉 CV parsed and profile updated successfully!");
+      toast.success("CV parsed successfully! Review your data below.");
     } catch (err) {
       const message = parseCvApiError(err);
       setErrorMessage(message);
       setStatus("error");
       toast.error(message);
+    }
+  }, []);
+
+  const confirmCv = useCallback(async (request: CvConfirmRequest) => {
+    setIsConfirming(true);
+    try {
+      await confirmCvSave(request);
+      toast.success("🎉 Profile saved successfully!");
+      return true;
+    } catch (err) {
+      const message = parseCvApiError(err);
+      toast.error(message);
+      return false;
+    } finally {
+      setIsConfirming(false);
     }
   }, []);
 
@@ -59,7 +76,9 @@ export const useCvParser = () => {
     result,
     errorMessage,
     fileName,
+    isConfirming,
     uploadCv,
+    confirmCv,
     reset,
   };
 };

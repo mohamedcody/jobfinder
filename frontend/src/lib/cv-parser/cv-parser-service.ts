@@ -9,7 +9,7 @@
 import axios, { AxiosError } from "axios";
 import { createApiClient } from "@/lib/api/create-api-client";
 import { env } from "@/lib/config/env";
-import type { CvParseResponse, CvApiError } from "./types";
+import type { CvParseResponse, CvApiError, CvConfirmRequest } from "./types";
 
 const cvApiClient = createApiClient({
   baseURL: env.API_BASE_URL,
@@ -31,6 +31,22 @@ export async function uploadCvForParsing(file: File): Promise<CvParseResponse> {
   const { data } = await cvApiClient.post<CvParseResponse>(
     "/cv/upload",
     formData
+  );
+
+  return data;
+}
+
+/**
+ * Confirm and save the user-reviewed CV data to the database.
+ *
+ * @param request - The reviewed/edited CV data
+ * @returns Saved profile data from the backend
+ * @throws AxiosError with CvApiError body on failure
+ */
+export async function confirmCvSave(request: CvConfirmRequest): Promise<CvParseResponse> {
+  const { data } = await cvApiClient.post<CvParseResponse>(
+    "/cv/confirm",
+    request
   );
 
   return data;
