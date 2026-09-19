@@ -36,7 +36,7 @@ public class GeminiApiClient {
     private String geminiApiKey;
 
     private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-    private static final String DEFAULT_MODEL = "gemini-flash-latest";
+    private static final String DEFAULT_MODEL = "gemini-1.5-flash";
 
     public GeminiApiClient(WebClient.Builder webClientBuilder) {
         // We do NOT set the baseUrl here because we will pass absolute URIs

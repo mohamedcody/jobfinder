@@ -39,7 +39,7 @@ public class SecurityConfig {
                             .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                         )
                         .authorizeHttpRequests(auth -> auth
-
+                                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
