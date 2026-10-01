@@ -36,7 +36,8 @@ public class GeminiApiClient {
     private String geminiApiKey;
 
     private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-    private static final String DEFAULT_MODEL = "gemini-1.5-flash";
+    @Value("${gemini.api.model:gemini-3.8-flash}")
+    private String geminiModel;
 
     public GeminiApiClient(WebClient.Builder webClientBuilder) {
         // We do NOT set the baseUrl here because we will pass absolute URIs
@@ -62,9 +63,9 @@ public class GeminiApiClient {
         }
 
         // 1. Construct exact URI using java.net.URI to bypass Spring WebFlux's UriBuilder 
-        // which incorrectly encodes the ':' character in 'gemini-1.5-flash:generateContent' to '%3A'.
-        String uriString = String.format("%s/v1beta/models/%s:generateContent", 
-                GEMINI_BASE_URL, DEFAULT_MODEL);
+        // which incorrectly encodes the ':' character in '<model>:generateContent' to '%3A'.
+        String uriString = String.format("%s/v1beta/models/%s:generateContent",
+                GEMINI_BASE_URL, geminiModel);
         URI exactUri = URI.create(uriString);
 
         // 2. Build the exact Request Payload Google expects
@@ -77,7 +78,7 @@ public class GeminiApiClient {
                 )
         );
 
-        log.debug("🚀 Sending request to Gemini API. Model: {}", DEFAULT_MODEL);
+        log.debug("🚀 Sending request to Gemini API. Model: {}", geminiModel);
 
         return webClient.post()
                 .uri(exactUri)

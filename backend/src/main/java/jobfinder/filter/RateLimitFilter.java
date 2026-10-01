@@ -99,17 +99,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extracts the real client IP, respecting reverse proxy headers.
-     * Checks X-Forwarded-For first (set by NGINX), falls back to remoteAddr.
-     */
     private String extractClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
-            // The first one is the original client IP
-            return xForwardedFor.split(",")[0].trim();
-        }
         return request.getRemoteAddr();
     }
 
