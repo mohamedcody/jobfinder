@@ -12,6 +12,6 @@ public interface AuthInterface {
     void resendVerificationOtp(ResendVerificationOtpRequest request);
     void forgetPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);
+    AuthResponseDto googleLogin(GoogleLoginRequest request);
     
-
 }

@@ -41,6 +41,7 @@ public class AuthService implements AuthInterface {
     private final LoginAttemptService loginAttemptService;
     private final EmailValidatorService emailValidatorService;
     private final OtpService otpService ;
+    private final jobfinder.services.assets.GoogleTokenVerifier googleTokenVerifier;
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final long OTP_RESEND_COOLDOWN_MINUTES = 1;
 
@@ -278,7 +279,41 @@ public class AuthService implements AuthInterface {
      *   <li>Blocks resend requests made within 2 minutes of the last OTP generation.</li>
      *   <li>Invalidates any previously unused OTPs before creating a fresh OTP.</li>
      * </ul>
-     */
+     */    @Override
+    @Transactional
+    public AuthResponseDto googleLogin(GoogleLoginRequest request) {
+        jobfinder.model.dto.GoogleIdentity identity = googleTokenVerifier.verify(request.idToken());
+
+        if (identity.email() == null || identity.email().isEmpty()) {
+            throw new BaseException(ErrorCode.INVALID_INPUT, "Google identity does not contain an email");
+        }
+
+        User user = userRepository.findByEmail(identity.email())
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .username(identity.email().split("@")[0] + "_" + secureRandom.nextInt(10000))
+                            .email(identity.email())
+                            .password(passwordEncoder.encode(String.valueOf(secureRandom.nextLong())))
+                            .role("USER")
+                            .enabled(true) 
+                            .emailVerified(true)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        if (!user.isEnabled()) {
+            user.setEnabled(true);
+            user.setEmailVerified(true);
+            user = userRepository.save(user);
+        }
+
+        UserDetails details = createDetails(user);
+        String accessToken = jwtService.generateToken(details);
+        String refreshToken = jwtService.generateRefreshToken(details);
+
+        return new AuthResponseDto(accessToken, refreshToken, user.getEmail(), user.getRole(), "Google Login Successful");
+    }
+
     private void saveAndSendOtpInterna(User user) {
         LocalDateTime cooldownThreshold = LocalDateTime.now().minusMinutes(OTP_RESEND_COOLDOWN_MINUTES);
         otpCodeRepository.findTopByUserOrderByCreatedAtDesc(user)
