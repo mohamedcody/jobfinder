@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -69,6 +69,8 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const session = useAuthSession();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googleLoginInFlightRef = useRef(false);
   
   const [lockUntil, setLockUntil] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
@@ -138,6 +140,31 @@ export default function LoginPage() {
     }
   };
 
+  const onGoogleLogin = async (idToken: string) => {
+    if (googleLoginInFlightRef.current) {
+      return;
+    }
+
+    googleLoginInFlightRef.current = true;
+    setIsGoogleLoading(true);
+    try {
+      const response = await authService.googleLogin({ idToken });
+      if (!response.token) {
+        throw new Error("Google Login did not return an access token.");
+      }
+
+      session.login(response.token);
+      toast.success(response.message || "Welcome back!");
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      googleLoginInFlightRef.current = false;
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
     <AuthShell
       title="Welcome back"
@@ -186,7 +213,10 @@ export default function LoginPage() {
           </SubmitButton>
         </form>
 
-        <AuthSocialLogin />
+        <AuthSocialLogin
+          onGoogleLogin={onGoogleLogin}
+          isGoogleLoading={isGoogleLoading}
+        />
 
         <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
           New to JobFinder?{" "}

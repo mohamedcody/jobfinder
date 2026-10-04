@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/auth/api-client";
 import type {
   AuthResponse,
   ForgotPasswordPayload,
+  GoogleLoginPayload,
   LoginPayload,
   ResendVerificationOtpPayload,
   RegisterPayload,
@@ -17,6 +18,11 @@ export const authService = {
 
   async login(payload: LoginPayload) {
     const { data } = await apiClient.post<AuthResponse>("/login", payload);
+    return data;
+  },
+
+  async googleLogin(payload: GoogleLoginPayload) {
+    const { data } = await apiClient.post<AuthResponse>("/google", payload);
     return data;
   },
 
@@ -40,4 +46,3 @@ export const authService = {
     return data;
   },
 };
-

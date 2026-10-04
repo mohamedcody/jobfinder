@@ -27,6 +27,7 @@ const getEnv = (key: string, fallback: string): string => {
 export const env = {
   // ── Authentication ───────────────────────────────────────────────
   AUTH_API_URL: getEnv("NEXT_PUBLIC_AUTH_API_URL", "/api/auth"),
+  GOOGLE_CLIENT_ID: getEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", ""),
 
   // ── Jobs ─────────────────────────────────────────────────────────
   JOBS_API_URL: getEnv("NEXT_PUBLIC_JOBS_API_URL", "/api/jobs"),

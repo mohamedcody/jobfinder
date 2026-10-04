@@ -16,6 +16,10 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface GoogleLoginPayload {
+  idToken: string;
+}
+
 export interface ForgotPasswordPayload {
   email: string;
 }
@@ -41,4 +45,3 @@ export interface ApiErrorShape {
   error?: string;
   details?: string;
 }
-
