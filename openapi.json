@@ -2,13 +2,17 @@
   "openapi": "3.0.3",
   "info": {
     "title": "JobFinder API",
-    "description": "REST API for authentication, job discovery, profiles, saved jobs, CV parsing, email alerts, AI chat, and job scraping.",
+    "description": "REST API for authentication, job discovery, profiles, saved jobs, CV parsing, email alerts, AI chat, and job scraping. For protected operations, first call POST /api/auth/login with a valid existing account, extract the returned token, and send it as Authorization: Bearer <token>. Credentials are intentionally not included in this document.",
     "version": "1.0.0"
   },
   "servers": [
     {
       "url": "http://localhost:8080",
       "description": "Local development server"
+    },
+    {
+      "url": "https://tetragonally-homotypic-armando.ngrok-free.dev",
+      "description": "Current public ngrok tunnel for API testing"
     }
   ],
   "tags": [
@@ -39,6 +43,7 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "Login",
+        "description": "Authenticate an existing account. Use the returned token as a Bearer token for all protected API operations. Do not place real credentials in this OpenAPI document.",
         "operationId": "login",
         "security": [],
         "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}},
@@ -319,11 +324,11 @@
         "properties": {
           "username": {"type": "string", "minLength": 3, "maxLength": 50},
           "email": {"type": "string", "format": "email"},
-          "password": {"type": "string", "minLength": 8, "format": "password", "description": "Must contain uppercase, lowercase, number, special character, and no whitespace."}
+         "password": {"type": "string", "minLength": 8, "format": "password", "example": "Test@123"}
         }
       },
       "LoginRequest": {"type": "object", "required": ["identifier", "password"], "properties": {"identifier": {"type": "string"}, "password": {"type": "string", "format": "password"}}},
-      "AuthResponse": {"type": "object", "properties": {"token": {"type": "string"}, "email": {"type": "string", "format": "email"}, "role": {"type": "string"}, "message": {"type": "string"}}, "description": "refreshToken is intentionally omitted from JSON and returned through an HttpOnly cookie."},
+      "AuthResponse": {"type": "object", "required": ["token", "email", "role", "message"], "properties": {"token": {"type": "string", "nullable": true, "description": "JWT access token. This is null after registration until the email is verified."}, "email": {"type": "string", "format": "email"}, "role": {"type": "string"}, "message": {"type": "string"}}, "description": "refreshToken is intentionally omitted from JSON and returned through an HttpOnly cookie. Registration returns token=null until email verification is complete."},
       "ForgotPasswordRequest": {"type": "object", "required": ["email"], "properties": {"email": {"type": "string"}}},
       "ResetPasswordRequest": {"type": "object", "required": ["email", "otpCode", "newPassword", "confirmPassword"], "properties": {"email": {"type": "string", "format": "email"}, "otpCode": {"type": "string"}, "newPassword": {"type": "string", "format": "password", "minLength": 8}, "confirmPassword": {"type": "string", "format": "password"}}},
       "VerifyEmailRequest": {"type": "object", "required": ["email", "otp"], "properties": {"email": {"type": "string", "format": "email"}, "otp": {"type": "string"}}},

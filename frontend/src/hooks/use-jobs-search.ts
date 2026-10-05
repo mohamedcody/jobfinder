@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import { 
   createEmptyJobSearchState, 
   type JobSearchFormState 
-} from "@/components/jobs/job-search-filter";
-import { getPostedAfterFromPreset } from "@/lib/jobs/jobs-utils";
-import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
-import { jobsService } from "@/lib/jobs/jobs-service";
-import type { Job, JobFilterParams } from "@/lib/jobs/types";
-import { APP_CONSTANTS } from "@/lib/constants";
+} from "@/features/jobs/components/job-search-filter";
+import { getPostedAfterFromPreset } from "@/utils/jobs-utils";
+import { getApiErrorMessage, isRequestCanceled } from "@/utils/api-error";
+import { jobsService } from "@/services/jobs.service";
+import type { Job, JobFilterParams } from "@/types/jobs.types";
+import { APP_CONSTANTS } from "@/constants";
 
 const toJobFilterParams = (filters: JobSearchFormState): JobFilterParams => ({
   title: filters.title.trim() || undefined,
@@ -18,6 +18,10 @@ const toJobFilterParams = (filters: JobSearchFormState): JobFilterParams => ({
   postedAfter: getPostedAfterFromPreset(filters.datePreset),
   employmentType: filters.empType || undefined,
 });
+
+
+const CACHE_TTL_MS = 1000 * 60 * 5; // 5 mins
+const jobsCache = new Map<string, { jobs: Job[], hasNext: boolean, nextCursor: number | null, timestamp: number }>();
 
 export const useJobsSearch = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -46,6 +50,22 @@ export const useJobsSearch = () => {
     async (currentFilters: JobFilterParams, cursor: number | null = null, append = false) => {
       cancelInFlightRequest();
 
+      const cacheKey = JSON.stringify({ currentFilters, cursor });
+      const isRefresh = (currentFilters as any).refresh;
+
+      if (!append && !isRefresh) {
+        const cached = jobsCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+          setJobs(cached.jobs);
+          setHasMore(cached.hasNext);
+          setNextCursor(cached.nextCursor);
+          setIsLoading(false);
+          setIsLoadingMore(false);
+          setError(null);
+          return;
+        }
+      }
+
       const controller = new AbortController();
       activeControllerRef.current = controller;
       const requestId = ++requestIdRef.current;
@@ -62,6 +82,14 @@ export const useJobsSearch = () => {
 
         if (requestId !== requestIdRef.current) return;
 
+        if (!append && !(currentFilters as any).refresh) {
+          jobsCache.set(cacheKey, {
+            jobs: response.data,
+            hasNext: response.hasNext,
+            nextCursor: response.nextCursor,
+            timestamp: Date.now()
+          });
+        }
         setJobs((prev) => (append ? [...prev, ...response.data] : response.data));
         setHasMore(response.hasNext);
         setNextCursor(response.nextCursor);

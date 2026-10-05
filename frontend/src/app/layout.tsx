@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { AppToaster } from "@/components/providers/app-toaster";
-import { AuthGuard } from "@/components/auth/auth-guard";
+import { AuthGuard } from "@/features/auth/components/auth-guard";
 import "./globals.css";
 import "./tokens.css";
 

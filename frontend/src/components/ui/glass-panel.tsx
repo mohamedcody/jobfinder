@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // This is a transitional component to map legacy GlassPanel to the new Card component.
 // It preserves the props interface but uses the new design system under the hood.

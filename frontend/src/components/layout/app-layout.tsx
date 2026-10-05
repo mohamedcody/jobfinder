@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthSession } from "@/lib/auth/use-auth-session";
-import { APP_CONSTANTS } from "@/lib/constants";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { APP_CONSTANTS } from "@/constants";
 import {
   LayoutDashboard,
   Briefcase,
@@ -57,7 +57,7 @@ const SidebarItem = ({ icon: Icon, label, href, isCollapsed, isActive }: Sidebar
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 import dynamic from "next/dynamic";
-const AiChatbot = dynamic(() => import("@/components/ai/ai-chatbot"), { ssr: false });
+const AiChatbot = dynamic(() => import("@/features/ai/components/ai-chatbot"), { ssr: false });
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(() => {

@@ -3,10 +3,10 @@
 import { useState, useTransition, useMemo } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { EditProfileFormTabs } from "@/components/profile/edit-profile-form-tabs";
-import { CareerIntelligenceHub } from "@/components/profile/career-intelligence-hub";
-import type { UpdateProfileRequest } from "@/lib/profile/profile-service";
-import { escapeHtml } from "@/lib/security/sanitization";
+import { EditProfileFormTabs } from "@/features/profile/components/edit-profile-form-tabs";
+import { CareerIntelligenceHub } from "@/features/profile/components/career-intelligence-hub";
+import type { UpdateProfileRequest } from "@/services/profile.service";
+import { escapeHtml } from "@/utils/security/sanitization";
 import {
   User, 
   Code2,
@@ -18,7 +18,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { UserProfileResponse } from "@/lib/profile/types";
+import type { UserProfileResponse } from "@/types/profile.types";
 import { Button } from "@/components/ui/button";
 
 // --- Helper Components ---

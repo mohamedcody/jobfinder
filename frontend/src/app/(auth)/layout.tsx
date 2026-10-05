@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AuthMobileIntro } from "@/components/auth/auth-mobile-intro";
-import { AuthShowcase } from "@/components/auth/auth-showcase";
+import { AuthMobileIntro } from "@/features/auth/components/auth-mobile-intro";
+import { AuthShowcase } from "@/features/auth/components/auth-showcase";
 import { useEffect, useState } from "react";
 
 function AuthParticles() {

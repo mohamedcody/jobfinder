@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { OtpField } from "@/components/auth/otp-field";
-import { PasswordField } from "@/components/auth/password-field";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { TextField } from "@/components/auth/text-field";
+import { AuthShell } from "@/features/auth/components/auth-shell";
+import { OtpField } from "@/features/auth/components/otp-field";
+import { PasswordField } from "@/features/auth/components/password-field";
+import { SubmitButton } from "@/features/auth/components/submit-button";
+import { TextField } from "@/features/auth/components/text-field";
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from "@/features/auth/schemas";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
-import { authService } from "@/lib/auth/auth-service";
+import { getApiErrorMessage } from "@/utils/api-error";
+import { authService } from "@/services/auth.service";
 
 interface ResetPasswordFormProps {
   initialEmail: string;

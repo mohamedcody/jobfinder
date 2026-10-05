@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { emailAlertService } from "@/lib/email-alerts/email-alert-service";
+import { emailAlertService } from "@/services/email-alert.service";
 import type {
   EmailAlertResponse,
   UpdateEmailAlertRequest,
-} from "@/lib/email-alerts/types";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
+} from "@/types/email-alerts.types";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export const useEmailAlerts = () => {
   const [settings, setSettings] = useState<EmailAlertResponse | null>(null);

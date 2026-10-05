@@ -5,12 +5,12 @@ import {
   Sparkles,
   Zap
 } from "lucide-react";
-import { useAuthSession } from "@/lib/auth/use-auth-session";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 
 const JobsList = lazy(() =>
-  import("@/components/jobs/jobs-list").then((module) => ({ default: module.JobsList })),
+  import("@/features/jobs/components/jobs-list").then((module) => ({ default: module.JobsList })),
 );
 
 function JobsListFallback() {

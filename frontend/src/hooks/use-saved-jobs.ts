@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getApiErrorMessage, isRequestCanceled } from "@/lib/auth/api-error";
-import { hasValidToken } from "@/lib/auth/token-storage";
-import { APP_CONSTANTS } from "@/lib/constants";
-import { savedJobsService } from "@/lib/saved-jobs/saved-jobs-service";
-import type { SaveJobRequest, SavedJobResponse as SavedJob } from "@/lib/saved-jobs/types";
+import { getApiErrorMessage, isRequestCanceled } from "@/utils/api-error";
+import { hasValidToken } from "@/utils/token-storage";
+import { APP_CONSTANTS } from "@/constants";
+import { savedJobsService } from "@/services/saved-jobs.service";
+import type { SaveJobRequest, SavedJobResponse as SavedJob } from "@/types/saved-jobs.types";
 
 /** Use centralized constant as the single source of truth for the localStorage key. */
 const SAVED_JOBS_KEY = APP_CONSTANTS.SAVED_JOBS_STORAGE_KEY;

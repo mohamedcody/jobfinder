@@ -6,8 +6,8 @@ import {
   uploadCvForParsing,
   confirmCvSave,
   parseCvApiError,
-} from "@/lib/cv-parser/cv-parser-service";
-import type { CvParseResponse, CvConfirmRequest, CvUploadStatus } from "@/lib/cv-parser/types";
+} from "@/services/cv-parser.service";
+import type { CvParseResponse, CvConfirmRequest, CvUploadStatus } from "@/types/cv-parser.types";
 
 export const useCvParser = () => {
   const [status, setStatus] = useState<CvUploadStatus>("idle");
