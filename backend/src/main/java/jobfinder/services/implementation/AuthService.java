@@ -144,7 +144,7 @@ public class AuthService implements AuthInterface {
         }
 
         UserDetails details = createDetails(user);
-        if (jwtService.isTokenValid(refreshToken, details)) {
+        if (jwtService.isRefreshTokenValid(refreshToken, details)) {
             String newAccessToken = jwtService.generateToken(details);
             String newRefreshToken = jwtService.generateRefreshToken(details);
             return new AuthResponseDto(newAccessToken, newRefreshToken, user.getEmail(), user.getRole(), "Token refreshed");
@@ -302,10 +302,9 @@ public class AuthService implements AuthInterface {
                 });
 
         if (!user.isEnabled()) {
-            user.setEnabled(true);
-            user.setEmailVerified(true);
-            user = userRepository.save(user);
+            throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
         }
+
 
         UserDetails details = createDetails(user);
         String accessToken = jwtService.generateToken(details);

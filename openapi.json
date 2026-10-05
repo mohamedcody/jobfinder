@@ -1,0 +1,353 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "JobFinder API",
+    "description": "REST API for authentication, job discovery, profiles, saved jobs, CV parsing, email alerts, AI chat, and job scraping.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {"name": "Authentication"},
+    {"name": "Jobs"},
+    {"name": "User Profile"},
+    {"name": "Saved Jobs"},
+    {"name": "CV Parsing"},
+    {"name": "Email Alerts"},
+    {"name": "AI Chat"},
+    {"name": "Scraper"}
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Create a new account",
+        "operationId": "register",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRequest"}}}},
+        "responses": {
+          "201": {"description": "Account created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthResponse"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"}
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login",
+        "operationId": "login",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}},
+        "responses": {
+          "200": {"description": "Authenticated; a refresh_token HttpOnly cookie is also set", "headers": {"Set-Cookie": {"schema": {"type": "string"}}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthResponse"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh access token",
+        "operationId": "refreshToken",
+        "security": [],
+        "parameters": [{"name": "refresh_token", "in": "cookie", "required": false, "schema": {"type": "string"}}],
+        "responses": {
+          "200": {"description": "New access and refresh tokens", "headers": {"Set-Cookie": {"schema": {"type": "string"}}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthResponse"}}}},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Request a password reset",
+        "operationId": "forgotPassword",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ForgotPasswordRequest"}}}},
+        "responses": {"200": {"description": "OTP sent", "content": {"text/plain": {"schema": {"type": "string", "example": "OTP sent to your email successfully."}}}}, "400": {"$ref": "#/components/responses/BadRequest"}}
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Reset password using OTP",
+        "operationId": "resetPassword",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResetPasswordRequest"}}}},
+        "responses": {"200": {"description": "Password reset", "content": {"text/plain": {"schema": {"type": "string", "example": "Password has been reset successfully."}}}}, "400": {"$ref": "#/components/responses/BadRequest"}}
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Verify account using OTP",
+        "operationId": "verifyEmail",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VerifyEmailRequest"}}}},
+        "responses": {"200": {"description": "Email verified", "content": {"text/plain": {"schema": {"type": "string", "example": "Email verified successfully."}}}}, "400": {"$ref": "#/components/responses/BadRequest"}}
+      }
+    },
+    "/api/auth/resend-verification-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Resend verification OTP",
+        "operationId": "resendVerificationOtp",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResendVerificationOtpRequest"}}}},
+        "responses": {"200": {"description": "OTP resend request processed", "content": {"text/plain": {"schema": {"type": "string"}}}}, "400": {"$ref": "#/components/responses/BadRequest"}}
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Google login",
+        "operationId": "googleLogin",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GoogleLoginRequest"}}}},
+        "responses": {"200": {"description": "Authenticated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AuthResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": ["Jobs"],
+        "summary": "List jobs using cursor pagination",
+        "operationId": "getAllJobs",
+        "parameters": [
+          {"$ref": "#/components/parameters/LastId"},
+          {"$ref": "#/components/parameters/PageSize"}
+        ],
+        "responses": {"200": {"description": "Jobs", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/JobPage"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/jobs/search": {
+      "get": {
+        "tags": ["Jobs"],
+        "summary": "Search jobs (legacy)",
+        "operationId": "searchJobs",
+        "parameters": [
+          {"name": "title", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"name": "location", "in": "query", "required": true, "schema": {"type": "string"}},
+          {"$ref": "#/components/parameters/LastId"},
+          {"$ref": "#/components/parameters/PageSize"}
+        ],
+        "responses": {"200": {"description": "Jobs", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/JobPage"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/jobs/filter": {
+      "get": {
+        "tags": ["Jobs"],
+        "summary": "Filter jobs",
+        "operationId": "filterJobs",
+        "parameters": [
+          {"name": "title", "in": "query", "schema": {"type": "string"}},
+          {"name": "location", "in": "query", "schema": {"type": "string"}},
+          {"name": "postedAfter", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "minSalary", "in": "query", "schema": {"type": "string"}},
+          {"name": "employmentType", "in": "query", "schema": {"type": "string"}},
+          {"$ref": "#/components/parameters/LastId"},
+          {"$ref": "#/components/parameters/PageSize"},
+          {"name": "refresh", "in": "query", "required": false, "schema": {"type": "boolean", "default": false, "example": false, "description": "When true, cache eviction requires ADMIN role."}}
+        ],
+        "responses": {"200": {"description": "Filtered jobs", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/JobPage"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"$ref": "#/components/responses/Forbidden"}}
+      }
+    },
+    "/api/jobs/{id}/summarize": {
+      "post": {
+        "tags": ["Jobs"],
+        "summary": "Generate an AI summary for a job",
+        "operationId": "summarizeJob",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "Summary", "content": {"application/json": {"schema": {"type": "object", "required": ["summary"], "properties": {"summary": {"type": "string"}}}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}, "404": {"description": "Job not found"}}
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "tags": ["User Profile"],
+        "summary": "Get my profile",
+        "operationId": "getMyProfile",
+        "responses": {"200": {"description": "Profile", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UserProfileResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}, "404": {"description": "Profile not found"}}
+      },
+      "put": {
+        "tags": ["User Profile"],
+        "summary": "Update my profile",
+        "operationId": "updateMyProfile",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateUserProfileRequest"}}}},
+        "responses": {"200": {"description": "Updated profile", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UserProfileResponse"}}}}, "400": {"$ref": "#/components/responses/BadRequest"}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/users/profile/{userId}": {
+      "get": {
+        "tags": ["User Profile"],
+        "summary": "Get a specific user's profile",
+        "operationId": "getUserProfile",
+        "description": "Accessible to ADMIN or to the authenticated user whose ID matches userId.",
+        "parameters": [{"name": "userId", "in": "path", "required": true, "schema": {"type": "integer", "format": "int64"}}],
+        "responses": {"200": {"description": "Profile", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UserProfileResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"description": "User or profile not found"}}
+      }
+    },
+    "/api/saved-jobs/{jobId}": {
+      "post": {
+        "tags": ["Saved Jobs"],
+        "summary": "Save a job",
+        "operationId": "saveJob",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "requestBody": {"required": false, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SaveJobRequest"}}}},
+        "responses": {"200": {"description": "Saved job", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SavedJobResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      },
+      "delete": {
+        "tags": ["Saved Jobs"],
+        "summary": "Unsave a job",
+        "operationId": "unSaveJob",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"204": {"description": "Job unsaved"}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/saved-jobs": {
+      "get": {
+        "tags": ["Saved Jobs"],
+        "summary": "Get all my saved jobs",
+        "operationId": "getMySavedJobs",
+        "responses": {"200": {"description": "Saved jobs", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/SavedJobResponse"}}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/saved-jobs/{jobId}/status": {
+      "get": {
+        "tags": ["Saved Jobs"],
+        "summary": "Check if a job is saved",
+        "operationId": "isJobSaved",
+        "parameters": [{"$ref": "#/components/parameters/JobId"}],
+        "responses": {"200": {"description": "Saved status", "content": {"application/json": {"schema": {"type": "boolean"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/saved-jobs/status/batch": {
+      "post": {
+        "tags": ["Saved Jobs"],
+        "summary": "Check saved status for multiple jobs",
+        "operationId": "getSavedJobIds",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "array", "items": {"type": "integer", "format": "int64"}}}}},
+        "responses": {"200": {"description": "Saved job IDs", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "integer", "format": "int64"}}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/cv/upload": {
+      "post": {
+        "tags": ["CV Parsing"],
+        "summary": "Upload and parse a CV/Resume",
+        "operationId": "uploadCv",
+        "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "PDF CV file"}}}}}},
+        "responses": {"200": {"description": "Parsed CV data", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CvParseResponse"}}}}, "400": {"$ref": "#/components/responses/BadRequest"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "422": {"description": "AI returned invalid data"}, "503": {"description": "AI service unavailable"}}
+      }
+    },
+    "/api/cv/confirm": {
+      "post": {
+        "tags": ["CV Parsing"],
+        "summary": "Confirm and save reviewed CV data",
+        "operationId": "confirmCvSave",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CvConfirmRequest"}}}},
+        "responses": {"200": {"description": "Saved CV/profile data", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CvParseResponse"}}}}, "400": {"$ref": "#/components/responses/BadRequest"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "404": {"description": "User not found"}}
+      }
+    },
+    "/api/users/profile/alerts": {
+      "get": {
+        "tags": ["Email Alerts"],
+        "summary": "Get email alert settings",
+        "operationId": "getAlertSettings",
+        "responses": {"200": {"description": "Settings", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EmailAlertResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      },
+      "put": {
+        "tags": ["Email Alerts"],
+        "summary": "Update email alert settings",
+        "operationId": "updateAlertSettings",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateEmailAlertRequest"}}}},
+        "responses": {"200": {"description": "Updated settings", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EmailAlertResponse"}}}}, "400": {"$ref": "#/components/responses/BadRequest"}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/users/profile/alerts/test": {
+      "post": {
+        "tags": ["Email Alerts"],
+        "summary": "Trigger test email alert",
+        "operationId": "triggerTestEmail",
+        "responses": {"200": {"description": "Result message", "content": {"text/plain": {"schema": {"type": "string"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/ai/chat": {
+      "post": {
+        "tags": ["AI Chat"],
+        "summary": "Chat with the AI assistant",
+        "operationId": "chat",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AiChatRequest"}}}},
+        "responses": {"200": {"description": "AI reply", "content": {"application/json": {"schema": {"type": "object", "required": ["reply"], "properties": {"reply": {"type": "string"}}}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}}
+      }
+    },
+    "/api/v1/scraper/trigger": {
+      "post": {
+        "tags": ["Scraper"],
+        "summary": "Trigger autonomous job scraper",
+        "operationId": "triggerScraper",
+        "description": "Requires ADMIN role.",
+        "parameters": [{"name": "keyword", "in": "query", "required": true, "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Scraper result", "content": {"text/plain": {"schema": {"type": "string"}}}}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"$ref": "#/components/responses/Forbidden"}}
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token. Send as Authorization: Bearer <token>."
+      }
+    },
+    "responses": {
+      "BadRequest": {"description": "Invalid request or validation error"},
+      "Unauthorized": {"description": "JWT authentication required or credentials invalid"},
+      "Forbidden": {"description": "Authenticated user lacks sufficient permissions"}
+    },
+    "parameters": {
+      "JobId": {"name": "jobId", "in": "path", "required": true, "schema": {"type": "integer", "format": "int64"}},
+      "LastId": {"name": "lastId", "in": "query", "required": false, "schema": {"type": "integer", "format": "int64"}},
+      "PageSize": {"name": "size", "in": "query", "required": false, "schema": {"type": "integer", "format": "int32", "minimum": 1, "maximum": 100, "default": 10}}
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["username", "email", "password"],
+        "properties": {
+          "username": {"type": "string", "minLength": 3, "maxLength": 50},
+          "email": {"type": "string", "format": "email"},
+          "password": {"type": "string", "minLength": 8, "format": "password", "description": "Must contain uppercase, lowercase, number, special character, and no whitespace."}
+        }
+      },
+      "LoginRequest": {"type": "object", "required": ["identifier", "password"], "properties": {"identifier": {"type": "string"}, "password": {"type": "string", "format": "password"}}},
+      "AuthResponse": {"type": "object", "properties": {"token": {"type": "string"}, "email": {"type": "string", "format": "email"}, "role": {"type": "string"}, "message": {"type": "string"}}, "description": "refreshToken is intentionally omitted from JSON and returned through an HttpOnly cookie."},
+      "ForgotPasswordRequest": {"type": "object", "required": ["email"], "properties": {"email": {"type": "string"}}},
+      "ResetPasswordRequest": {"type": "object", "required": ["email", "otpCode", "newPassword", "confirmPassword"], "properties": {"email": {"type": "string", "format": "email"}, "otpCode": {"type": "string"}, "newPassword": {"type": "string", "format": "password", "minLength": 8}, "confirmPassword": {"type": "string", "format": "password"}}},
+      "VerifyEmailRequest": {"type": "object", "required": ["email", "otp"], "properties": {"email": {"type": "string", "format": "email"}, "otp": {"type": "string"}}},
+      "ResendVerificationOtpRequest": {"type": "object", "required": ["email"], "properties": {"email": {"type": "string", "format": "email"}}},
+      "GoogleLoginRequest": {"type": "object", "required": ["idToken"], "properties": {"idToken": {"type": "string"}}},
+      "UpdateUserProfileRequest": {"type": "object", "properties": {"current_job_title": {"type": "string", "maxLength": 150}, "years_of_experience": {"type": "integer", "minimum": 0, "maximum": 70}, "education_level": {"type": "string", "maxLength": 100}, "country": {"type": "string", "maxLength": 100}, "city": {"type": "string", "maxLength": 100}, "resume_url": {"type": "string", "maxLength": 500}, "expected_salary": {"type": "number", "format": "double", "minimum": 0}, "currency": {"type": "string", "pattern": "^[A-Z]{3}$"}, "is_open_to_work": {"type": "boolean"}, "bio": {"type": "string", "maxLength": 1000}, "skills": {"type": "array", "items": {"type": "string"}}}},
+      "UserProfileResponse": {"type": "object", "properties": {"id": {"type": "integer", "format": "int64"}, "user_id": {"type": "integer", "format": "int64"}, "username": {"type": "string"}, "email": {"type": "string", "format": "email"}, "current_job_title": {"type": "string"}, "years_of_experience": {"type": "integer"}, "education_level": {"type": "string"}, "country": {"type": "string"}, "city": {"type": "string"}, "resume_url": {"type": "string"}, "expected_salary": {"type": "number", "format": "double"}, "currency": {"type": "string"}, "is_open_to_work": {"type": "boolean"}, "bio": {"type": "string"}, "skills": {"type": "array", "items": {"$ref": "#/components/schemas/Skill"}}, "updated_at": {"type": "string", "format": "date-time"}}},
+      "Skill": {"type": "object", "properties": {"id": {"type": "integer", "format": "int64"}, "name": {"type": "string"}}},
+      "Job": {"type": "object", "properties": {"id": {"type": "integer", "format": "int64"}, "title": {"type": "string"}, "companyName": {"type": "string"}, "location": {"type": "string"}, "link": {"type": "string"}, "descriptionText": {"type": "string"}, "companyLogo": {"type": "string"}, "companyWebsite": {"type": "string"}, "companyDescription": {"type": "string"}, "seniorityLevel": {"type": "string"}, "employmentType": {"type": "string"}, "salary": {"type": "string"}, "aiSummary": {"type": "string"}, "scrapedAt": {"type": "string", "format": "date-time"}}},
+      "JobPage": {"type": "object", "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Job"}}, "pageSize": {"type": "integer"}, "nextCursor": {"type": "integer", "format": "int64", "nullable": true}, "hasNext": {"type": "boolean"}}},
+      "SaveJobRequest": {"type": "object", "properties": {"notes": {"type": "string", "maxLength": 500}}},
+      "SavedJobResponse": {"type": "object", "properties": {"savedJobId": {"type": "integer", "format": "int64"}, "jobId": {"type": "integer", "format": "int64"}, "jobTitle": {"type": "string"}, "companyName": {"type": "string"}, "companyLogo": {"type": "string"}, "location": {"type": "string"}, "jobUrl": {"type": "string"}, "employmentType": {"type": "string"}, "savedAt": {"type": "string", "format": "date-time"}, "notes": {"type": "string"}}},
+      "CvConfirmRequest": {"type": "object", "properties": {"currentJobTitle": {"type": "string", "maxLength": 150}, "bio": {"type": "string", "maxLength": 1000}, "educationLevel": {"type": "string", "maxLength": 100}, "yearsOfExperience": {"type": "integer", "minimum": 0, "maximum": 70}, "city": {"type": "string", "maxLength": 100}, "country": {"type": "string", "maxLength": 100}, "skills": {"type": "array", "items": {"$ref": "#/components/schemas/CvSkillRequest"}}, "education": {"type": "array", "items": {"$ref": "#/components/schemas/CvEducationRequest"}}, "workExperience": {"type": "array", "items": {"$ref": "#/components/schemas/CvWorkExperienceRequest"}}}},
+      "CvSkillRequest": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string", "maxLength": 100}, "proficiencyScore": {"type": "integer", "minimum": 1, "maximum": 5}, "yearsOfExperience": {"type": "integer", "minimum": 0, "maximum": 70}}},
+      "CvEducationRequest": {"type": "object", "properties": {"institution": {"type": "string", "maxLength": 500}, "degree": {"type": "string", "maxLength": 255}, "fieldOfStudy": {"type": "string", "maxLength": 255}, "startYear": {"type": "integer", "minimum": 1900, "maximum": 2100}, "endYear": {"type": "integer", "minimum": 1900, "maximum": 2100}, "grade": {"type": "string", "maxLength": 100}}},
+      "CvWorkExperienceRequest": {"type": "object", "properties": {"companyName": {"type": "string", "maxLength": 500}, "jobTitle": {"type": "string", "maxLength": 255}, "description": {"type": "string", "maxLength": 5000}, "startDate": {"type": "string", "pattern": "^\\d{4}-\\d{2}$|^$"}, "endDate": {"type": "string", "pattern": "^\\d{4}-\\d{2}$|^$"}, "isCurrent": {"type": "boolean"}}},
+      "CvParseResponse": {"type": "object", "properties": {"message": {"type": "string"}, "fullName": {"type": "string"}, "phoneNumber": {"type": "string"}, "currentJobTitle": {"type": "string"}, "educationLevel": {"type": "string"}, "yearsOfExperience": {"type": "integer"}, "bio": {"type": "string"}, "city": {"type": "string"}, "country": {"type": "string"}, "skills": {"type": "array", "items": {"$ref": "#/components/schemas/CvSkillEntry"}}, "education": {"type": "array", "items": {"$ref": "#/components/schemas/CvEducationEntry"}}, "workExperience": {"type": "array", "items": {"$ref": "#/components/schemas/CvWorkExperienceEntry"}}, "educationCount": {"type": "integer"}, "workExperienceCount": {"type": "integer"}, "parsedAt": {"type": "string", "format": "date-time"}}},
+      "CvSkillEntry": {"type": "object", "properties": {"name": {"type": "string"}, "proficiencyScore": {"type": "integer"}, "yearsOfExperience": {"type": "integer"}}},
+      "CvEducationEntry": {"type": "object", "properties": {"institution": {"type": "string"}, "degree": {"type": "string"}, "fieldOfStudy": {"type": "string"}, "startYear": {"type": "integer"}, "endYear": {"type": "integer"}, "grade": {"type": "string"}}},
+      "CvWorkExperienceEntry": {"type": "object", "properties": {"companyName": {"type": "string"}, "jobTitle": {"type": "string"}, "description": {"type": "string"}, "startDate": {"type": "string"}, "endDate": {"type": "string"}, "isCurrent": {"type": "boolean"}}},
+      "EmailAlertResponse": {"type": "object", "properties": {"dailyDigestEnabled": {"type": "boolean"}, "minMatchScore": {"type": "integer"}}},
+      "UpdateEmailAlertRequest": {"type": "object", "required": ["dailyDigestEnabled", "minMatchScore"], "properties": {"dailyDigestEnabled": {"type": "boolean"}, "minMatchScore": {"type": "integer", "minimum": 0, "maximum": 100}}},
+      "AiChatRequest": {"type": "object", "required": ["contents"], "properties": {"contents": {"type": "array", "items": {"type": "object", "additionalProperties": true, "description": "Conversation content objects forwarded to the AI service."}}}}
+    }
+  },
+  "security": [{"bearerAuth": []}]
+}

@@ -15,9 +15,12 @@ declare global {
           renderButton: (
             parent: HTMLElement,
             options: {
-              theme: "outline" | "filled_blue" | "filled_black";
-              size: "large" | "medium" | "small";
+              type?: "standard" | "icon";
+              theme?: "outline" | "filled_blue" | "filled_black";
+              size?: "large" | "medium" | "small";
               width?: number;
+              text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+              shape?: "rectangular" | "pill" | "circle" | "square";
             },
           ) => void;
         };
@@ -54,6 +57,11 @@ export function AuthSocialLogin({
     env.GOOGLE_CLIENT_ID ? null : "Google Login is not configured.",
   );
 
+  const onGoogleLoginRef = useRef(onGoogleLogin);
+  useEffect(() => {
+    onGoogleLoginRef.current = onGoogleLogin;
+  }, [onGoogleLogin]);
+
   useEffect(() => {
     if (!env.GOOGLE_CLIENT_ID) {
       return;
@@ -65,21 +73,26 @@ export function AuthSocialLogin({
         return;
       }
 
+      if (googleButtonRef.current.hasChildNodes()) {
+        return;
+      }
+
       window.google.accounts.id.initialize({
         client_id: env.GOOGLE_CLIENT_ID,
         callback: ({ credential }) => {
-          if (!credential || isGoogleLoading) {
+          if (!credential) {
             return;
           }
-          onGoogleLogin(credential);
+          onGoogleLoginRef.current(credential);
         },
       });
 
-      googleButtonRef.current.replaceChildren();
       window.google.accounts.id.renderButton(googleButtonRef.current, {
+        type: "standard",
         theme: "outline",
         size: "large",
-        width: 280,
+        text: "signin_with",
+        shape: "rectangular"
       });
     };
 
@@ -106,7 +119,7 @@ export function AuthSocialLogin({
     script.onload = initializeGoogle;
     script.onerror = () => setGoogleError("Google Login could not be loaded.");
     document.head.appendChild(script);
-  }, [isGoogleLoading, onGoogleLogin]);
+  }, []);
 
   return (
     <div className="mt-8">
@@ -116,29 +129,31 @@ export function AuthSocialLogin({
         <div className="h-px flex-1 bg-white/20" />
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div
-          ref={googleButtonRef}
-          className={`flex min-h-11 items-center justify-center overflow-hidden rounded-2xl ${
-            isGoogleLoading ? "pointer-events-none opacity-60" : ""
-          }`}
-          aria-busy={isGoogleLoading}
-        />
-        {providers
-          .filter(({ provider }) => provider !== "google")
-          .map(({ label, provider }) => (
-          <button
-            key={label}
-            type="button"
-            className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 ${
-              provider === "linkedin"
-                ? "border-sky-400/60 bg-sky-600 text-white hover:bg-sky-700"
-                : "border-white/20 bg-slate-900/45 text-slate-100 hover:border-cyan-300/40 hover:bg-slate-800/55"
-            }`}
-          >
-            <ProviderIcon provider={provider} />
-            {label}
-          </button>
-        ))}
+        {providers.map(({ label, provider }) => {
+          const isGoogle = provider === "google";
+          return (
+            <div key={label} className="relative w-full group">
+              <button
+                type="button"
+                className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all group-hover:-translate-y-0.5 ${
+                  provider === "linkedin"
+                    ? "border-sky-400/60 bg-sky-600 text-white group-hover:bg-sky-700"
+                    : "border-white/20 bg-slate-900/45 text-slate-100 group-hover:border-cyan-300/40 group-hover:bg-slate-800/55"
+                } ${isGoogleLoading && isGoogle ? "pointer-events-none opacity-60" : ""}`}
+              >
+                <ProviderIcon provider={provider} />
+                {label}
+              </button>
+              
+              {isGoogle && (
+                <div 
+                  ref={googleButtonRef}
+                  className="absolute inset-0 z-10 overflow-hidden opacity-[0.01] [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:w-full"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
       {isGoogleLoading && (
         <p className="mt-2 text-center text-xs text-slate-400">Signing in with Google...</p>

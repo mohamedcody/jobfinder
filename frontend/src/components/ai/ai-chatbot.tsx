@@ -36,12 +36,16 @@ const QUICK_PROMPTS = [
   { icon: Star, label: "Interviews", text: "Top 5 interview tips" },
 ];
 
+import { env } from "@/lib/config/env";
+import { getToken } from "@/lib/auth/token-storage";
+import React from "react";
+
 const SYSTEM_PROMPT = `You are JobBot, an expert AI career assistant for JobFinder PRO.
 Always be encouraging, professional, and concise. Format responses with markdown — bold key terms, use bullet points for lists.`;
 
 async function callGemini(messages: Message[]): Promise<string> {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) return "⚠️ Gemini API key is not configured.";
+  const token = getToken();
+  if (!token) return "⚠️ You must be logged in to use JobBot.";
 
   const contents = [
     { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
@@ -52,36 +56,50 @@ async function callGemini(messages: Message[]): Promise<string> {
     })),
   ];
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
+  try {
+    const res = await fetch(`${env.API_BASE_URL}/ai/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify({ contents }),
+    });
+
+    if (res.status === 429) {
+      return `⚠️ Rate limit reached. Please try again in a minute.`;
     }
-  );
 
-  if (res.status === 429) {
-    const retryAfter = res.headers.get("retry-after");
-    const waitHint = retryAfter ? ` Please try again in ${retryAfter}s.` : " Please try again in a minute.";
-    return `⚠️ Rate limit reached.${waitHint}`;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data?.reply ?? "No response received.";
+  } catch (error) {
+    console.error("Failed to connect to backend AI:", error);
+    throw error;
   }
+}
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response received.";
+function parseInlineFormatting(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="text-cyan-400">{part.slice(2, -2)}</strong>;
+    }
+    return <React.Fragment key={index}>{part}</React.Fragment>;
+  });
 }
 
 function formatMessage(text: string) {
   const lines = text.split("\n");
   return lines.map((line, i) => {
-    const formatted = line.replace(/\*\*(.*?)\*\*/g, "<strong class='text-cyan-400'>$1</strong>");
     if (line.startsWith("* ") || line.startsWith("- ")) {
       return (
-        <li key={i} className="ml-4 list-disc text-[13px] leading-relaxed mb-1" dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
+        <li key={i} className="ml-4 list-disc text-[13px] leading-relaxed mb-1">
+          {parseInlineFormatting(line.slice(2))}
+        </li>
       );
     }
-    return <p key={i} className="text-[13px] leading-relaxed mb-2" dangerouslySetInnerHTML={{ __html: formatted }} />;
+    return <p key={i} className="text-[13px] leading-relaxed mb-2">{parseInlineFormatting(line)}</p>;
   });
 }
 

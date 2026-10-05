@@ -139,16 +139,33 @@ public class AuthServiceGoogleLoginTest {
 
     // 8. Missing Google Email
     @Test
-    void testGoogleLogin_MissingGoogleEmail_ShouldThrowException() {
-        GoogleIdentity identityNoEmail = new GoogleIdentity("sub123", null, "Test User");
-        when(googleTokenVerifier.verify("valid.token")).thenReturn(identityNoEmail);
+    void testGoogleLogin_DisabledExistingUser_ShouldRejectLogin() {
+        when(googleTokenVerifier.verify("valid.google.token"))
+                .thenReturn(validIdentity);
 
-        GoogleLoginRequest req = new GoogleLoginRequest("valid.token");
-        
-        BaseException ex = assertThrows(BaseException.class, () -> authService.googleLogin(req));
-        assertEquals(ErrorCode.INVALID_INPUT, ex.getErrorCode());
-        assertTrue(ex.getMessage().contains("does not contain an email"));
-        
-        verify(userRepository, never()).findByEmail(anyString());
+        User disabledUser = User.builder()
+                .id(1L)
+                .email("test@gmail.com")
+                .role("USER")
+                .enabled(false)
+                .emailVerified(false)
+                .build();
+
+        when(userRepository.findByEmail("test@gmail.com"))
+                .thenReturn(Optional.of(disabledUser));
+
+        BaseException ex = assertThrows(
+                BaseException.class,
+                () -> authService.googleLogin(validRequest)
+        );
+
+        assertEquals(ErrorCode.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
+
+        // Must not enable or save the disabled account
+        assertFalse(disabledUser.isEnabled());
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(jwtService, never()).generateToken(any());
+        verify(jwtService, never()).generateRefreshToken(any());
     }
 }

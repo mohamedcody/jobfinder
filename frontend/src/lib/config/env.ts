@@ -8,10 +8,13 @@
  * Usage:
  *   import { env } from "@/lib/config/env";
  *   const baseUrl = env.API_BASE_URL;
+ *
+ * NOTE: process.env.NEXT_PUBLIC_* MUST be referenced statically (not via
+ * dynamic key lookup like process.env[key]) so that Next.js / Turbopack can
+ * inline the values into the client-side bundle at build/compile time.
  */
 
-const getEnv = (key: string, fallback: string): string => {
-  const value = process.env[key];
+const resolve = (value: string | undefined, key: string, fallback: string): string => {
   if (!value || value.trim() === "") {
     if (process.env.NODE_ENV === "development") {
       console.warn(
@@ -26,27 +29,25 @@ const getEnv = (key: string, fallback: string): string => {
 
 export const env = {
   // ── Authentication ───────────────────────────────────────────────
-  AUTH_API_URL: getEnv("NEXT_PUBLIC_AUTH_API_URL", "/api/auth"),
-  GOOGLE_CLIENT_ID: getEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", ""),
+  AUTH_API_URL:     resolve(process.env.NEXT_PUBLIC_AUTH_API_URL,              "NEXT_PUBLIC_AUTH_API_URL",              "/api/auth"),
+  GOOGLE_CLIENT_ID: resolve(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,          "NEXT_PUBLIC_GOOGLE_CLIENT_ID",          ""),
 
   // ── Jobs ─────────────────────────────────────────────────────────
-  JOBS_API_URL: getEnv("NEXT_PUBLIC_JOBS_API_URL", "/api/jobs"),
+  JOBS_API_URL:     resolve(process.env.NEXT_PUBLIC_JOBS_API_URL,              "NEXT_PUBLIC_JOBS_API_URL",              "/api/jobs"),
 
   // ── User Profile ─────────────────────────────────────────────────
-  PROFILE_API_URL: getEnv("NEXT_PUBLIC_PROFILE_API_URL", "/api/users/profile"),
+  PROFILE_API_URL:  resolve(process.env.NEXT_PUBLIC_PROFILE_API_URL,           "NEXT_PUBLIC_PROFILE_API_URL",           "/api/users/profile"),
 
   // ── Saved Jobs ───────────────────────────────────────────────────
-  SAVED_JOBS_API_URL: getEnv("NEXT_PUBLIC_SAVED_JOBS_API_URL", "/api/saved-jobs"),
-  SAVED_JOBS_API_TIMEOUT_MS: Number(
-    getEnv("NEXT_PUBLIC_SAVED_JOBS_API_TIMEOUT_MS", "15000")
-  ),
+  SAVED_JOBS_API_URL:        resolve(process.env.NEXT_PUBLIC_SAVED_JOBS_API_URL,         "NEXT_PUBLIC_SAVED_JOBS_API_URL",         "/api/saved-jobs"),
+  SAVED_JOBS_API_TIMEOUT_MS: Number(resolve(process.env.NEXT_PUBLIC_SAVED_JOBS_API_TIMEOUT_MS, "NEXT_PUBLIC_SAVED_JOBS_API_TIMEOUT_MS", "15000")),
 
   // ── Email Alerts ─────────────────────────────────────────────────
-  ALERTS_API_URL: getEnv("NEXT_PUBLIC_ALERTS_API_URL", "/api/users/profile/alerts"),
+  ALERTS_API_URL:   resolve(process.env.NEXT_PUBLIC_ALERTS_API_URL,            "NEXT_PUBLIC_ALERTS_API_URL",            "/api/users/profile/alerts"),
 
   // ── CV Parser ────────────────────────────────────────────────────
   /** Base /api URL used by the CV upload endpoint (/api/cv/upload) */
-  API_BASE_URL: getEnv("NEXT_PUBLIC_API_URL", "/api"),
+  API_BASE_URL:     resolve(process.env.NEXT_PUBLIC_API_URL,                   "NEXT_PUBLIC_API_URL",                   "/api"),
 } as const;
 
 export type Env = typeof env;
