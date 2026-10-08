@@ -79,7 +79,22 @@ export function createApiClient(
       const status = error?.response?.status;
       const isCanceled = error?.code === "ERR_CANCELED";
 
-      // ── Auth Error: clear session + notify for redirect ──
+      // ── Auth Error: attempt refresh, or clear session + notify ──
+      if (status === 401 && !config._retry) {
+        config._retry = true;
+        try {
+          const refreshRes = await axios.post("/api/auth/refresh", {}, { withCredentials: true });
+          if (refreshRes.data?.token) {
+            const { saveToken } = await import("@/utils/token-storage");
+            saveToken(refreshRes.data.token);
+            config.headers.Authorization = `Bearer ${refreshRes.data.token}`;
+            return client(config);
+          }
+        } catch (refreshErr) {
+          // Refresh failed, fall through to logout
+        }
+      }
+
       if (status === 401 || status === 403) {
         clearToken();
         emitAuthExpired();
