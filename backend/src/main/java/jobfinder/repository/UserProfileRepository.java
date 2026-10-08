@@ -23,7 +23,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
      */
     Optional<UserProfile> findByUserId(Long userId);
 
-
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "INSERT INTO user_profiles (user_id, is_open_to_work, updated_at) VALUES (:userId, true, NOW()) ON CONFLICT (user_id) DO NOTHING", nativeQuery = true)
+    void createProfileIfNotExists(@Param("userId") Long userId);
     @Query("""
         SELECT DISTINCT LOWER(TRIM(up.currentJobTitle))
         FROM UserProfile up

@@ -52,9 +52,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        // Only rate-limit auth endpoints
         String path = request.getRequestURI();
-        if (!path.startsWith("/api/auth")) {
+        
+        // Determine bucket and limit based on path
+        String bucketType = null;
+        int limit = MAX_REQUESTS_PER_MINUTE;
+
+        if (path.startsWith("/api/auth")) {
+            bucketType = "AUTH";
+            limit = 20;
+        } else if (path.startsWith("/api/cv/upload") || 
+                   path.contains("/summarize") || 
+                   path.startsWith("/api/ai/chat") ||
+                   path.startsWith("/api/users/profile/alerts/test")) {
+            bucketType = "AI_EXPENSIVE";
+            limit = 5; // Stricter limit for AI operations
+        }
+
+        // If not a rate-limited path, pass through
+        if (bucketType == null) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -66,9 +82,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String clientIp = extractClientIp(request);
+        String bucketKey = clientIp + ":" + bucketType;
         long now = System.currentTimeMillis();
 
-        RateLimitEntry entry = requestCounts.compute(clientIp, (key, existing) -> {
+        RateLimitEntry entry = requestCounts.compute(bucketKey, (key, existing) -> {
             if (existing == null || (now - existing.windowStart) > WINDOW_MS) {
                 // New window — reset counter
                 return new RateLimitEntry(now, new AtomicInteger(1));
@@ -78,9 +95,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return existing;
         });
 
-        if (entry.count.get() > MAX_REQUESTS_PER_MINUTE) {
-            log.warn("🛑 Rate limit exceeded for IP: {} on path: {} ({} requests in window)",
-                    clientIp, path, entry.count.get());
+        if (entry.count.get() > limit) {
+            log.warn("🛑 Rate limit exceeded for IP: {} (Bucket: {}) on path: {} ({} requests in window, limit {})",
+                    clientIp, bucketType, path, entry.count.get(), limit);
 
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -88,7 +105,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             Map<String, Object> errorBody = Map.of(
                     "status", 429,
                     "error", "Too Many Requests",
-                    "message", "You have exceeded the rate limit. Please try again in a moment.",
+                    "message", "You have exceeded the rate limit for this action. Please try again in a minute.",
                     "path", path
             );
 
@@ -99,17 +116,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extracts the real client IP, respecting reverse proxy headers.
-     * Checks X-Forwarded-For first (set by NGINX), falls back to remoteAddr.
-     */
     private String extractClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
-            // The first one is the original client IP
-            return xForwardedFor.split(",")[0].trim();
-        }
         return request.getRemoteAddr();
     }
 

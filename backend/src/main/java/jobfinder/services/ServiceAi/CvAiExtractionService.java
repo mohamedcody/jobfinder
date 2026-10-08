@@ -47,6 +47,7 @@ public class CvAiExtractionService {
         String prompt = buildExtractionPrompt(cvText);
 
         return geminiClient.generateContent(prompt, REQUEST_TIMEOUT)
+        
                 .flatMap(map -> this.parseGeminiResponse((Map<String, Object>) map))
                 .doOnSuccess(result -> log.info("✅ AI CV extraction succeeded. Extracted {} skills, {} education, {} experience entries.",
                         result.skills() != null ? result.skills().size() : 0,
@@ -76,8 +77,18 @@ public class CvAiExtractionService {
                 ));
             }
 
-            Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+        
+
+          // استبدل السطور 79-81 بالكود ده:
+          Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+
+          if (content == null) {
+              throw new MalformedAiResponseException(
+                      "AI blocked the content due to safety filters.",
+                      response.toString());
+          }
+
+          List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
 
             if (parts == null || parts.isEmpty()) {
                 return Mono.error(new MalformedAiResponseException(

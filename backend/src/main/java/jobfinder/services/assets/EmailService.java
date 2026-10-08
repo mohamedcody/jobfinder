@@ -8,27 +8,23 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class  EmailService {
+public class EmailService {
 
+    // variable the javaMailSender responsipilatey is sending the email
 
+    private final JavaMailSender mailSender;
 
-
-    private final JavaMailSender mailSender ;
-
-
-        @Async
+    @Async
     public void sendVerificationEmail(String email, String code) {
-            try {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(email);
-                message.setSubject("JobFinder - Verify Your Account");
-                message.setText("Your activation code is:   " + code);
-                mailSender.send(message);
-            } catch (Exception e) {
-                System.err.println("Error sending email: " + e.getMessage()); // This prints the root cause here.
-            }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject("JobFinder - Verify Your Account");
+            message.setText("Your activation code is:   " + code);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Error sending email: " + e.getMessage()); // This prints the root cause here.
         }
+    }
 
 }
-
-

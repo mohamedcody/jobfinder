@@ -36,7 +36,8 @@ public class GeminiApiClient {
     private String geminiApiKey;
 
     private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-    private static final String DEFAULT_MODEL = "gemini-flash-latest";
+    @Value("${gemini.api.model:gemini-3.8-flash}")
+    private String geminiModel;
 
     public GeminiApiClient(WebClient.Builder webClientBuilder) {
         // We do NOT set the baseUrl here because we will pass absolute URIs
@@ -56,19 +57,6 @@ public class GeminiApiClient {
     @Retry(name = "geminiApi", fallbackMethod = "retryFallback")
     @CircuitBreaker(name = "geminiApi", fallbackMethod = "circuitBreakerFallback")
     public Mono<Map> generateContent(String prompt, Duration timeout) {
-        if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("${")) {
-            log.error("❌ CRITICAL: Gemini API Key is missing or unresolved. Cannot process AI request.");
-            return Mono.error(new IllegalStateException("Gemini API Key is missing."));
-        }
-
-        // 1. Construct exact URI using java.net.URI to bypass Spring WebFlux's UriBuilder 
-        // which incorrectly encodes the ':' character in 'gemini-1.5-flash:generateContent' to '%3A'.
-        String uriString = String.format("%s/v1beta/models/%s:generateContent?key=%s", 
-                GEMINI_BASE_URL, DEFAULT_MODEL, geminiApiKey);
-        URI exactUri = URI.create(uriString);
-
-        // 2. Build the exact Request Payload Google expects
-        // REMOVED generationConfig (responseMimeType) because gemini-pro (1.0) does NOT support it.
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of("parts", List.of(
@@ -76,12 +64,32 @@ public class GeminiApiClient {
                         ))
                 )
         );
+        return generateContentWithBody(requestBody, timeout);
+    }
 
-        log.debug("🚀 Sending request to Gemini API. Model: {}", DEFAULT_MODEL);
+    @Retry(name = "geminiApi", fallbackMethod = "retryFallback")
+    @CircuitBreaker(name = "geminiApi", fallbackMethod = "circuitBreakerFallback")
+    public Mono<Map> generateContentWithHistory(List<Map<String, Object>> contents, Duration timeout) {
+        Map<String, Object> requestBody = Map.of("contents", contents);
+        return generateContentWithBody(requestBody, timeout);
+    }
+
+    private Mono<Map> generateContentWithBody(Map<String, Object> requestBody, Duration timeout) {
+        if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("${")) {
+            log.error("❌ CRITICAL: Gemini API Key is missing or unresolved. Cannot process AI request.");
+            return Mono.error(new IllegalStateException("Gemini API Key is missing."));
+        }
+
+        String uriString = String.format("%s/v1beta/models/%s:generateContent",
+                GEMINI_BASE_URL, geminiModel);
+        URI exactUri = URI.create(uriString);
+
+        log.debug("🚀 Sending request to Gemini API. Model: {}", geminiModel);
 
         return webClient.post()
                 .uri(exactUri)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("x-goog-api-key", geminiApiKey)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)

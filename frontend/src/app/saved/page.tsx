@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useSavedJobs } from "@/hooks/use-saved-jobs";
-import type { SavedJobResponse } from "@/lib/saved-jobs/types";
+import type { SavedJobResponse } from "@/types/saved-jobs.types";
 import {
   Bookmark,
   Send,
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { formatRelativeTime } from "@/lib/jobs/time-utils";
+import { formatRelativeTime } from "@/utils/time-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
