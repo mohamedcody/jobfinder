@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 import { X } from "lucide-react"
 
 interface DialogProps {
@@ -40,7 +40,7 @@ function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChi
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children as React.ReactElement<any>, {
       onClick: (e: React.MouseEvent) => {
-        children.props.onClick?.(e)
+        (children as React.ReactElement<any>).props.onClick?.(e)
         onOpenChange(true)
       }
     })

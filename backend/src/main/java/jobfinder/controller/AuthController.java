@@ -87,10 +87,18 @@ public class AuthController {
         return ResponseEntity.ok("If the email is registered and not verified, a new OTP has been sent.");
     }
 
-  
-
-
-
-
-
+    @Operation(summary = "Google Login")
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponseDto> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        AuthResponseDto response = authService.googleLogin(request);
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", response.refreshToken())
+                .httpOnly(true)
+                .secure(true) // Should be configured properly in prod
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
+    }
 }

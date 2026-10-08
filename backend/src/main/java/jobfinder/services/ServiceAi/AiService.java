@@ -49,4 +49,31 @@ public class AiService {
             return "AI Summary is currently unavailable. Please try again later.";
         }
     }
+
+    public String chat(List<Map<String, Object>> contents) {
+        if (contents == null || contents.isEmpty()) {
+            return "No messages provided.";
+        }
+        try {
+            Map response = geminiClient.generateContentWithHistory(contents, REQUEST_TIMEOUT).block();
+
+            if (response != null && response.containsKey("candidates")) {
+                List candidates = (List) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map candidate = (Map) candidates.get(0);
+                    Map content = (Map) candidate.get("content");
+                    List parts = (List) content.get("parts");
+                    if (!parts.isEmpty()) {
+                        Map part = (Map) parts.get(0);
+                        return (String) part.get("text");
+                    }
+                }
+            }
+            log.warn("⚠️ AI Response received but candidates list is empty.");
+            return "Could not generate response at this time.";
+        } catch (Exception e) {
+            log.error("❌ Error during AI chat: {}", e.getMessage(), e);
+            return "AI Chat is currently unavailable. Please try again later.";
+        }
+    }
 }

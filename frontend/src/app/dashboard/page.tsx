@@ -20,10 +20,10 @@ import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useSavedJobs } from "@/hooks/use-saved-jobs";
-import { jobsService } from "@/lib/jobs/jobs-service";
-import type { Job } from "@/lib/jobs/types";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
-import { formatRelativeTime } from "@/lib/jobs/time-utils";
+import { jobsService } from "@/services/jobs.service";
+import type { Job } from "@/types/jobs.types";
+import { getApiErrorMessage } from "@/utils/api-error";
+import { formatRelativeTime } from "@/utils/time-utils";
 
 // Delegates to shared time utility — no duplication
 function getTimeAgo(dateString: string): string {

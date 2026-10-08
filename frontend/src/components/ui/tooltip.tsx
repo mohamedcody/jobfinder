@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 import { AnimatePresence, motion } from "framer-motion"
 
 interface TooltipProps {
@@ -12,7 +12,7 @@ interface TooltipProps {
 
 export function Tooltip({ children, content, delayMs = 300, position = "top", className }: TooltipProps) {
   const [isVisible, setIsVisible] = React.useState(false);
-  const timeoutRef = React.useRef<NodeJS.Timeout>();
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = () => {
     timeoutRef.current = setTimeout(() => {
