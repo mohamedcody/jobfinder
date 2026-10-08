@@ -143,6 +143,12 @@ public class ProfileDataMapper {
         if (aiResult.country() != null) {
             profile.setCountry(aiResult.country());
         }
+        if (aiResult.fullName() != null) {
+            profile.setFullName(aiResult.fullName());
+        }
+        if (aiResult.phone() != null) {
+            profile.setPhoneNumber(aiResult.phone());
+        }
         profile.setCvParsedAt(LocalDateTime.now());
     }
 

@@ -124,7 +124,9 @@ export default function SettingsPage() {
   // Sync server state → local state when settings load
   useEffect(() => {
     if (settings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalDigest(settings.dailyDigestEnabled);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalScore(settings.minMatchScore);
     }
   }, [settings]);
@@ -134,6 +136,7 @@ export default function SettingsPage() {
   
   useEffect(() => {
     if (isDirty) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSaveSuccess(false);
     }
   }, [isDirty]);
