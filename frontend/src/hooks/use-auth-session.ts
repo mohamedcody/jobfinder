@@ -9,6 +9,7 @@ import {
   saveToken,
   TOKEN_KEY,
 } from "@/utils/token-storage";
+import { authService } from "@/services/auth.service";
 
 export const useAuthSession = () => {
   const [token, setToken] = useState<string | null>(null);
@@ -73,7 +74,9 @@ export const useAuthSession = () => {
     setToken(newToken);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Fire-and-forget API call to clear HTTP-only refresh cookie
+    authService.logout();
     clearToken();
     setToken(null);
   }, []);

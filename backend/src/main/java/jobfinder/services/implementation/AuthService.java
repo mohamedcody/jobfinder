@@ -2,6 +2,7 @@ package jobfinder.services.implementation;
 import jakarta.transaction.Transactional;
 import jobfinder.config.CustomUserDetails;
 import jobfinder.exception.BaseException;
+import java.util.Optional;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.*;
 import jobfinder.model.entity.OtpCode;
@@ -287,30 +288,61 @@ public class AuthService implements AuthInterface {
         if (identity.email() == null || identity.email().isEmpty()) {
             throw new BaseException(ErrorCode.INVALID_INPUT, "Google identity does not contain an email");
         }
-
-        User user = userRepository.findByEmail(identity.email())
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .username(identity.email().split("@")[0] + "_" + secureRandom.nextInt(10000))
-                            .email(identity.email())
-                            .password(passwordEncoder.encode(String.valueOf(secureRandom.nextLong())))
-                            .role("USER")
-                            .enabled(true) 
-                            .emailVerified(true)
-                            .build();
-                    return userRepository.save(newUser);
-                });
-
-        if (!user.isEnabled()) {
-            throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
+        if (identity.subject() == null || identity.subject().isEmpty()) {
+            throw new BaseException(ErrorCode.INVALID_INPUT, "Google identity does not contain a valid subject");
         }
 
+        // Step A: Find by Auth Provider & Provider ID
+        Optional<User> optionalProviderUser = userRepository.findByAuthProviderAndProviderId("GOOGLE", identity.subject());
+        User user;
+
+        if (optionalProviderUser.isPresent()) {
+            user = optionalProviderUser.get();
+            if (!user.isEnabled()) {
+                throw new BaseException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
+            }
+        } else {
+            // Step B: Find by Email Fallback
+            Optional<User> optionalEmailUser = userRepository.findByEmail(identity.email());
+            
+            if (optionalEmailUser.isPresent()) {
+                User existingUser = optionalEmailUser.get();
+                
+                // If it is an unverified LOCAL squatter account, safely evict it
+                if ("LOCAL".equals(existingUser.getAuthProvider()) && !existingUser.isEmailVerified()) {
+                    // Safe Squatter Eviction: Delete the shell account completely.
+                    userRepository.delete(existingUser);
+                    userRepository.flush(); // Ensure deletion is committed before creating the new one
+                    
+                    user = createNewGoogleUser(identity);
+                } else {
+                    // Conflict with a verified account or another provider
+                    throw new BaseException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email is already registered. Please log in using your password.");
+                }
+            } else {
+                user = createNewGoogleUser(identity);
+            }
+        }
 
         UserDetails details = createDetails(user);
         String accessToken = jwtService.generateToken(details);
         String refreshToken = jwtService.generateRefreshToken(details);
 
         return new AuthResponseDto(accessToken, refreshToken, user.getEmail(), user.getRole(), "Google Login Successful");
+    }
+
+    private User createNewGoogleUser(jobfinder.model.dto.GoogleIdentity identity) {
+        User newUser = User.builder()
+                .username(identity.email().split("@")[0] + "_" + secureRandom.nextInt(10000))
+                .email(identity.email())
+                .password(passwordEncoder.encode(String.valueOf(secureRandom.nextLong())))
+                .role("USER")
+                .authProvider("GOOGLE")
+                .providerId(identity.subject())
+                .enabled(true)
+                .emailVerified(true)
+                .build();
+        return userRepository.save(newUser);
     }
 
     private void saveAndSendOtpInterna(User user) {

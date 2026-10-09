@@ -4,7 +4,9 @@ import { getApiErrorMessage, isRequestCanceled } from '../api-error';
 describe('Api Error Utils', () => {
   it('should extract error message from axios response', () => {
     const error = {
+      isAxiosError: true,
       response: {
+        status: 400,
         data: {
           message: 'Custom backend error',
         },
@@ -19,7 +21,7 @@ describe('Api Error Utils', () => {
   });
 
   it('should detect canceled request', () => {
-    const error = { code: 'ERR_CANCELED' };
+    const error = { isAxiosError: true, code: 'ERR_CANCELED' };
     expect(isRequestCanceled(error)).toBe(true);
   });
 });

@@ -29,6 +29,13 @@ public class User {
     @Column(name = "role", nullable = false, length = 20)
     private String role;
 
+    @Column(name = "auth_provider", nullable = false, length = 50)
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
     @Column(name = "enabled", nullable = false)
     private boolean enabled = false;
 

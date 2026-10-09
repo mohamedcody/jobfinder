@@ -45,4 +45,12 @@ export const authService = {
     const { data } = await apiClient.post<string>("/resend-verification-otp", payload);
     return data;
   },
+
+  async logout() {
+    try {
+      await apiClient.post("/logout");
+    } catch (error) {
+      console.error("Logout API failed, continuing client-side logout", error);
+    }
+  },
 };

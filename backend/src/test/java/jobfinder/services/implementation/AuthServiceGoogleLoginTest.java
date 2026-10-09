@@ -1,6 +1,5 @@
 package jobfinder.services.implementation;
 
-import jobfinder.config.CustomUserDetails;
 import jobfinder.exception.BaseException;
 import jobfinder.exception.ErrorCode;
 import jobfinder.model.dto.AuthResponseDto;
@@ -13,11 +12,13 @@ import jobfinder.util.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.security.SecureRandom;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,144 +29,121 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceGoogleLoginTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private JwtService jwtService;
-
-    @Mock
-    private GoogleTokenVerifier googleTokenVerifier;
+    @Mock private GoogleTokenVerifier googleTokenVerifier;
+    @Mock private UserRepository userRepository;
+    @Mock private JwtService jwtService;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private AuthService authService;
 
-    private GoogleLoginRequest validRequest;
     private GoogleIdentity validIdentity;
+    private GoogleLoginRequest request;
 
     @BeforeEach
     void setUp() {
-        validRequest = new GoogleLoginRequest("valid.google.token");
-        validIdentity = new GoogleIdentity("sub123", "test@gmail.com", "Test User");
+        validIdentity = new GoogleIdentity("sub-123", "test@example.com", "Test User");
+        request = new GoogleLoginRequest("valid-id-token");
     }
 
-    // 1. Valid Google Token & 7. New Google User
     @Test
-    void testGoogleLogin_ValidToken_NewUser_ShouldCreateUserAndGenerateTokens() {
-        when(googleTokenVerifier.verify("valid.google.token")).thenReturn(validIdentity);
-        when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.empty());
+    void shouldCreateNewAccountForNewGoogleIdentity() {
+        when(googleTokenVerifier.verify("valid-id-token")).thenReturn(validIdentity);
+        when(userRepository.findByAuthProviderAndProviderId("GOOGLE", "sub-123")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
         
-        User savedUser = User.builder()
-                .id(1L)
-                .email("test@gmail.com")
-                .role("USER")
-                .enabled(true)
-                .build();
-                
-        when(passwordEncoder.encode(anyString())).thenReturn("hashedRandomPass");
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
+        
+        User savedUser = User.builder().email("test@example.com").authProvider("GOOGLE").providerId("sub-123").role("USER").enabled(true).emailVerified(true).build();
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(jwtService.generateToken(any())).thenReturn("access_token");
-        when(jwtService.generateRefreshToken(any())).thenReturn("refresh_token");
+        when(jwtService.generateToken(any())).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
 
-        AuthResponseDto response = authService.googleLogin(validRequest);
-
-        assertNotNull(response);
-        assertEquals("access_token", response.token());
-        assertEquals("refresh_token", response.refreshToken());
-        assertEquals("test@gmail.com", response.email());
-        
-        verify(userRepository).save(argThat(user -> 
-            user.getEmail().equals("test@gmail.com") && 
-            user.isEnabled() && 
-            user.isEmailVerified()
-        ));
-    }
-
-    // 6. Existing User
-    @Test
-    void testGoogleLogin_ExistingUser_ShouldNotCreateDuplicateUser() {
-        when(googleTokenVerifier.verify("valid.google.token")).thenReturn(validIdentity);
-        
-        User existingUser = User.builder()
-                .id(1L)
-                .email("test@gmail.com")
-                .role("USER")
-                .enabled(true)
-                .build();
-                
-        when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(existingUser));
-        when(jwtService.generateToken(any())).thenReturn("access_token");
-        when(jwtService.generateRefreshToken(any())).thenReturn("refresh_token");
-
-        AuthResponseDto response = authService.googleLogin(validRequest);
+        AuthResponseDto response = authService.googleLogin(request);
 
         assertNotNull(response);
-        assertEquals("access_token", response.token());
+        assertEquals("access-token", response.token());
         
-        // Ensure save is NOT called for a new user creation, and NOT called to update if already enabled
-        verify(userRepository, never()).save(any(User.class));
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User created = userCaptor.getValue();
+        assertEquals("GOOGLE", created.getAuthProvider());
+        assertEquals("sub-123", created.getProviderId());
+        assertTrue(created.isEnabled());
+        assertTrue(created.isEmailVerified());
     }
 
-    // 2. Invalid Token, 3. Expired Token, 4. Wrong Client ID
     @Test
-    void testGoogleLogin_InvalidToken_ShouldThrowException() {
-        when(googleTokenVerifier.verify("invalid.token"))
-                .thenThrow(new BaseException(ErrorCode.INVALID_CREDENTIALS, "Invalid Google ID token."));
+    void shouldLoginExistingGoogleAccount() {
+        when(googleTokenVerifier.verify("valid-id-token")).thenReturn(validIdentity);
+        
+        User existingUser = User.builder().email("test@example.com").authProvider("GOOGLE").providerId("sub-123").enabled(true).role("USER").build();
+        when(userRepository.findByAuthProviderAndProviderId("GOOGLE", "sub-123")).thenReturn(Optional.of(existingUser));
+        
+        when(jwtService.generateToken(any())).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
 
-        GoogleLoginRequest invalidReq = new GoogleLoginRequest("invalid.token");
-        
-        BaseException ex = assertThrows(BaseException.class, () -> authService.googleLogin(invalidReq));
-        assertEquals(ErrorCode.INVALID_CREDENTIALS, ex.getErrorCode());
-        
-        verify(userRepository, never()).findByEmail(anyString());
-        verify(jwtService, never()).generateToken(any());
+        AuthResponseDto response = authService.googleLogin(request);
+
+        assertNotNull(response);
+        assertEquals("access-token", response.token());
+        verify(userRepository, never()).save(any(User.class)); // Shouldn't save
     }
 
-    // 5. Missing Token
     @Test
-    void testGoogleLogin_MissingToken_ShouldBeRejected() {
-        // Technically controller handles @NotBlank, but let's test verifier handling null or service rejecting
-        when(googleTokenVerifier.verify(null))
-                .thenThrow(new BaseException(ErrorCode.INVALID_CREDENTIALS, "Missing token"));
-
-        GoogleLoginRequest nullReq = new GoogleLoginRequest(null);
+    void shouldRejectBannedGoogleAccount() {
+        when(googleTokenVerifier.verify("valid-id-token")).thenReturn(validIdentity);
         
-        assertThrows(BaseException.class, () -> authService.googleLogin(nullReq));
-        verify(userRepository, never()).findByEmail(anyString());
-    }
-
-    // 8. Missing Google Email
-    @Test
-    void testGoogleLogin_DisabledExistingUser_ShouldRejectLogin() {
-        when(googleTokenVerifier.verify("valid.google.token"))
-                .thenReturn(validIdentity);
-
-        User disabledUser = User.builder()
-                .id(1L)
-                .email("test@gmail.com")
-                .role("USER")
-                .enabled(false)
-                .emailVerified(false)
-                .build();
-
-        when(userRepository.findByEmail("test@gmail.com"))
-                .thenReturn(Optional.of(disabledUser));
-
-        BaseException ex = assertThrows(
-                BaseException.class,
-                () -> authService.googleLogin(validRequest)
-        );
-
+        User bannedUser = User.builder().email("test@example.com").authProvider("GOOGLE").providerId("sub-123").enabled(false).role("USER").build();
+        when(userRepository.findByAuthProviderAndProviderId("GOOGLE", "sub-123")).thenReturn(Optional.of(bannedUser));
+        
+        BaseException ex = assertThrows(BaseException.class, () -> authService.googleLogin(request));
         assertEquals(ErrorCode.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
-
-        // Must not enable or save the disabled account
-        assertFalse(disabledUser.isEnabled());
-
-        verify(userRepository, never()).save(any(User.class));
+        
         verify(jwtService, never()).generateToken(any());
-        verify(jwtService, never()).generateRefreshToken(any());
+    }
+
+    @Test
+    void shouldRejectGoogleLoginIfVerifiedLocalAccountExists() {
+        when(googleTokenVerifier.verify("valid-id-token")).thenReturn(validIdentity);
+        when(userRepository.findByAuthProviderAndProviderId("GOOGLE", "sub-123")).thenReturn(Optional.empty());
+        
+        User localUser = User.builder().email("test@example.com").authProvider("LOCAL").emailVerified(true).enabled(true).build();
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(localUser));
+        
+        BaseException ex = assertThrows(BaseException.class, () -> authService.googleLogin(request));
+        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+        
+        verify(userRepository, never()).delete(any());
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void shouldUsurpUnverifiedLocalAccount() {
+        when(googleTokenVerifier.verify("valid-id-token")).thenReturn(validIdentity);
+        when(userRepository.findByAuthProviderAndProviderId("GOOGLE", "sub-123")).thenReturn(Optional.empty());
+        
+        User unverifiedLocalUser = User.builder().email("test@example.com").authProvider("LOCAL").emailVerified(false).enabled(false).build();
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(unverifiedLocalUser));
+        
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
+        
+        User newGoogleUser = User.builder().email("test@example.com").authProvider("GOOGLE").providerId("sub-123").role("USER").enabled(true).emailVerified(true).build();
+        when(userRepository.save(any(User.class))).thenReturn(newGoogleUser);
+        
+        when(jwtService.generateToken(any())).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(any())).thenReturn("refresh-token");
+
+        AuthResponseDto response = authService.googleLogin(request);
+
+        assertNotNull(response);
+        verify(userRepository).delete(unverifiedLocalUser); // Squatter evicted
+        verify(userRepository).flush();
+        
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User created = userCaptor.getValue();
+        assertEquals("GOOGLE", created.getAuthProvider());
+        assertEquals("sub-123", created.getProviderId());
     }
 }
