@@ -106,3 +106,4 @@ Stateless authentication using JWTs. The flow requires users to verify their ema
 - Test coverage is critically low for core business logic (Auth, Profile, Saved Jobs).
 - The `CvUploadController` currently blocks a reactive WebFlux thread, which may limit scalability during high traffic.
 - Semantic matching logic is duplicated across multiple services.
+- Google OAuth2 authentication flow has been recently updated for enhanced security.
