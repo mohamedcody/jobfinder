@@ -13,45 +13,57 @@ public class JobSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // 0. Only active jobs
+            predicates.add(criteriaBuilder.isTrue(root.get("isActive")));
+
             // 1. Cursor Pagination (lastId) - For DESC order, we want IDs smaller than lastId
             if (lastId != null && lastId > 0) {
                 predicates.add(criteriaBuilder.lessThan(root.get("id"), lastId));
             }
 
-            // 2. Filter by Title
-            if (filter.title() != null && !filter.title().trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("title")),
-                        "%" + filter.title().toLowerCase() + "%"
-                ));
+            if (filter != null) {
+                // 2. Filter by Title
+                if (filter.title() != null && !filter.title().trim().isEmpty()) {
+                    predicates.add(criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("title")),
+                            "%" + filter.title().trim().toLowerCase() + "%"
+                    ));
+                }
+
+                // 3. Filter by Location
+                if (filter.location() != null && !filter.location().trim().isEmpty()) {
+                    predicates.add(criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("location")),
+                            "%" + filter.location().trim().toLowerCase() + "%"
+                    ));
+                }
+
+                // 4. Filter by Date
+                if (filter.postedAfter() != null) {
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                            root.get("scrapedAt"),
+                            filter.postedAfter().atStartOfDay()
+                    ));
+                }
+
+                // 5. Filter by Employment Type (Remote/Full-time etc)
+                if (filter.employmentType() != null && !filter.employmentType().trim().isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(
+                            criteriaBuilder.lower(root.get("employmentType")),
+                            filter.employmentType().trim().toLowerCase()
+                    ));
+                }
             }
 
-            // 3. Filter by Location
-            if (filter.location() != null && !filter.location().trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("location")),
-                        "%" + filter.location().toLowerCase() + "%"
-                ));
+            // ✅ FIX: تثبيت الترتيب وحل مشكلة N+1 بتفعيل Eager Fetching للشركة فقط في استعلام البيانات وليس الـ Count
+            if (query != null && Long.class != query.getResultType() && long.class != query.getResultType()) {
+                boolean alreadyFetched = root.getFetches().stream()
+                        .anyMatch(f -> "company".equals(f.getAttribute().getName()));
+                if (!alreadyFetched) {
+                    root.fetch("company", jakarta.persistence.criteria.JoinType.LEFT);
+                }
+                query.orderBy(criteriaBuilder.desc(root.get("id")));
             }
-
-            // 4. Filter by Date
-            if (filter.postedAfter() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
-                        root.get("scrapedAt"),
-                        filter.postedAfter().atStartOfDay()
-                ));
-            }
-
-            // 5. Filter by Employment Type (Remote/Full-time etc)
-            if (filter.employmentType() != null && !filter.employmentType().trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.lower(root.get("employmentType")),
-                        filter.employmentType().toLowerCase()
-                ));
-            }
-
-            // ✅ FIX: تثبيت الترتيب لضمان استقرار وموثوقية الـ Cursor Pagination
-            query.orderBy(criteriaBuilder.desc(root.get("id")));
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };

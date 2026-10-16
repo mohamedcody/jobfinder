@@ -118,13 +118,13 @@ export function JobSearchFilter({
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isLoading}
-              className="relative overflow-hidden flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-violet-600/20 disabled:opacity-50"
+              className="relative overflow-hidden flex-1 sm:flex-none justify-center flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-violet-600/20 disabled:opacity-50 cursor-pointer"
             >
               {isLoading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -138,13 +138,18 @@ export function JobSearchFilter({
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-all border ${
+              className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all border cursor-pointer ${
                 showAdvanced
                   ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
                   : "bg-white/5 border-white/5 text-slate-400 hover:text-white"
               }`}
+              title="Advanced Filters"
+              aria-label="Toggle advanced filters"
             >
               <SlidersHorizontal className="h-5 w-5" />
+              {(value.datePreset !== "any" || Boolean(value.empType)) && (
+                <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-cyan-400 ring-2 ring-[#0a0c24]" />
+              )}
             </button>
           </div>
         </div>

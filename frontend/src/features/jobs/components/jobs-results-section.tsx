@@ -9,7 +9,7 @@
 
 "use client";
 
-import { memo, useRef, useEffect } from "react";
+import { memo, useRef, useEffect, useMemo } from "react";
 import { 
   AlertCircle, 
   Filter, 
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { JobCard } from "@/features/jobs/components/job-card";
+import { useSavedJobs } from "@/hooks/use-saved-jobs";
 import type { Job } from "@/types/jobs.types";
 import type { JobSearchFormState } from "@/features/jobs/components/job-search-filter";
 
@@ -36,6 +37,7 @@ interface JobsResultsSectionProps {
   onRemoveFilter: (key: keyof JobSearchFormState) => void;
   onClearAll: () => void;
   onRefresh: () => void;
+  onSelectPopularSearch?: (term: string) => void;
 }
 
 function JobsResultsSectionComponent({
@@ -52,9 +54,13 @@ function JobsResultsSectionComponent({
   onRemoveFilter,
   onClearAll,
   onRefresh,
+  onSelectPopularSearch,
 }: JobsResultsSectionProps) {
   const showError = error && jobs.length === 0;
   const showEmpty = !isLoading && !showError && jobs.length === 0;
+
+  const visibleJobIds = useMemo(() => jobs.map((job) => job.id).filter(Boolean), [jobs]);
+  useSavedJobs(visibleJobIds);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const isLoadMoreInView = useInView(loadMoreRef, { margin: "200px" });
@@ -95,7 +101,7 @@ function JobsResultsSectionComponent({
           <button
             onClick={onRefresh}
             disabled={isLoading || isLoadingMore}
-            className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600/10 border border-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white transition-all shadow-lg shadow-violet-600/5"
+            className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600/10 border border-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white transition-all shadow-lg shadow-violet-600/5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             <span className="text-[10px] font-black uppercase tracking-widest">Refresh System</span>
@@ -168,9 +174,13 @@ function JobsResultsSectionComponent({
                 <Filter className="h-10 w-10 text-violet-400" />
               </div>
             </div>
-            <h3 className="text-3xl font-black text-white tracking-tight">Ready to Search?</h3>
+            <h3 className="text-3xl font-black text-white tracking-tight">
+              {activeChips.length > 0 ? "No Matching Opportunities" : "Ready to Search?"}
+            </h3>
             <p className="mx-auto mt-4 max-w-md text-lg text-slate-400 leading-relaxed">
-              Enter a job title, location, or skill above to discover matching opportunities tailored to your profile.
+              {activeChips.length > 0
+                ? "We couldn't find any opportunities matching your active search criteria. Try broadening your keywords or clearing some filters."
+                : "Enter a job title, location, or skill above to discover matching opportunities tailored to your profile."}
             </p>
             <div className="mt-8 space-y-3">
               <p className="text-sm text-slate-500">Popular searches:</p>
@@ -178,7 +188,9 @@ function JobsResultsSectionComponent({
                 {["React Developer", "Full Stack", "Remote"].map((term) => (
                   <button
                     key={term}
-                    className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-violet-400 border border-slate-700 hover:border-violet-500/30 transition-all"
+                    type="button"
+                    onClick={() => onSelectPopularSearch?.(term)}
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-violet-400 border border-slate-700 hover:border-violet-500/30 transition-all cursor-pointer"
                   >
                     {term}
                   </button>

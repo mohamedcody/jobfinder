@@ -10,6 +10,7 @@ export interface Job {
   companyDescription: string | null;
   seniorityLevel: string | null;
   employmentType: string | null;
+  salaryRange?: string | null;
   aiSummary?: string;
   scrapedAt: string;
 }

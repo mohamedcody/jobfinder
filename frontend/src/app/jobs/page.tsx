@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
   Sparkles,
   Zap
@@ -50,6 +50,8 @@ function JobsListFallback() {
 }
 
 export default function JobsPage() {
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
   return (
     <AppLayout>
       <div className="space-y-8">
@@ -66,47 +68,63 @@ export default function JobsPage() {
         </div>
 
         {/* AI Match Section - Premium & Clear */}
-        <section className="fade-up group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-indigo-950/40 border border-white/10 p-6 sm:p-8 shadow-2xl shadow-violet-500/10">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
-          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
+        {!isBannerDismissed && (
+          <section className="fade-up group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-indigo-950/40 border border-white/10 p-6 sm:p-8 shadow-2xl shadow-violet-500/10">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
+            <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
 
-          <div className="relative z-10">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-              <div className="flex items-start gap-6 flex-1">
-                <div className="relative shrink-0">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                  <div className="relative h-16 w-16 rounded-2xl border border-white/10 bg-[#07091a] flex items-center justify-center">
-                    <Sparkles className="h-8 w-8 text-violet-400" />
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div className="flex items-start gap-6 flex-1">
+                  <div className="relative shrink-0">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                    <div className="relative h-16 w-16 rounded-2xl border border-white/10 bg-[#07091a] flex items-center justify-center">
+                      <Sparkles className="h-8 w-8 text-violet-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white border-2 border-[#0a0c24]">
+                      AI
+                    </div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white border-2 border-[#0a0c24]">
-                    AI
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3 flex-wrap">
+                      <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] font-black uppercase tracking-widest text-violet-400">🎯 Perfect Match</span>
+                      <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                        <Zap className="h-3.5 w-3.5 fill-current" /> 98% Compatibility
+                      </span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2">
+                      Senior Software Engineer <span className="text-slate-500 font-medium text-xl">@ Remote</span>
+                    </h2>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      Based on your expertise in <span className="text-cyan-300 font-bold">React</span>, <span className="text-violet-300 font-bold">Node.js</span>, and <span className="text-emerald-300 font-bold">AWS</span>, this is our top recommendation for your career growth.
+                      <span className="block text-xs text-slate-400 mt-2">💡 Tip: Click &quot;AI Insights&quot; on any job card to get detailed analysis and alignment score.</span>
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3 flex-wrap">
-                    <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] font-black uppercase tracking-widest text-violet-400">🎯 Perfect Match</span>
-                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                      <Zap className="h-3.5 w-3.5 fill-current" /> 98% Compatibility
-                    </span>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2">
-                    Senior Software Engineer <span className="text-slate-500 font-medium text-xl">@ Remote</span>
-                  </h2>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Based on your expertise in <span className="text-cyan-300 font-bold">React</span>, <span className="text-violet-300 font-bold">Node.js</span>, and <span className="text-emerald-300 font-bold">AWS</span>, this is our top recommendation for your career growth.
-                    <span className="block text-xs text-slate-400 mt-2">💡 Tip: Click &quot;AI Insights&quot; on any job card to get detailed analysis and alignment score.</span>
-                  </p>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="font-bold cursor-pointer"
+                    onClick={() => document.getElementById("jobs-list-container")?.scrollIntoView({ behavior: "smooth" })}
+                  >
+                    Quick Apply
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={() => setIsBannerDismissed(true)}
+                  >
+                    Dismiss
+                  </Button>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <Button variant="primary" size="sm" className="font-bold">Quick Apply</Button>
-                <Button variant="ghost" size="sm">Dismiss</Button>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Info Section */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -125,13 +143,19 @@ export default function JobsPage() {
         </div>
 
         {/* Middle: Jobs List */}
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
+        <div id="jobs-list-container" className="fade-up" style={{ animationDelay: "0.1s" }}>
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-black text-white">Recommended Roles</h2>
               <p className="text-xs text-slate-400 mt-1">Ranked by AI match quality and career alignment</p>
             </div>
-            <span className="text-xs text-slate-400 font-medium hover:text-white cursor-pointer transition-colors">View All →</span>
+            <button
+              type="button"
+              onClick={() => document.getElementById("jobs-list-container")?.scrollIntoView({ behavior: "smooth" })}
+              className="text-xs text-slate-400 font-medium hover:text-white cursor-pointer transition-colors"
+            >
+              View All →
+            </button>
           </div>
           <Suspense fallback={<JobsListFallback />}>
             <JobsList />

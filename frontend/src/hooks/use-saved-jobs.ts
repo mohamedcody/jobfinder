@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getApiErrorMessage, isRequestCanceled } from "@/utils/api-error";
+import { isRequestCanceled } from "@/utils/api-error";
 import { hasValidToken } from "@/utils/token-storage";
 import { APP_CONSTANTS } from "@/constants";
-import { savedJobsService } from "@/services/saved-jobs.service";
+import { savedJobsService, getSavedJobsErrorMessage } from "@/services/saved-jobs.service";
 import type { SaveJobRequest, SavedJobResponse as SavedJob } from "@/types/saved-jobs.types";
 
 /** Use centralized constant as the single source of truth for the localStorage key. */
 const SAVED_JOBS_KEY = APP_CONSTANTS.SAVED_JOBS_STORAGE_KEY;
+const SAVED_JOBS_EVENT = "jobfinder:saved-jobs-changed";
 const EMPTY_JOB_IDS: number[] = [];
-
 
 interface SavedJobsStore {
   [jobId: number]: boolean;
@@ -39,6 +39,11 @@ const persistSavedJobs = (jobs: SavedJobsStore) => {
   window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(jobs));
 };
 
+const emitSavedJobsChange = (jobs: SavedJobsStore) => {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(SAVED_JOBS_EVENT, { detail: jobs }));
+};
+
 /**
  * Backend-first saved jobs hook with optimistic UI and localStorage fallback.
  * Pass visible job IDs from list pages to sync all cards in one batch request.
@@ -61,6 +66,7 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
     setSavedJobs((current) => {
       const next = updater(current);
       persistSavedJobs(next);
+      emitSavedJobsChange(next);
       return next;
     });
   }, []);
@@ -114,13 +120,40 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
       return saved;
     } catch (error) {
       if (!isRequestCanceled(error)) {
-        toast.error(getApiErrorMessage(error));
+        toast.error(getSavedJobsErrorMessage(error));
       }
       return [];
     } finally {
       setIsSyncing(false);
     }
   }, [updateSavedJobs]);
+
+  useEffect(() => {
+    const handleSavedJobsChange = (e: Event) => {
+      const customEvent = e as CustomEvent<SavedJobsStore>;
+      if (customEvent.detail) {
+        setSavedJobs(customEvent.detail);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SAVED_JOBS_KEY && e.newValue) {
+        try {
+          setSavedJobs(JSON.parse(e.newValue));
+        } catch {
+          // ignore invalid JSON
+        }
+      }
+    };
+
+    window.addEventListener(SAVED_JOBS_EVENT, handleSavedJobsChange);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener(SAVED_JOBS_EVENT, handleSavedJobsChange);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -143,6 +176,11 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
 
   const toggleSaveJob = useCallback(
     async (jobId: number, payload?: SaveJobRequest) => {
+      if (!hasValidToken()) {
+        toast.error("Please sign in to save jobs.");
+        return;
+      }
+
       if (isPending(jobId)) return;
 
       const wasSaved = savedJobs[jobId] === true;
@@ -172,7 +210,7 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
           else delete next[jobId];
           return next;
         });
-        toast.error(getApiErrorMessage(error));
+        toast.error(getSavedJobsErrorMessage(error));
       } finally {
         setPending(jobId, false);
       }
@@ -181,6 +219,11 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
   );
 
   const clearSavedJobs = useCallback(async () => {
+    if (!hasValidToken()) {
+      toast.error("Please sign in to manage saved jobs.");
+      return;
+    }
+
     const jobsToRemove = Object.keys(savedJobs).map(Number).filter(Number.isFinite);
     const previous = savedJobs;
 
@@ -192,7 +235,7 @@ export const useSavedJobs = (visibleJobIds: number[] = EMPTY_JOB_IDS) => {
       toast.success("All saved jobs cleared");
     } catch (error) {
       updateSavedJobs(() => previous);
-      toast.error(getApiErrorMessage(error));
+      toast.error(getSavedJobsErrorMessage(error));
     }
   }, [savedJobs, updateSavedJobs]);
 

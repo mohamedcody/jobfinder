@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { 
   JobSearchFilter, 
+  createEmptyJobSearchState,
   type JobSearchFormState 
 } from "@/features/jobs/components/job-search-filter";
 import { useJobsSearch } from "@/hooks/use-jobs-search";
@@ -27,6 +28,15 @@ export function JobsList() {
     handleRetrySearch,
     handleRefresh,
   } = useJobsSearch();
+
+  const handleSelectPopularSearch = (term: string) => {
+    const isRemote = term.toLowerCase() === "remote";
+    const nextState: JobSearchFormState = {
+      ...createEmptyJobSearchState(),
+      ...(isRemote ? { empType: "Remote" } : { title: term }),
+    };
+    handleSearch(nextState);
+  };
 
   const activeChips = useMemo(
     () => [
@@ -64,6 +74,7 @@ export function JobsList() {
         onRemoveFilter={handleRemoveFilter}
         onClearAll={handleClearAll}
         onRefresh={handleRefresh}
+        onSelectPopularSearch={handleSelectPopularSearch}
       />
     </div>
   );

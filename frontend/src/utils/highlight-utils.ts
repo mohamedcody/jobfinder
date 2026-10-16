@@ -14,14 +14,15 @@ export function getHighlightParts(text: string, searchTerm: string) {
 
   // Escape special regex characters
   const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  const parts = text.split(regex);
+  const splitRegex = new RegExp(`(${escaped})`, "gi");
+  const matchRegex = new RegExp(`^(${escaped})$`, "i");
+  const parts = text.split(splitRegex);
 
   return parts
     .filter((part) => part.length > 0)
     .map((part) => ({
       text: part,
-      isMatch: regex.test(part),
+      isMatch: matchRegex.test(part),
     }));
 }
 
@@ -34,13 +35,14 @@ export function highlightText(text: string, searchTerm: string): React.ReactNode
   }
 
   const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  const parts = text.split(regex);
+  const splitRegex = new RegExp(`(${escaped})`, "gi");
+  const matchRegex = new RegExp(`^(${escaped})$`, "i");
+  const parts = text.split(splitRegex);
 
   const children = parts
     .filter((part) => part.length > 0)
     .map((part, idx) =>
-      regex.test(part)
+      matchRegex.test(part)
         ? createElement("mark", {
             key: idx,
             className: "bg-yellow-400/30 text-yellow-100 font-semibold rounded px-0.5 py-0.5",

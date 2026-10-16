@@ -18,7 +18,9 @@ import {
   ExternalLink,
   Trash2,
   StickyNote,
+  Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/utils/time-utils";
@@ -276,10 +278,17 @@ export default function SavedMatchesPage() {
             <Bookmark className="h-7 w-7 text-violet-400" />
           </div>
           <h2 className="text-lg font-black text-white mb-2">No Saved Jobs Yet</h2>
-          <p className="text-sm text-slate-400 max-w-sm">
+          <p className="text-sm text-slate-400 max-w-sm mb-6">
             Click the heart icon on any job card to save it here and track your application
             progress.
           </p>
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-violet-600/20 hover:from-violet-500 hover:to-indigo-500 transition-all cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" />
+            Explore Opportunities
+          </Link>
         </div>
       )}
 

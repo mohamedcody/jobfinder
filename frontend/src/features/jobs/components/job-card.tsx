@@ -11,7 +11,8 @@ import {
   ArrowUpRight,
   ExternalLink,
   ChevronDown,
-  Bot
+  Bot,
+  DollarSign
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Job } from "@/types/jobs.types";
@@ -92,6 +93,12 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
                   • {job.employmentType}
                 </span>
+                )}
+                {job.salaryRange && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-cyan-400 border border-cyan-500/20">
+                    <DollarSign className="h-2.5 w-2.5" />
+                    {job.salaryRange}
+                  </span>
                 )}
               </div>
               <h3 className="text-xl font-black text-white group-hover:text-violet-400 transition-colors truncate tracking-tight">
@@ -235,12 +242,16 @@ export const JobCard = memo(function JobCardComponent({ job, searchTerm = "" }: 
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover/apply:translate-x-1 group-hover/apply:-translate-y-1" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/apply:translate-x-full transition-transform duration-1000" />
           </a>
-          <button 
-            className="h-14 w-14 rounded-2xl bg-white/5 text-slate-500 hover:text-white transition-all border border-white/5 flex items-center justify-center"
+          <a 
+            href={job.companyWebsite || job.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-14 w-14 shrink-0 rounded-2xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5 flex items-center justify-center cursor-pointer"
             aria-label={`View ${job.companyName} company profile or external resources`}
+            title={job.companyWebsite ? "Visit Company Website" : "Open Original Job Posting"}
           >
             <ExternalLink className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </a>
         </div>
       </motion.article>
   );
