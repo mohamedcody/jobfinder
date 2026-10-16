@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { CvUploaderWidget } from "@/components/cv-parser";
+import { CvUploaderWidget } from "@/features/cv-parser/components";
 import { FileText, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 

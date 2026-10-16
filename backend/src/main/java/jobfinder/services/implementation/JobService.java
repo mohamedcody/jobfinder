@@ -35,7 +35,7 @@ public class JobService implements JobInterface {
     private final CacheManager cacheManager;
 
     @Override
-    @Cacheable(value = "jobs", key = "{'all', #lastId, #size}")
+    @Cacheable(value = "jobs", key = "{'all', (#lastId != null && #lastId > 0) ? #lastId : 0, (#size <= 0 || #size > 100) ? 10 : #size}")
     public CursorPageResponseDto<JobResponseDTO> getJobsAdvanced(Long lastId, int size) {
         JobFilterRequest emptyFilter = new JobFilterRequest(null, null, null, null, null);
         return searchJobsByFilter(emptyFilter, lastId, size);
@@ -49,9 +49,10 @@ public class JobService implements JobInterface {
             return new CursorPageResponseDto<>(List.of(), 0, null, false);
         }
 
-        List<JobEntity> results = jobRepository.searchJobsFullText(sanitizedTitle, location, lastId, size + 1);
-        boolean hasNext = results.size() > size;
-        List<JobEntity> pageData = hasNext ? results.subList(0, size) : results;
+        int limit = (size <= 0 || size > 100) ? 10 : size;
+        List<JobEntity> results = jobRepository.searchJobsFullText(sanitizedTitle, location, lastId, limit + 1);
+        boolean hasNext = results.size() > limit;
+        List<JobEntity> pageData = hasNext ? results.subList(0, limit) : results;
         List<JobResponseDTO> dtos = pageData.stream().map(this::convertToDTO).toList();
         Long nextCursor = (hasNext && !pageData.isEmpty()) ? pageData.get(pageData.size() - 1).getId() : null;
 
@@ -59,7 +60,7 @@ public class JobService implements JobInterface {
     }
 
     @Override
-    @Cacheable(value = "jobs", key = "{#filter.title(), #filter.location(), #filter.employmentType(), #filter.postedAfter(), #lastId, #size}")
+    @Cacheable(value = "jobs", key = "{#filter?.title()?.trim()?.toLowerCase(), #filter?.location()?.trim()?.toLowerCase(), #filter?.employmentType()?.trim()?.toLowerCase(), #filter?.postedAfter(), (#lastId != null && #lastId > 0) ? #lastId : 0, (#size <= 0 || #size > 100) ? 10 : #size}")
     public CursorPageResponseDto<JobResponseDTO> searchJobsByFilter(JobFilterRequest filter, Long lastId, int size) {
         log.info("🚀 Sovereign Search applied: {}", filter);
         try {
@@ -75,7 +76,7 @@ public class JobService implements JobInterface {
 
             boolean hasNext = jobList.size() > limit;
             List<JobEntity> finalContent = hasNext ? jobList.subList(0, limit) : jobList;
-            Long nextCursor = finalContent.get(finalContent.size() - 1).getId();
+            Long nextCursor = hasNext ? finalContent.get(finalContent.size() - 1).getId() : null;
 
             return new CursorPageResponseDto<>(finalContent.stream().map(this::convertToDTO).toList(), limit, nextCursor, hasNext);
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { BarChart3, Zap, ArrowRight, ShieldCheck, ChevronDown, UserCircle2, BriefcaseBusiness, Sparkles, Filter, Clock3, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuthSession } from "@/lib/auth/use-auth-session";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { Button } from "@/components/ui/button";
 
 const containerVariants: Variants = {

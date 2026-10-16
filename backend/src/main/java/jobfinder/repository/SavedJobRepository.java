@@ -65,4 +65,8 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, Long> {
 
     // ✅ جديد: بتشيك إذا الـ user عمل unsave لـ job معين بسرعة (للـ restore functionality)
     boolean existsByUser_IdAndJob_IdAndIsDeletedTrue(Long userId, Long jobId);
+
+    // ✅ استعلام دفعة واحدة (Batch query) لفحص حالة الحفظ لعدة وظائف باستعلام SQL واحد بدل N queries
+    @Query("SELECT s.job.id FROM SavedJob s WHERE s.user.id = :userId AND s.job.id IN :jobIds AND s.isDeleted = false")
+    List<Long> findSavedJobIds(@Param("userId") Long userId, @Param("jobIds") List<Long> jobIds);
 }

@@ -16,8 +16,8 @@ public class CorsConfig {
 //    @Value("${FRONTEND_URL:http://localhost:3000}")
 //    private String frontendUrl;
 
-    @Value("${FRONTEND_URL}")
-    private String getFrontendUrl;
+    @Value("${FRONTEND_URL:http://localhost:3000}")
+    private String frontendUrl;
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -25,11 +25,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(
-                                "http://localhost:3000",
-                                "http://127.0.0.1:3000",
-                                getFrontendUrl // الدومين الحقيقي للإنتاج
-                        )
+                        .allowedOrigins(frontendUrl)
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

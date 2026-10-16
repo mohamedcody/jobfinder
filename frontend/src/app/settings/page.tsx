@@ -119,27 +119,27 @@ export default function SettingsPage() {
   // Local form state (separate from server state for dirty detection)
   const [localDigest, setLocalDigest] = useState(true);
   const [localScore, setLocalScore] = useState(60);
-  const [isDirty, setIsDirty] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Sync server state → local state when settings load
   useEffect(() => {
     if (settings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalDigest(settings.dailyDigestEnabled);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalScore(settings.minMatchScore);
-      setIsDirty(false);
     }
   }, [settings]);
 
-  // Dirty detection
+  // Dirty detection (Derived during render + side effect safely)
+  const isDirty = settings ? (localDigest !== settings.dailyDigestEnabled || localScore !== settings.minMatchScore) : false;
+  
   useEffect(() => {
-    if (!settings) return;
-    const changed =
-      localDigest !== settings.dailyDigestEnabled ||
-      localScore !== settings.minMatchScore;
-    setIsDirty(changed);
-    if (changed) setSaveSuccess(false);
-  }, [localDigest, localScore, settings]);
+    if (isDirty) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSaveSuccess(false);
+    }
+  }, [isDirty]);
 
   // Save handler
   const handleSave = useCallback(async () => {

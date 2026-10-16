@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Toaster, toast } from "sonner";
-import { GLOBAL_API_ERROR_EVENT } from "@/lib/api/global-api-error";
+import { GLOBAL_API_ERROR_EVENT } from "@/api/global-api-error";
 
 export function AppToaster() {
   const lastToastAtRef = useRef(0);

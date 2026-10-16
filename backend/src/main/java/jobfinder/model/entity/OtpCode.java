@@ -25,7 +25,7 @@ public class OtpCode {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 6)
+    @Column(nullable = false, length = 255)
     private String code;
 
     @Column(nullable = false)

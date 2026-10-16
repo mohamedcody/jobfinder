@@ -3,11 +3,10 @@
 import { useState, useTransition, useMemo } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { EditProfileFormTabs } from "@/components/profile/edit-profile-form-tabs";
-import { CareerIntelligenceHub } from "@/components/profile/career-intelligence-hub";
-import type { UpdateProfileRequest } from "@/lib/profile/types";
-import { escapeHtml } from "@/lib/security/sanitization";
-import { calculateProfileCompletion } from "@/lib/profile/validation";
+import { EditProfileFormTabs } from "@/features/profile/components/edit-profile-form-tabs";
+import { CareerIntelligenceHub } from "@/features/profile/components/career-intelligence-hub";
+import type { UpdateProfileRequest } from "@/services/profile.service";
+import { escapeHtml } from "@/utils/security/sanitization";
 import {
   User, 
   Code2,
@@ -19,7 +18,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { UserProfileResponse } from "@/lib/profile/types";
+import type { UserProfileResponse } from "@/types/profile.types";
 import { Button } from "@/components/ui/button";
 
 // --- Helper Components ---
@@ -56,14 +55,26 @@ const AvailabilityBadge = ({ available }: { available: boolean }) => {
 
 const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResponse, onEdit: () => void }) => {
   const completeness = useMemo(() => {
-    const result = calculateProfileCompletion(profile as unknown as Partial<Record<string, unknown>>);
-    return {
-      score: result.score,
-      incompleteTasks: result.incompleteTasks.map((task) => ({
-        ...task,
-        action: () => onEdit(),
-      })),
+    const checks = {
+      hasHeadline: !!profile.currentJobTitle,
+      hasAbout: (profile.bio?.length || 0) > 20,
+      hasExperience: (profile.yearsOfExperience || 0) > 0,
+      hasSalary: !!profile.expectedSalary,
+      hasSkills: (profile.skills?.length || 0) > 0,
     };
+    const totalChecks = Object.keys(checks).length;
+    const completedChecks = Object.values(checks).filter(Boolean).length;
+    const score = Math.round((completedChecks / totalChecks) * 100);
+    
+    const incompleteTasks = [
+      !checks.hasHeadline && { label: "Add your professional headline", action: () => onEdit() },
+      !checks.hasAbout && { label: "Write a brief summary about yourself", action: () => onEdit() },
+      !checks.hasExperience && { label: "Set your years of experience", action: () => onEdit() },
+      !checks.hasSalary && { label: "Define your expected salary", action: () => onEdit() },
+      !checks.hasSkills && { label: "List your top skills", action: () => onEdit() },
+    ].filter(Boolean) as { label: string, action: () => void }[];
+
+    return { score, incompleteTasks };
   }, [profile, onEdit]);
 
   return (
@@ -118,12 +129,12 @@ const ProfileCompletenessCard = ({ profile, onEdit }: { profile: UserProfileResp
 
 
 export default function ProfilePage() {
-  const { profile, isLoading, isSaving, updateProfile, fetchProfile } = useUserProfile();
+  const { profile, isLoading, isSaving, updateProfile } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [, startTransition] = useTransition();
 
   const handleRetry = () => {
-    fetchProfile();
+    window.location.reload();
   };
 
   const handleSaveProfile = async (data: UpdateProfileRequest) => {
@@ -147,7 +158,14 @@ export default function ProfilePage() {
 
   const profileCompleteness = useMemo(() => {
     if (!profile) return 0;
-    return calculateProfileCompletion(profile as unknown as Partial<Record<string, unknown>>).score;
+    const checks = [
+      !!profile.currentJobTitle,
+      (profile.bio?.length || 0) > 20,
+      (profile.yearsOfExperience || 0) > 0,
+      !!profile.expectedSalary,
+      (profile.skills?.length || 0) > 0,
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [profile]);
 
   if (isLoading) {
@@ -291,7 +309,7 @@ export default function ProfilePage() {
                     </div>
                     {profile.skills && profile.skills.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {profile.skills.map((skill: { id: number; name: string }) => (
+                        {profile.skills.map(skill => (
                           <span key={skill.id} className="px-3 py-1 rounded-full bg-white/5 text-xs font-semibold text-slate-200 border border-white/10 shadow-sm">
                             {skill.name}
                           </span>

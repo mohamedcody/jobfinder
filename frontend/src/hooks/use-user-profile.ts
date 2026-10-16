@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { profileService, type UserProfileResponse, type UpdateProfileRequest } from "@/lib/profile/profile-service";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
+import { profileService, type UserProfileResponse, type UpdateProfileRequest } from "@/services/profile.service";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 /** Maximum number of auto-retries for network / not-found errors. */
 const MAX_RETRIES = 3;

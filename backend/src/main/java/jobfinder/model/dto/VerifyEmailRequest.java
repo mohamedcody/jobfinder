@@ -7,4 +7,5 @@ public record VerifyEmailRequest(
 
     @NotBlank @Email String email,
     @NotBlank String otp
+    
 ) {}

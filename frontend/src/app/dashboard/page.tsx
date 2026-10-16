@@ -20,14 +20,31 @@ import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useSavedJobs } from "@/hooks/use-saved-jobs";
-import { jobsService } from "@/lib/jobs/jobs-service";
-import type { Job } from "@/lib/jobs/types";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
-import { formatRelativeTime } from "@/lib/jobs/time-utils";
+import { jobsService } from "@/services/jobs.service";
+import type { Job } from "@/types/jobs.types";
+import { getApiErrorMessage } from "@/utils/api-error";
+import { formatRelativeTime } from "@/utils/time-utils";
 
 // Delegates to shared time utility — no duplication
 function getTimeAgo(dateString: string): string {
   return formatRelativeTime(dateString);
+}
+
+function DashboardCompanyLogo({ logo, companyName }: { logo?: string | null; companyName: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (logo && !hasError) {
+    return (
+      <img
+        src={logo}
+        alt={companyName}
+        className="h-full w-full object-contain mix-blend-screen"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return <Briefcase className="h-7 w-7 text-slate-500 group-hover:text-violet-400 transition-colors" />;
 }
 
 export default function DashboardPage() {
@@ -72,6 +89,17 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const handleSavedJobsChange = (e: Event) => {
+      const customEvent = e as CustomEvent<Record<number, boolean>>;
+      if (customEvent.detail) {
+        setSavedCount(Object.keys(customEvent.detail).length);
+      }
+    };
+    window.addEventListener("jobfinder:saved-jobs-changed", handleSavedJobsChange);
+    return () => window.removeEventListener("jobfinder:saved-jobs-changed", handleSavedJobsChange);
+  }, []);
 
   // Derived Data
   const displayName = profile?.username?.trim() || "User";
@@ -230,11 +258,7 @@ export default function DashboardPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
                           <div className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner overflow-hidden p-2">
-                            {job.companyLogo ? (
-                              <img src={job.companyLogo} alt={job.companyName} className="h-full w-full object-contain mix-blend-screen" />
-                            ) : (
-                              <Briefcase className="h-7 w-7 text-slate-500 group-hover:text-violet-400 transition-colors" />
-                            )}
+                            <DashboardCompanyLogo logo={job.companyLogo} companyName={job.companyName} />
                           </div>
                           <div>
                             <h4 className="text-lg font-black text-white tracking-tight leading-tight mb-2 max-w-md truncate" title={job.title}>

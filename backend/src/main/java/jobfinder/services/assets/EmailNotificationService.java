@@ -56,8 +56,10 @@ public class EmailNotificationService {
         }
     }
 
+
     // ─── HTML Template ────────────────────────────────────────────────────────
 
+    
     private String buildHtml(String firstName, List<JobMatchDto> matches) {
         StringBuilder sb = new StringBuilder();
 
