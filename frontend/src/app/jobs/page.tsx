@@ -15,34 +15,32 @@ const JobsList = lazy(() =>
 
 function JobsListFallback() {
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-4">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="relative overflow-hidden rounded-[2rem] bg-white/[0.03] border border-white/5 p-6 space-y-4 min-h-[340px]">
+        <div key={i} className="relative overflow-hidden rounded-2xl bg-[#0c0f24] border border-white/[0.08] p-5 sm:p-6 space-y-4 min-h-[280px]">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-white/5 animate-pulse shrink-0" />
+              <div className="h-14 w-14 rounded-xl bg-white/5 animate-pulse shrink-0" />
               <div className="space-y-2 flex-1">
                 <div className="h-4 w-32 rounded bg-white/10 animate-pulse" />
                 <div className="h-3 w-20 rounded bg-white/5 animate-pulse" />
               </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-white/5 animate-pulse shrink-0" />
+            <div className="h-9 w-9 rounded-xl bg-white/5 animate-pulse shrink-0" />
           </div>
           <div className="space-y-2 flex-1">
             <div className="h-3 w-full rounded bg-white/5 animate-pulse" />
             <div className="h-3 w-4/5 rounded bg-white/5 animate-pulse" />
             <div className="h-3 w-3/4 rounded bg-white/5 animate-pulse" />
           </div>
-          <div className="flex gap-2 pt-4">
-            <div className="h-6 w-24 rounded-full bg-white/5 animate-pulse" />
-            <div className="h-6 w-24 rounded-full bg-white/5 animate-pulse" />
+          <div className="flex gap-2 pt-2">
+            <div className="h-6 w-20 rounded-lg bg-white/5 animate-pulse" />
+            <div className="h-6 w-20 rounded-lg bg-white/5 animate-pulse" />
           </div>
-          <div className="pt-4 border-t border-white/5 flex gap-3">
-            <div className="flex-1 h-10 rounded-2xl bg-white/5 animate-pulse" />
-            <div className="h-10 w-10 rounded-2xl bg-white/5 animate-pulse" />
+          <div className="pt-3 border-t border-white/[0.06] flex gap-3">
+            <div className="flex-1 h-11 rounded-xl bg-white/5 animate-pulse" />
+            <div className="h-11 w-11 rounded-xl bg-white/5 animate-pulse" />
           </div>
-          {/* Shimmer effect overlay */}
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/[0.03] to-transparent" />
         </div>
       ))}
     </div>
@@ -54,91 +52,95 @@ export default function JobsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        {/* Header Section - Enhanced */}
-        <div className="flex flex-col gap-3">
-          <h1 className="text-4xl font-black text-white tracking-tight">Find Your Next Opportunity</h1>
-          <p className="text-slate-300 text-base max-w-2xl leading-relaxed">
-            Discover verified job opportunities powered by AI matching. Every role is analyzed and ranked based on your skills and career preferences for the best fit.
-          </p>
-          <div className="mt-2 flex items-center gap-2 text-xs font-bold text-violet-400 uppercase tracking-widest">
-            <Sparkles className="h-4 w-4" />
-            Smart Matching Powered by AI
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col gap-1.5">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI Match Engine</span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Find Your Next Opportunity</h1>
+          <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            Discover verified roles ranked by AI alignment with your skills and career preferences.
+          </p>
         </div>
 
-        {/* AI Match Section - Premium & Clear */}
+        {/* AI Match Section */}
         {!isBannerDismissed && (
-          <section className="fade-up group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-indigo-950/40 border border-white/10 p-6 sm:p-8 shadow-2xl shadow-violet-500/10">
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-600/10 to-transparent pointer-events-none" />
-            <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-violet-600/5 blur-[100px] pointer-events-none" />
-
-            <div className="relative z-10">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                <div className="flex items-start gap-6 flex-1">
-                  <div className="relative shrink-0">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                    <div className="relative h-16 w-16 rounded-2xl border border-white/10 bg-[#07091a] flex items-center justify-center">
-                      <Sparkles className="h-8 w-8 text-violet-400" />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-emerald-500 flex items-center justify-center text-[10px] font-black text-white border-2 border-[#0a0c24]">
-                      AI
-                    </div>
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                      <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] font-black uppercase tracking-widest text-violet-400">🎯 Perfect Match</span>
-                      <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                        <Zap className="h-3.5 w-3.5 fill-current" /> 98% Compatibility
-                      </span>
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2">
-                      Senior Software Engineer <span className="text-slate-500 font-medium text-xl">@ Remote</span>
-                    </h2>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      Based on your expertise in <span className="text-cyan-300 font-bold">React</span>, <span className="text-violet-300 font-bold">Node.js</span>, and <span className="text-emerald-300 font-bold">AWS</span>, this is our top recommendation for your career growth.
-                      <span className="block text-xs text-slate-400 mt-2">💡 Tip: Click &quot;AI Insights&quot; on any job card to get detailed analysis and alignment score.</span>
-                    </p>
+          <section className="relative overflow-hidden rounded-2xl bg-[#0c0f24] border border-violet-500/25 p-5 sm:p-6 shadow-sm">
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-4 flex-1">
+                <div className="relative shrink-0">
+                  <div className="h-12 w-12 rounded-xl border border-violet-500/30 bg-violet-600/10 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-violet-400" />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="font-bold cursor-pointer"
-                    onClick={() => document.getElementById("jobs-list-container")?.scrollIntoView({ behavior: "smooth" })}
-                  >
-                    Quick Apply
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => setIsBannerDismissed(true)}
-                  >
-                    Dismiss
-                  </Button>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-[11px] font-semibold text-violet-300">
+                      Top Recommendation
+                    </span>
+                    <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                      <Zap className="h-3 w-3 fill-current" /> 98% Compatibility
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                    Senior Software Engineer <span className="text-slate-400 font-normal text-sm">@ Remote</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mt-1">
+                    Based on your skills in React, TypeScript, and Node.js. Click AI Insights on any job card for personalized evaluation.
+                  </p>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-shrink-0 self-end lg:self-center">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="h-10 px-4 rounded-xl text-xs font-semibold cursor-pointer"
+                  onClick={() => document.getElementById("jobs-list-container")?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  View Matches
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-3 rounded-xl text-xs text-slate-400 hover:text-white cursor-pointer"
+                  onClick={() => setIsBannerDismissed(true)}
+                >
+                  Dismiss
+                </Button>
               </div>
             </div>
           </section>
         )}
 
-        {/* Info Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
-            <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-2">✨ AI Insights</p>
-            <p className="text-sm text-slate-300">Click the AI button on any job to get detailed analysis, skills match, and career impact assessment.</p>
+        {/* Info Highlights */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f24] p-4">
+            <p className="text-xs font-bold text-violet-300 mb-1 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-violet-400" /> AI Insights
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Instant analysis and key requirements breakdown directly on each opportunity.
+            </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
-            <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-2">🤖 JobBot Assistant</p>
-            <p className="text-sm text-slate-300">Ask our AI assistant questions about roles, salary ranges, company culture, and career guidance.</p>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f24] p-4">
+            <p className="text-xs font-bold text-cyan-300 mb-1 flex items-center gap-1.5">
+              <span>🤖</span> JobBot Assistant
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Ask targeted questions about salary benchmarks, culture, and interview prep.
+            </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
-            <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">❤️ Save & Track</p>
-            <p className="text-sm text-slate-300">Save jobs you like and track applications across multiple opportunities in one place.</p>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f24] p-4">
+            <p className="text-xs font-bold text-emerald-300 mb-1 flex items-center gap-1.5">
+              <span>📌</span> Saved Matches & Kanban
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Organize opportunities across pipeline stages from Bookmarked to Applied.
+            </p>
           </div>
         </div>
 

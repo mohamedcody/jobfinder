@@ -19,6 +19,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import type {
   CvParseResponse,
   CvConfirmRequest,
@@ -141,20 +144,14 @@ export function ReviewAndSaveForm({ result, onReset, onConfirm, isConfirming }: 
       className="w-full space-y-6"
     >
       {/* Success Header */}
-      <div className="flex items-center gap-3 rounded-2xl bg-emerald-500/8 border border-emerald-500/20 p-5">
-        <div className="h-10 w-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-          <CheckCircle className="h-5 w-5 text-emerald-400" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-white">
-            CV Parsed Successfully!
-          </h3>
-          <p className="text-xs text-slate-400">
-            Review the extracted data below. Edit anything before saving to
-            your profile.
-          </p>
-        </div>
-      </div>
+      <Alert variant="success" className="p-5">
+        <AlertTitle className="text-base font-bold text-white">
+          CV Parsed Successfully!
+        </AlertTitle>
+        <AlertDescription className="text-xs text-slate-300">
+          Review the extracted data below. Edit anything before saving to your profile.
+        </AlertDescription>
+      </Alert>
 
       {/* Profile Overview */}
       <div className="rounded-2xl bg-white/5 border border-white/10 p-6 space-y-5">
@@ -222,41 +219,36 @@ export function ReviewAndSaveForm({ result, onReset, onConfirm, isConfirming }: 
 
         <div className="flex flex-wrap gap-2">
           {skills.map((skill, i) => (
-            <motion.span
+            <Badge
               key={`${skill.name}-${i}`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="group inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 border border-violet-500/25 px-3 py-1.5 text-xs font-semibold text-violet-300"
+              variant="primary"
+              size="default"
+              removable
+              onRemove={() => handleRemoveSkill(i)}
             >
               {skill.name}
-              <button
-                type="button"
-                onClick={() => handleRemoveSkill(i)}
-                className="h-4 w-4 rounded-full bg-white/10 hover:bg-red-500/30 flex items-center justify-center transition-colors"
-                aria-label={`Remove ${skill.name}`}
-              >
-                <X className="h-2.5 w-2.5 text-slate-400 group-hover:text-red-300" />
-              </button>
-            </motion.span>
+            </Badge>
           ))}
         </div>
 
         {/* Add skill input */}
         <div className="flex gap-2">
-          <input
-            type="text"
-            value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Add a skill..."
-            className="flex-1 field-input rounded-xl px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div className="flex-1">
+            <Input
+              size="default"
+              value={newSkill}
+              onChange={(e) => setNewSkill(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Add a skill..."
+            />
+          </div>
           <Button
             type="button"
             onClick={handleAddSkill}
-            size="sm"
-            className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl px-4"
+            size="default"
+            variant="primary"
+            className="px-4"
+            aria-label="Add skill"
           >
             <Plus className="h-4 w-4" />
           </Button>

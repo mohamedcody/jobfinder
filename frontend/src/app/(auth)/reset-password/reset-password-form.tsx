@@ -93,11 +93,11 @@ export function ResetPasswordForm({ initialEmail }: ResetPasswordFormProps) {
         <SubmitButton isLoading={isSubmitting}>Reset password</SubmitButton>
       </form>
 
-      <div className="mt-6 flex items-center justify-between text-sm text-[var(--muted)]">
-        <Link href="/forgot-password" className="soft-link font-semibold hover:underline">
+      <div className="mt-6 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+        <Link href="/forgot-password" className="text-slate-400 hover:text-white transition-colors">
           Resend OTP
         </Link>
-        <Link href="/login" className="soft-link font-semibold hover:underline">
+        <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
           Back to login
         </Link>
       </div>

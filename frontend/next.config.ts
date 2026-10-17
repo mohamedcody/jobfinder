@@ -77,6 +77,10 @@ const nextConfig: NextConfig = {
         source: "/api/email-alerts/:path*",
         destination: `${backendOrigin}/api/email-alerts/:path*`,
       },
+      {
+        source: "/api/ai/:path*",
+        destination: `${backendOrigin}/api/ai/:path*`,
+      },
     ];
   },
   async headers() {

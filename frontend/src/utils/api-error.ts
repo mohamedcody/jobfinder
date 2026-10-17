@@ -2,17 +2,31 @@ import axios from "axios";
 import type { ApiErrorShape } from "@/types/auth.types";
 
 export const isRequestCanceled = (error: unknown): boolean => {
-  if (!axios.isAxiosError(error)) {
-    return false;
+  if (axios.isAxiosError(error)) {
+    return error.code === "ERR_CANCELED";
   }
 
-  return error.code === "ERR_CANCELED";
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return (error as { code?: string }).code === "ERR_CANCELED";
+  }
+
+  return false;
 };
 
 export const getApiErrorMessage = (error: unknown): string => {
-  if (axios.isAxiosError<ApiErrorShape>(error)) {
-    const data = error.response?.data;
-    const status = error.response?.status;
+  const isAxios = axios.isAxiosError<ApiErrorShape>(error);
+  const isDuckAxios =
+    typeof error === "object" &&
+    error !== null &&
+    ("response" in error || "isAxiosError" in error);
+
+  if (isAxios || isDuckAxios) {
+    const axiosError = error as {
+      response?: { data?: ApiErrorShape; status?: number };
+      message?: string;
+    };
+    const data = axiosError.response?.data;
+    const status = axiosError.response?.status;
 
     if (status === 401) {
       return "Your session has expired. Please log in again.";
@@ -30,7 +44,7 @@ export const getApiErrorMessage = (error: unknown): string => {
       return data?.message || "Too many requests. Please wait a moment before trying again.";
     }
 
-    if (!status) {
+    if (!axiosError.response && !status && !data) {
       return "Unable to reach the server. Please check your connection and try again.";
     }
 
@@ -38,8 +52,9 @@ export const getApiErrorMessage = (error: unknown): string => {
       data?.message ||
       data?.error ||
       data?.details ||
+      (!status && !data ? "Unable to reach the server. Please check your connection and try again." : undefined) ||
       (status ? `Request failed with status code ${status}` : undefined) ||
-      error.message ||
+      axiosError.message ||
       "Something went wrong. Please try again."
     );
   }

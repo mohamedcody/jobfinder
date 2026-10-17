@@ -20,21 +20,30 @@ import { cn } from "@/utils/cn"
  * ═══════════════════════════════════════════════════════════════════════
  */
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "elevated" | "interactive" | "glass" }>(
-  ({ className, variant = "default", ...props }, ref) => {
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: "default" | "elevated" | "interactive" | "glass" | "accent";
+  isSelected?: boolean;
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant = "default", isSelected = false, ...props }, ref) => {
     const variants = {
       default: "bg-surface/50 border border-border/50",
       elevated: "bg-surface-elevated border border-border shadow-elevated",
-      interactive: "bg-surface/50 border border-border/50 hover:bg-surface-hover hover:border-border-hover transition-all cursor-pointer",
+      interactive:
+        "bg-surface/50 border border-border/50 hover:bg-surface-hover hover:border-border-hover hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150 cursor-pointer",
       glass: "bg-glass-bg backdrop-blur-xl border border-glass-border shadow-glass",
+      accent: "bg-surface-elevated border border-cyan-500/30 shadow-[0_0_20px_rgba(34,211,238,0.08)]",
     }
     
     return (
       <div
         ref={ref}
+        tabIndex={variant === "interactive" && props.tabIndex === undefined ? 0 : props.tabIndex}
         className={cn(
-          "rounded-2xl text-foreground",
+          "rounded-2xl text-foreground transition-colors",
           variants[variant],
+          isSelected && "ring-2 ring-primary border-primary/60 bg-primary/[0.04]",
           className
         )}
         {...props}

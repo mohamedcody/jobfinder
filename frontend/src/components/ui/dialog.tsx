@@ -27,6 +27,16 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [open, onOpenChange])
 
+  React.useEffect(() => {
+    if (open) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [open]);
+
   return (
     <DialogContext.Provider value={{ open, onOpenChange }}>
       {children}
@@ -47,7 +57,7 @@ function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChi
   }
 
   return (
-    <div onClick={() => onOpenChange(true)} className="inline-block">
+    <div onClick={() => onOpenChange(true)} className="inline-block cursor-pointer">
       {children}
     </div>
   )
@@ -62,7 +72,7 @@ const DialogContent = React.forwardRef<
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
       <div 
         className="fixed inset-0 z-40" 
         onClick={() => onOpenChange(false)}
@@ -73,7 +83,7 @@ const DialogContent = React.forwardRef<
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative z-50 grid w-full max-w-lg gap-4 rounded-2xl border border-border bg-surface p-6 shadow-modal sm:rounded-[2rem]",
+          "relative z-50 grid w-full max-w-lg max-h-[90vh] overflow-y-auto gap-4 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-6 shadow-modal sm:rounded-[2rem] custom-scrollbar",
           "animate-in fade-in-0 zoom-in-95 duration-200",
           className
         )}
@@ -81,7 +91,7 @@ const DialogContent = React.forwardRef<
       >
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-xl p-2 text-foreground-muted hover:bg-surface-hover hover:text-foreground transition-colors"
+          className="absolute right-4 top-4 rounded-xl p-2 text-foreground-muted hover:bg-surface-hover hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
           aria-label="Close dialog"
         >
           <X className="h-5 w-5" />

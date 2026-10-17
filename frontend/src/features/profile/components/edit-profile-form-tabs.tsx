@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { UserProfileResponse, UpdateProfileRequest } from "@/services/profile.service";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { validators, fieldHints, type ValidationResult } from "@/utils/profile-validation";
 import { FieldHelp } from "./contextual-help";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
@@ -185,12 +186,12 @@ export function EditProfileFormTabs({
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-6 rounded-3xl bg-white/3 border border-white/5 p-8 backdrop-blur-xl"
+        className="space-y-6 rounded-2xl bg-[#0c0f24] border border-white/[0.08] p-5 sm:p-7 shadow-sm"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-white">Edit Profile</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Edit Profile</h2>
           {hasChanges && (
-            <span className="text-xs font-bold text-orange-400 flex items-center gap-1">
+            <span className="text-xs font-semibold text-amber-400 flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
               <AlertCircle className="h-3 w-3" />
               Unsaved Changes
             </span>
@@ -198,7 +199,7 @@ export function EditProfileFormTabs({
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-white/10 -mx-8 px-8">
+        <div className="flex gap-1 border-b border-white/[0.08] -mx-5 px-5 sm:-mx-7 sm:px-7 overflow-x-auto custom-scrollbar">
           <button
             type="button"
             onClick={() => setCurrentTab("basic")}
@@ -474,22 +475,18 @@ export function EditProfileFormTabs({
                 {formData.skills && formData.skills.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     {formData.skills.map((skill, idx) => (
-                      <span
+                      <Badge
                         key={idx}
-                        className="px-3 py-1 rounded-lg bg-violet-500/20 border border-violet-500/30 text-xs font-semibold text-violet-300"
+                        variant="primary"
+                        size="default"
+                        removable
+                        onRemove={() => {
+                          const updated = formData.skills?.filter((_, i) => i !== idx) || [];
+                          setFormData((prev) => ({ ...prev, skills: updated }));
+                        }}
                       >
                         {skill}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = formData.skills?.filter((_, i) => i !== idx) || [];
-                            setFormData((prev) => ({ ...prev, skills: updated }));
-                          }}
-                          className="ml-2 text-violet-400 hover:text-violet-200"
-                        >
-                          ×
-                        </button>
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 )}
@@ -537,11 +534,21 @@ export function EditProfileFormTabs({
         </motion.div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 pt-4 border-t border-white/10">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-white/10">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={handleCancelClick}
+              className="w-full sm:w-auto h-11 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 font-semibold rounded-xl px-5 py-2.5 transition-colors border border-white/10 text-sm"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </button>
+          )}
           <Button
             type="submit"
             disabled={isSaving || isLoading}
-            className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto h-11 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl px-6 py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-violet-600/20 text-sm"
           >
             {isSaving ? (
               <>
@@ -555,16 +562,6 @@ export function EditProfileFormTabs({
               </>
             )}
           </Button>
-          {onCancel && (
-            <button
-              type="button"
-              onClick={handleCancelClick}
-              className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl px-6 py-3 transition-colors border border-white/10"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </button>
-          )}
         </div>
       </motion.form>
 

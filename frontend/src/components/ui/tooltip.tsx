@@ -26,10 +26,17 @@ export function Tooltip({ children, content, delayMs = 300, position = "top", cl
   };
 
   React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isVisible) {
+        setIsVisible(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.removeEventListener("keydown", handleKeyDown);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [isVisible]);
 
   const positionClasses = {
     top: "bottom-full left-1/2 -translate-x-1/2 mb-2",

@@ -36,7 +36,7 @@ public class GeminiApiClient {
     private String geminiApiKey;
 
     private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-    @Value("${gemini.api.model:gemini-3.8-flash}")
+    @Value("${gemini.api.model:gemini-1.5-flash}")
     private String geminiModel;
 
     public GeminiApiClient(WebClient.Builder webClientBuilder) {

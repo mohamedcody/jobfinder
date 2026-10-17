@@ -43,7 +43,7 @@ public class SecurityConfig {
                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/actuator/health").permitAll()
+                                .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
 
 
                                 .requestMatchers("/graphql").authenticated()

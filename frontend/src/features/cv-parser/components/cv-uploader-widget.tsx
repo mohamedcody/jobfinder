@@ -14,6 +14,7 @@ import { useCvParser } from "@/hooks/use-cv-parser";
 import { AiLoadingState } from "./ai-loading-state";
 import { ReviewAndSaveForm } from "./review-and-save-form";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Main CV Uploader Widget with drag-and-drop support.
@@ -30,6 +31,25 @@ export function CvUploaderWidget() {
 
   const handleFile = useCallback(
     (file: File) => {
+      // 1. Mistake prevention: Validate file type client-side
+      const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+      if (!isPdf) {
+        toast.error("Invalid file format", {
+          description: "Please upload a PDF document (.pdf). Other formats are not supported.",
+        });
+        return;
+      }
+
+      // 2. Mistake prevention: Validate file size (10MB limit)
+      const maxSizeBytes = 10 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        toast.error("File too large", {
+          description: `Selected file is ${sizeMb}MB. Maximum allowed size is 10MB.`,
+        });
+        return;
+      }
+
       uploadCv(file);
     },
     [uploadCv],
@@ -98,8 +118,8 @@ export function CvUploaderWidget() {
                 transition-all duration-300 ease-out text-center
                 ${
                   isDragging
-                    ? "border-cyan-400 bg-cyan-400/8 shadow-[0_0_40px_rgba(34,211,238,0.15)] scale-[1.01]"
-                    : "border-white/15 bg-white/3 hover:border-violet-500/40 hover:bg-violet-500/5"
+                    ? "border-cyan-400 bg-cyan-400/[0.08] shadow-[0_0_40px_rgba(34,211,238,0.15)] scale-[1.01]"
+                    : "border-white/15 bg-white/[0.03] hover:border-violet-500/40 hover:bg-violet-500/5"
                 }
               `}
             >

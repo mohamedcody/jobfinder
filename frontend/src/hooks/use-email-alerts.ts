@@ -29,7 +29,7 @@ export const useEmailAlerts = () => {
     } catch (err) {
       const message = getApiErrorMessage(err);
       setError(message);
-      toast.error(`❌ ${message}`);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -46,12 +46,12 @@ export const useEmailAlerts = () => {
         setError(null);
         const updated = await emailAlertService.updateAlertSettings(request);
         setSettings(updated);
-        toast.success("✅ Email alert settings saved successfully!");
+        toast.success("Email alert settings saved successfully");
         return updated;
       } catch (err) {
         const message = getApiErrorMessage(err);
         setError(message);
-        toast.error(`❌ ${message}`);
+        toast.error(message);
         return undefined;
       } finally {
         setIsSaving(false);
@@ -74,16 +74,16 @@ export const useEmailAlerts = () => {
       // "no matches" scenarios with 200 OK. Distinguish by content.
       const isNoMatches = message.toLowerCase().includes("no matches found");
       if (isNoMatches) {
-        toast.warning(`⚠️ ${message}`);
+        toast.warning(message);
       } else {
-        toast.success(`📧 ${message}`);
+        toast.success(message);
       }
 
       return message;
     } catch (err) {
       const message = getApiErrorMessage(err);
       setError(message);
-      toast.error(`❌ ${message}`);
+      toast.error(message);
       return undefined;
     } finally {
       setIsSendingTest(false);

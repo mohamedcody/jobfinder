@@ -163,8 +163,9 @@ export default function AiChatbot() {
         whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-[0_0_30px_rgba(139,92,246,0.5)] md:h-16 md:w-16 border border-white/20"
+        aria-expanded={isOpen}
         aria-label="Toggle AI Assistant"
+        className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 lg:bottom-8 lg:right-8 z-[60] flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-[0_0_30px_rgba(139,92,246,0.5)] md:h-16 md:w-16 border border-white/20 cursor-pointer"
       >
         <div className="relative">
           <Sparkles className="h-6 w-6 md:h-7 md:w-7" />
@@ -179,7 +180,7 @@ export default function AiChatbot() {
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: 40, scale: 0.9, filter: "blur(10px)" }}
             transition={{ type: "spring", damping: 20, stiffness: 150 }}
-            className="fixed bottom-24 right-4 z-[60] flex w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#07091a]/80 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-3xl sm:right-6 sm:w-[400px] md:bottom-28"
+            className="fixed bottom-24 right-4 sm:bottom-24 sm:right-6 lg:bottom-28 z-[60] flex w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#07091a]/95 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-3xl sm:w-[420px]"
             style={{ height: "600px", maxHeight: "80dvh" }}
           >
             {/* Header: Premium Glassmorphism */}
@@ -195,10 +196,15 @@ export default function AiChatbot() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-white tracking-tight">JobBot Oracle</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Expert Assistant</p>
+                    <p className="text-xs font-semibold text-slate-400 tracking-wider">AI Career Assistant</p>
                   </div>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-full flex items-center justify-center bg-white/5 text-slate-400 hover:text-white transition-all hover:rotate-90">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Close JobBot AI chat"
+                  className="h-8 w-8 rounded-full flex items-center justify-center bg-white/5 text-slate-400 hover:text-white transition-all hover:rotate-90 cursor-pointer"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -286,7 +292,7 @@ export default function AiChatbot() {
                   <Send className="h-5 w-5 text-white" />
                 </button>
               </form>
-              <p className="text-center mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-widest">Powered by JobFinder Quantum Engine</p>
+              <p className="text-center mt-4 text-xs font-medium text-slate-400">Powered by JobFinder AI Engine</p>
             </div>
           </motion.div>
         )}

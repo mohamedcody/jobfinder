@@ -54,82 +54,83 @@
      ────────────────────────────────────────────────────────────────────── */
 
   /* Backgrounds */
-  --background: #07091a;
-  --background-app: #0a0c24;
+  --background: #080913;
+  --background-app: #0b0d1e;
 
   /* Surfaces */
-  --surface: rgba(255, 255, 255, 0.03);
-  --surface-hover: rgba(255, 255, 255, 0.06);
-  --surface-elevated: rgba(255, 255, 255, 0.05);
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.065);
+  --surface-elevated: #0f1228;
   --surface-muted: rgba(255, 255, 255, 0.02);
 
   /* Text */
-  --foreground: #f0f4ff;
-  --foreground-muted: var(--slate-400);
-  --foreground-subtle: var(--slate-500);
+  --foreground: #f8fafc;
+  --foreground-muted: #94a3b8;
+  --foreground-subtle: #64748b;
 
   /* Borders */
   --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.14);
+  --border-hover: rgba(255, 255, 255, 0.16);
 
-  /* Brand: Primary (Violet) */
-  --primary: #8b2cf5;
-  --primary-hover: var(--violet-400);
+  /* Brand: Primary (Modern Royal Violet) */
+  --primary: #7c3aed;
+  --primary-hover: #8b5cf6;
   --primary-foreground: #ffffff;
-  --primary-soft: rgba(139, 44, 245, 0.12);
-  --primary-strong: var(--violet-800);
+  --primary-soft: rgba(124, 58, 237, 0.12);
+  --primary-strong: #6d28d9;
 
   /* Brand: Accent (Cyan) */
-  --accent: #22d3ee;
-  --accent-hover: var(--cyan-300);
-  --accent-soft: rgba(34, 211, 238, 0.10);
+  --accent: #06b6d4;
+  --accent-hover: #22d3ee;
+  --accent-soft: rgba(6, 182, 212, 0.12);
 
   /* Status */
-  --success: var(--emerald-500);
-  --success-soft: rgba(16, 185, 129, 0.10);
-  --warning: var(--amber-500);
-  --warning-soft: rgba(245, 158, 11, 0.10);
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.12);
   --danger: #ef4444;
   --danger-soft: rgba(239, 68, 68, 0.12);
 
   /* Focus ring */
-  --ring: var(--accent);
+  --ring: rgba(124, 58, 237, 0.6);
 
   /* Glass */
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-bg-hover: rgba(255, 255, 255, 0.10);
-  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-bg: rgba(15, 18, 40, 0.75);
+  --glass-bg-hover: rgba(20, 24, 52, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.09);
 
   /* ──────────────────────────────────────────────────────────────────────
      TIER 3: BORDER RADIUS SCALE
      Consistent, predictable radius values.
      ────────────────────────────────────────────────────────────────────── */
-  --radius-sm: 0.375rem;  /*  6px — small badges, inline elements */
-  --radius-md: 0.5rem;    /*  8px — small buttons, inputs */
-  --radius-lg: 0.75rem;   /* 12px — standard buttons, cards */
-  --radius-xl: 1rem;      /* 16px — large buttons, sections */
-  --radius-2xl: 1.5rem;   /* 24px — large cards, panels */
+  --radius-sm: 0.375rem;  /*  6px — badges, tags */
+  --radius-md: 0.5rem;    /*  8px — controls */
+  --radius-lg: 0.75rem;   /* 12px — buttons, inputs, pills */
+  --radius-xl: 1rem;      /* 16px — cards, sections */
+  --radius-2xl: 1.25rem;  /* 20px — large cards, containers */
+  --radius-3xl: 1.5rem;   /* 24px — modals, hero sections */
   --radius-full: 9999px;  /* pill shapes */
 
   /* ──────────────────────────────────────────────────────────────────────
      TIER 4: SHADOW SCALE (ELEVATION)
      Dark-theme optimized shadow system.
      ────────────────────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.15);
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-  --shadow-glow-primary: 0 0 20px rgba(139, 44, 245, 0.4);
-  --shadow-glow-accent: 0 0 18px rgba(34, 211, 238, 0.3);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 10px 20px -3px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  --shadow-glass: 0 12px 32px 0 rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  --shadow-glow-primary: 0 8px 24px -4px rgba(124, 58, 237, 0.35);
+  --shadow-glow-accent: 0 8px 24px -4px rgba(6, 182, 212, 0.30);
 
   /* ──────────────────────────────────────────────────────────────────────
      TIER 5: MOTION / TRANSITION
      Standard transition durations and easings.
      ────────────────────────────────────────────────────────────────────── */
   --duration-fast: 150ms;
-  --duration-normal: 240ms;
-  --duration-slow: 400ms;
-  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-normal: 220ms;
+  --duration-slow: 350ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }

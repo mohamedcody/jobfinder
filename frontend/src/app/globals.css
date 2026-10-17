@@ -81,27 +81,36 @@
 
 
 /* ─── Base Styles ────────────────────────────────────────────────────── */
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
 body {
-  background:
-    radial-gradient(60rem 38rem at 8% 6%, rgba(139, 44, 245, 0.22) 0%, transparent 60%),
-    radial-gradient(52rem 34rem at 90% 18%, rgba(34, 211, 238, 0.16) 0%, transparent 62%),
-    radial-gradient(44rem 30rem at 50% 88%, rgba(139, 44, 245, 0.12) 0%, transparent 68%),
-    linear-gradient(180deg, var(--background) 0%, #0d1128 60%, #0a0f20 100%);
+  overflow-x: hidden;
+  width: 100%;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(1100px 520px at 50% -60px, rgba(124, 58, 237, 0.10) 0%, transparent 72%),
+    radial-gradient(800px 420px at 90% 120px, rgba(6, 182, 212, 0.05) 0%, transparent 68%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: "Outfit", "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Outfit", "Inter", sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 ::selection {
-  background: #bfdbfe;
-  color: #0b1324;
+  background: rgba(124, 58, 237, 0.35);
+  color: #ffffff;
 }
 
 
@@ -285,45 +294,41 @@ h1, h2, h3, h4, h5, h6 {
    Used by: error.tsx, global-error.tsx, jobs/error.tsx, jobs/loading.tsx
    NOTE: For React components, prefer <Card variant="glass"> */
 .glass-panel {
-  border: 1px solid var(--glass-border);
-  background: linear-gradient(145deg, var(--glass-bg), rgba(255, 255, 255, 0.03));
-  backdrop-filter: blur(16px) saturate(1.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -8px 24px rgba(7, 9, 26, 0.40),
-    var(--shadow-glass);
+  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-glass);
   transition: border-color var(--duration-normal) var(--ease-out),
               box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .glass-panel:hover {
-  border-color: rgba(139, 44, 245, 0.25);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 0 0 1px rgba(139, 44, 245, 0.12),
-    0 24px 56px rgba(2, 6, 23, 0.54);
+  border-color: var(--border-hover);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
 }
 
 
 /* ─── Button Glow: Primary ──────────────────────────────────────────── 
-   Used by: settings, dashboard, saved, jobs-sidebar, jobs-results, jobs-navbar
-   MIGRATION: Will be replaced by <Button variant="primary"> in Phase 4+ */
+   Used by: settings, dashboard, saved, jobs-sidebar, jobs-results, jobs-navbar */
 .btn-glow-primary {
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  border: 1px solid rgba(139, 44, 245, 0.50);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
   transition: all var(--duration-normal) var(--ease-out);
   box-shadow: var(--shadow-glow-primary);
 }
 .btn-glow-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 32px rgba(139, 44, 245, 0.65), 0 8px 24px rgba(0, 0, 0, 0.3);
-  filter: brightness(1.1);
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+  box-shadow: 0 10px 24px -2px rgba(124, 58, 237, 0.45);
 }
-.btn-glow-primary:active { transform: scale(0.97); }
+.btn-glow-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px 0 rgba(124, 58, 237, 0.3);
+}
 
 
 /* ─── Button Glow: Accent ───────────────────────────────────────────── 
@@ -331,16 +336,20 @@ h1, h2, h3, h4, h5, h6 {
 .btn-glow-accent {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--cyan-600), var(--accent));
-  border: 1px solid rgba(34, 211, 238, 0.50);
+  background: linear-gradient(135deg, #0891b2, var(--accent));
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
   transition: all var(--duration-normal) var(--ease-out);
   box-shadow: var(--shadow-glow-accent);
 }
 .btn-glow-accent:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 28px rgba(34, 211, 238, 0.55), 0 8px 22px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  box-shadow: 0 10px 24px -2px rgba(6, 182, 212, 0.40);
+}
+.btn-glow-accent:active {
+  transform: translateY(0);
 }
 
 

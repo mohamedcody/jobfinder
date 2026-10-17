@@ -200,8 +200,14 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="remember" className="h-4 w-4 rounded border-white/5 bg-white/5 text-violet-600 focus:ring-violet-500/20" />
-              <label htmlFor="remember" className="text-xs font-medium text-slate-400">Remember me</label>
+              <input
+                type="checkbox"
+                id="remember"
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-violet-600 text-violet-600 focus:ring-violet-500/30 cursor-pointer"
+              />
+              <label htmlFor="remember" className="text-xs font-medium text-slate-300 cursor-pointer select-none">
+                Remember me
+              </label>
             </div>
             <Link href="/forgot-password" title="Recover access" className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors">
               Forgot password?

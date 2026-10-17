@@ -58,10 +58,10 @@ export default function ForgotPasswordPage() {
         <SubmitButton isLoading={isSubmitting}>Send reset OTP</SubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[var(--muted)]">
-        Back to{" "}
-        <Link href="/login" className="soft-link font-semibold hover:underline">
-          Login
+      <p className="mt-6 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+        Remember your password?{" "}
+        <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors ml-1">
+          Back to login
         </Link>
       </p>
     </AuthShell>
