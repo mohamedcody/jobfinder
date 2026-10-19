@@ -2,7 +2,9 @@ import type { JobSearchFormState } from "@/features/jobs/components/job-search-f
 
 export const isFilterActive = (filters: JobSearchFormState, key: keyof JobSearchFormState) => {
   if (key === "datePreset") return filters.datePreset !== "any";
-  return Boolean(filters[key]?.trim?.() || filters[key]);
+  const val = filters[key];
+  if (typeof val === "string") return val.trim().length > 0;
+  return Boolean(val);
 };
 
 export const formatDatePresetLabel = (preset: JobSearchFormState["datePreset"]) => {

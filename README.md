@@ -76,34 +76,38 @@ docker-compose up -d --build
 *Note: Ensure your database is running externally as it is not included in the compose file.*
 
 ### Running Tests
-**Backend:**
+**Backend (82 JUnit 5 & Mockito Tests):**
 ```bash
 cd backend
 ./mvnw test
 ```
-*Note: Test coverage is currently limited. Expanding the test suite is a planned priority.*
+
+**Frontend (30 Vitest & Testing Library Tests):**
+```bash
+cd frontend
+npm test
+```
 
 ## API Overview
 The backend exposes REST APIs under `/api/` and a GraphQL endpoint at `/graphql`.
-- **Auth:** `/api/auth/register`, `/api/auth/login`, `/api/auth/verify-email`
-- **Jobs:** `/api/jobs`, `/api/jobs/filter`
+- **Auth:** `/api/auth/register`, `/api/auth/login`, `/api/auth/verify-email`, `/api/auth/google`, `/api/auth/refresh-token`
+- **Jobs:** `/api/jobs`, `/api/jobs/filter`, `/api/jobs/{id}/summarize`
 - **Saved Jobs:** `/api/saved-jobs`
 - **User Profile:** `/api/users/profile`
-- **CV Parsing:** `/api/cv/upload`
+- **CV Parsing:** `/api/cv/upload`, `/api/cv/confirm`
+- **AI Chatbot:** `/api/ai/chat`
 
 ## Authentication Overview
-Stateless authentication using JWTs. The flow requires users to verify their email via a 6-digit OTP before logging in. Failed login attempts are tracked, resulting in a temporary account lockout to prevent brute-force attacks.
+Stateless authentication using JWTs. The flow requires users to verify their email via a 6-digit OTP before logging in. Failed login attempts are tracked, resulting in a temporary account lockout to prevent brute-force attacks. Google OAuth2 authentication is also fully supported with automatic user registration and token exchange.
 
 ## Security Notes
 - Passwords are hashed using BCrypt.
 - APIs are protected by a JWT Authentication filter.
 - `/api/auth` endpoints are protected by an in-memory Rate Limiter (20 req/min).
 - Input validation is enforced via `@Valid` and Bean Validation.
-- CORS is restricted to the configured `FRONTEND_URL`.
+- CORS is restricted to the configured `FRONTEND_URL` (with multi-origin comma-separated support).
 
-## Known Limitations & Missing Features
-- The rate limiter is currently in-memory and not suitable for multi-instance distributed deployments.
-- Test coverage is critically low for core business logic (Auth, Profile, Saved Jobs).
-- The `CvUploadController` currently blocks a reactive WebFlux thread, which may limit scalability during high traffic.
-- Semantic matching logic is duplicated across multiple services.
-- Google OAuth2 authentication flow has been recently updated for enhanced security.
+## Known Limitations & Planned Enhancements
+- The rate limiter is currently in-memory and planned to be migrated to Redis for distributed cluster deployments.
+- The `CvUploadController` currently blocks a reactive WebFlux thread, which will be refactored to fully reactive pipelines.
+- Semantic matching logic is slated for consolidation into a centralized vector search service.

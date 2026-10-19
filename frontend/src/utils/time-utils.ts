@@ -2,6 +2,8 @@ export function formatRelativeTime(dateInput: string | Date | null | undefined):
   if (!dateInput) return "Just Now";
   
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (!date || isNaN(date.getTime())) return "Just Now";
+
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   
