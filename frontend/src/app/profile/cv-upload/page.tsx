@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/app-layout";
-import { CvUploaderWidget } from "@/components/cv-parser";
+import { CvUploaderWidget } from "@/features/cv-parser/components";
 import { FileText, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -40,9 +40,9 @@ export default function CvUploadPage() {
             ].map((feat) => (
               <span
                 key={feat}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white/3 border border-white/8 rounded-full px-3 py-1"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 bg-white/[0.04] border border-white/[0.08] rounded-full px-3 py-1"
               >
-                <Sparkles className="h-3 w-3 text-violet-500" />
+                <Sparkles className="h-3 w-3 text-violet-400" />
                 {feat}
               </span>
             ))}

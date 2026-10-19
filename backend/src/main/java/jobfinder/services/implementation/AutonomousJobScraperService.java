@@ -230,7 +230,6 @@ public class AutonomousJobScraperService {
      * This saves the new jobs to our database safely.
      * It checks if the job link or the company already exists so we don't save duplicates.
      */
-    @Transactional
     public void saveScrapedData(List<JobResponseDTO> jobList) {
         try {
             log.info("💾 Attempting to save {} jobs to the database...", jobList.size());

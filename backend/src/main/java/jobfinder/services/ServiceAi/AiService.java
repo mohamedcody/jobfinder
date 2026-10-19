@@ -12,6 +12,8 @@ import java.util.Map;
 @Slf4j
 public class AiService {
 
+    
+    // class responsepelety the ai Service
     private final GeminiApiClient geminiClient;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
@@ -23,10 +25,8 @@ public class AiService {
         if (description == null || description.trim().isEmpty()) {
             return "No description available to summarize.";
         }
-
-        String prompt = "Summarize this job description in 2-3 concise bullet points focusing on key responsibilities and requirements. Use a professional tone. \n\nJob Description: " + description;
-
         try {
+            String prompt = "Summarize the following job description in one brief paragraph:\n" + description;
             Map response = geminiClient.generateContent(prompt, REQUEST_TIMEOUT).block();
 
             if (response != null && response.containsKey("candidates")) {
@@ -47,6 +47,33 @@ public class AiService {
         } catch (Exception e) {
             log.error("❌ Error during AI summarization: {}", e.getMessage(), e);
             return "AI Summary is currently unavailable. Please try again later.";
+        }
+    }
+
+    public String chat(List<Map<String, Object>> contents) {
+        if (contents == null || contents.isEmpty()) {
+            return "No messages provided.";
+        }
+        try {
+            Map response = geminiClient.generateContentWithHistory(contents, REQUEST_TIMEOUT).block();
+
+            if (response != null && response.containsKey("candidates")) {
+                List candidates = (List) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map candidate = (Map) candidates.get(0);
+                    Map content = (Map) candidate.get("content");
+                    List parts = (List) content.get("parts");
+                    if (!parts.isEmpty()) {
+                        Map part = (Map) parts.get(0);
+                        return (String) part.get("text");
+                    }
+                }
+            }
+            log.warn("⚠️ AI Response received but candidates list is empty.");
+            return "Could not generate response at this time.";
+        } catch (Exception e) {
+            log.error("❌ Error during AI chat: {}", e.getMessage(), e);
+            return "AI Chat is currently unavailable. Please try again later.";
         }
     }
 }

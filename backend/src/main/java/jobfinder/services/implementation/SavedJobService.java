@@ -120,10 +120,11 @@ public class SavedJobService implements jobSaveInterface {
 
     @Override
     public List<Long> getSavedJobIds(List<Long> jobIds) {
+        if (jobIds == null || jobIds.isEmpty()) {
+            return List.of();
+        }
         Long userId = getCurrentUserId();
-        return jobIds.stream()
-                .filter(jobId -> savedJobRepository.isJobSaved(userId, jobId))
-                .toList();
+        return savedJobRepository.findSavedJobIds(userId, jobIds);
     }
 
 

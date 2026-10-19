@@ -77,12 +77,12 @@ public class JobController {
         log.debug("GET /api/jobs/filter title='{}' location='{}' employmentType='{}' lastId={} size={} refresh={}",
                 title, location, employmentType, lastId, size, refresh);
         if (refresh) {
-            if (authentication == null || authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-                log.warn("Cache eviction attempted by non-admin user.");
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            if (authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                log.info("Admin triggered cache eviction for jobs.");
+                jobScraperService.evictJobsCache();
+            } else {
+                log.warn("Cache eviction skipped for non-admin user.");
             }
-            log.info("Admin triggered cache eviction for jobs.");
-            jobScraperService.evictJobsCache();
         }
         JobFilterRequest filter = new JobFilterRequest(title, location, minSalary, postedAfter, employmentType);
         return ok(jobScraperService.searchJobsByFilter(filter, lastId, size));

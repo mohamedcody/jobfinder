@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { EmployerSidebar } from "@/components/employer/employer-sidebar";
+import { EmployerSidebar } from "@/features/employer/components/employer-sidebar";
 import { motion } from "framer-motion";
 
 export default function EmployerLayout({ children }: { children: ReactNode }) {

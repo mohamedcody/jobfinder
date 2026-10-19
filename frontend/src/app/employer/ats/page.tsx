@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { MoreHorizontal, Plus, Search, Mail, MessageSquare, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs } from "@/components/ui/tabs";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { AppLayout } from "@/components/layout/app-layout";
 
 const initialColumns = [
   { id: "sourced", title: "Sourced", count: 12, color: "bg-slate-500" },
@@ -23,8 +27,8 @@ export default function EmployerATSPage() {
   const [activeTab, setActiveTab] = useState("pipeline");
 
   return (
-    <div className="min-h-[100dvh] text-white p-4 md:p-8 relative">
-      <div className="relative z-10 max-w-[1600px] mx-auto space-y-6 md:space-y-8">
+    <AppLayout>
+      <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8 py-6">
         
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -35,46 +39,46 @@ export default function EmployerATSPage() {
             <p className="text-[11px] sm:text-sm text-slate-400 mt-1">San Francisco, CA (Remote) • Posted 4 days ago</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-            <Button variant="default" className="w-full sm:w-auto py-3 sm:py-2">Share Job</Button>
-            <Button variant="primary" className="w-full sm:w-auto py-3 sm:py-2">Edit Posting</Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+            <Button variant="default" className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-semibold">Share Job</Button>
+            <Button variant="primary" className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-semibold">Edit Posting</Button>
           </div>
         </header>
 
         {/* Analytics Summary */}
-        <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 gap-4 custom-scrollbar snap-x">
+        <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 gap-3.5 custom-scrollbar snap-x">
           {[
             { label: "Total Views", value: "2,451", trend: "+12%" },
             { label: "AI Matches Found", value: "34", trend: "+5%" },
             { label: "Applications", value: "128", trend: "-2%" },
             { label: "Time to Hire", value: "14 days", trend: "Fast" },
           ].map((stat, i) => (
-            <GlassPanel key={i} padding="sm" className="min-w-[200px] md:min-w-0 snap-start shrink-0 focus-within:ring-2 focus-within:ring-cyan-500">
-              <h4 className="text-sm text-slate-400 font-medium">{stat.label}</h4>
-              <div className="flex items-end justify-between mt-2">
-                <span className="text-2xl font-black text-white">{stat.value}</span>
-                <span className="text-xs font-bold text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded-md">{stat.trend}</span>
+            <GlassPanel key={i} padding="sm" className="min-w-[180px] md:min-w-0 snap-start shrink-0 focus-within:ring-2 focus-within:ring-cyan-500 rounded-2xl">
+              <h4 className="text-xs text-slate-400 font-medium">{stat.label}</h4>
+              <div className="flex items-end justify-between mt-1.5">
+                <span className="text-xl font-bold text-white tabular-nums">{stat.value}</span>
+                <span className="text-[11px] font-semibold text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-md">{stat.trend}</span>
               </div>
             </GlassPanel>
           ))}
         </div>
 
         {/* ATS Board */}
-        <GlassPanel padding="none" className="rounded-3xl flex flex-col h-[calc(100vh-250px)] min-h-[600px]">
+        <GlassPanel padding="none" className="rounded-2xl flex flex-col min-h-0 lg:h-[calc(100vh-220px)] lg:min-h-[520px]">
           
           {/* Board Header / Controls */}
-          <div className="p-4 border-b border-white/10 bg-black/20 overflow-x-auto custom-scrollbar">
-            <div className="flex justify-between items-center gap-8 min-w-max">
+          <div className="p-3.5 sm:p-4 border-b border-white/10 bg-black/20">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
               
               {/* Tabs */}
-              <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5 shrink-0" role="tablist">
+              <div className="flex gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 overflow-x-auto custom-scrollbar" role="tablist">
                 {["pipeline", "list", "ai-insights"].map((tab) => (
                   <button 
                     key={tab}
                     role="tab"
                     aria-selected={activeTab === tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-1.5 text-sm font-bold rounded-lg capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${activeTab === tab ? "bg-white/10 text-white shadow-xs" : "text-slate-400 hover:text-white"}`}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg capitalize transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 cursor-pointer ${activeTab === tab ? "bg-white/10 text-white shadow-xs" : "text-slate-400 hover:text-white"}`}
                   >
                     {tab.replace("-", " ")}
                   </button>
@@ -82,19 +86,17 @@ export default function EmployerATSPage() {
               </div>
 
               {/* Search & Filter */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="relative">
-                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden="true" />
-                  <input 
-                    type="text" 
-                    placeholder="Search candidates..." 
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="w-full sm:w-60">
+                  <Input
+                    icon={Search}
+                    size="sm"
+                    placeholder="Search candidates..."
                     aria-label="Search candidates"
-                    dir="auto"
-                    className="ps-9 pe-4 py-1.5 bg-black/40 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-500 text-white w-64 transition-all"
                   />
                 </div>
-                <Button variant="ghost" size="sm" className="gap-2 border-white/20 text-slate-300 hover:text-white hover:border-white/40">
-                  Filter <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                <Button variant="ghost" size="sm" className="h-9 gap-1.5 border-white/20 text-slate-300 hover:text-white hover:border-white/40 text-xs">
+                  Filter <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
               </div>
 
@@ -105,22 +107,18 @@ export default function EmployerATSPage() {
           <div className="flex-1 overflow-hidden flex flex-col">
             
             {/* Mobile Column Selector (Visible only on mobile/tablet) */}
-            <div className="lg:hidden p-4 border-b border-white/5 flex gap-2 overflow-x-auto custom-scrollbar bg-black/10">
-              {initialColumns.map(col => (
-                <button
-                  key={col.id}
-                  onClick={() => setActiveTab(col.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
-                    activeTab === col.id 
-                    ? `bg-white/10 text-white ${col.color.replace("bg-", "border-")}` 
-                    : "bg-white/5 text-slate-500 border-transparent"
-                  }`}
-                >
-                  <span className={`h-2 w-2 rounded-full ${col.color}`} />
-                  {col.title}
-                  <span className="opacity-60">{col.count}</span>
-                </button>
-              ))}
+            <div className="lg:hidden p-3 border-b border-white/5 bg-black/10">
+              <Tabs
+                tabs={initialColumns.map((col) => ({
+                  id: col.id,
+                  label: col.title,
+                  count: col.count,
+                  icon: <span className={`h-2 w-2 rounded-full ${col.color}`} />,
+                }))}
+                activeId={activeTab === "pipeline" ? "sourced" : activeTab}
+                onChange={(id) => setActiveTab(id)}
+                variant="pills"
+              />
             </div>
 
             <div className="flex-1 overflow-x-auto p-4 lg:p-6 flex lg:gap-6 custom-scrollbar snap-x snap-mandatory pb-24 lg:pb-6">
@@ -183,12 +181,16 @@ export default function EmployerATSPage() {
                             
                             <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
                               <div className="flex items-center gap-1">
-                                <button className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><Mail className="h-3.5 w-3.5" /></button>
-                                <button className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><MessageSquare className="h-3.5 w-3.5" /></button>
+                                <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-white" aria-label="Send email">
+                                  <Mail className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-white" aria-label="Send message">
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
-                              <span className="text-[10px] font-black text-green-400 bg-green-400/10 px-2 py-1 rounded-md border border-green-400/20">
+                              <Badge variant="success" size="sm">
                                 {candidate.match} Match
-                              </span>
+                              </Badge>
                             </div>
                           </div>
                         ))
@@ -205,6 +207,6 @@ export default function EmployerATSPage() {
         </GlassPanel>
         
       </div>
-    </div>
+    </AppLayout>
   );
 }

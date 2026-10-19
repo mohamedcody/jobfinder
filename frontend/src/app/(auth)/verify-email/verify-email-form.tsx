@@ -7,16 +7,17 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { OtpField } from "@/components/auth/otp-field";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { TextField } from "@/components/auth/text-field";
+import { AuthShell } from "@/features/auth/components/auth-shell";
+import { OtpField } from "@/features/auth/components/otp-field";
+import { SubmitButton } from "@/features/auth/components/submit-button";
+import { TextField } from "@/features/auth/components/text-field";
+import { Button } from "@/components/ui/button";
 import {
   verifyEmailSchema,
   type VerifyEmailFormValues,
 } from "@/features/auth/schemas";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
-import { authService } from "@/lib/auth/auth-service";
+import { getApiErrorMessage } from "@/utils/api-error";
+import { authService } from "@/services/auth.service";
 
 interface VerifyEmailFormProps {
   initialEmail: string;
@@ -155,20 +156,23 @@ export function VerifyEmailForm({ initialEmail }: VerifyEmailFormProps) {
         <SubmitButton isLoading={isSubmitting}>Verify email</SubmitButton>
       </form>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
         onClick={onResendOtp}
         disabled={resendDisabled}
-        className="secondary-button mt-3 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        isLoading={isResending}
+        loadingText="Sending..."
+        className="mt-3 w-full h-11 text-xs font-semibold"
       >
-        {isResending ? "Sending..." : resendLabel}
-      </button>
+        {resendLabel}
+      </Button>
 
-      <div className="mt-6 flex items-center justify-between text-sm text-[var(--muted)]">
-        <Link href="/register" className="soft-link font-semibold hover:underline">
+      <div className="mt-6 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+        <Link href="/register" className="text-slate-400 hover:text-white transition-colors">
           Register again
         </Link>
-        <Link href="/login" className="soft-link font-semibold hover:underline">
+        <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
           Back to login
         </Link>
       </div>

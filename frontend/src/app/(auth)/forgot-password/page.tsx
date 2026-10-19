@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { TextField } from "@/components/auth/text-field";
+import { AuthShell } from "@/features/auth/components/auth-shell";
+import { SubmitButton } from "@/features/auth/components/submit-button";
+import { TextField } from "@/features/auth/components/text-field";
 import {
   forgotPasswordSchema,
   type ForgotPasswordFormValues,
 } from "@/features/auth/schemas";
-import { getApiErrorMessage } from "@/lib/auth/api-error";
-import { authService } from "@/lib/auth/auth-service";
+import { getApiErrorMessage } from "@/utils/api-error";
+import { authService } from "@/services/auth.service";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -58,10 +58,10 @@ export default function ForgotPasswordPage() {
         <SubmitButton isLoading={isSubmitting}>Send reset OTP</SubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[var(--muted)]">
-        Back to{" "}
-        <Link href="/login" className="soft-link font-semibold hover:underline">
-          Login
+      <p className="mt-6 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+        Remember your password?{" "}
+        <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors ml-1">
+          Back to login
         </Link>
       </p>
     </AuthShell>

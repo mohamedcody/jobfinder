@@ -1,6 +1,12 @@
 package jobfinder.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public record AuthResponseDto(
-        String token, String email ,String role , String message
+        String token,
+        @JsonIgnore String refreshToken,
+        String email,
+        String role,
+        String message
 ) {
 }
